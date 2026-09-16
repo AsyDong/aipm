@@ -8,6 +8,13 @@
 //   POST /api/sync                   客户端数据入库（op 幂等，重试不会写重）
 //   GET  /api/report                 成长报告（按孩子 + 天数查快照）
 //
+// op → SQL 的分发在 server/ops.ts；本文件只管 HTTP、鉴权、PG 连接。
+// 支持的 op：
+//   事件流（只能靠 op_id 去重）      attempt / ledger
+//   实体快照（按业务主键 upsert）    child / pet / task_template / daily_task / prize / redeem
+//
+// 失败语义：单条 op 出错不再拖垮整批 —— 见 /api/sync 里的逐条上报。
+//
 // 数据库：腾讯云 CloudBase PostgreSQL（走 exec-pgsql，参数化 SQL，API Key 鉴权）
 // 环境变量：PORT / TCB_ENV_ID / TCB_API_KEY / SYNC_TOKEN（可选，sync+report 校验）
 
@@ -17,6 +24,7 @@ import {
 } from '../src/engine/questions'
 import { gradeLocally, needsModel, normalizeNumeric } from '../src/engine/grading'
 import { QUESTIONS_PER_LEVEL } from '../src/engine/rules'
+import { PgError, applyOp, OPS_PER_REQUEST, type Op } from './ops'
 
 const PORT = Number(process.env.PORT || 8787)
 const ENV_ID = process.env.TCB_ENV_ID || ''
@@ -30,16 +38,28 @@ let pgOk = true
 let pgLastError = ''
 
 async function pg(sql: string, parameters: unknown[] = []): Promise<Record<string, unknown>[]> {
-  const res = await fetch(`${PG_BASE}/v1/rdb/exec-pgsql`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
-    body: JSON.stringify({ sql, parameters, role: 'cloudbase_postgres' }),
-  })
+  let res: Response
+  try {
+    res = await fetch(`${PG_BASE}/v1/rdb/exec-pgsql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
+      body: JSON.stringify({ sql, parameters, role: 'cloudbase_postgres' }),
+    })
+  } catch (e) {
+    // 连不上网关：基础设施问题 → 客户端保留数据重推
+    pgOk = false
+    pgLastError = `PG 不可达: ${(e as Error).message}`
+    throw new PgError(pgLastError, true)
+  }
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
-    pgOk = false
-    pgLastError = `PG ${res.status}: ${JSON.stringify(body).slice(0, 200)}`
-    throw new Error(pgLastError)
+    // 5xx / 429 = 网关或数据库本身的问题（重推可能就好了）
+    // 4xx      = 这条 SQL 本身被拒（类型 / 约束 / 列名，重推一万次也一样）
+    const transient = res.status >= 500 || res.status === 429
+    pgLastError = `PG ${res.status}: ${JSON.stringify(body).slice(0, 300)}`
+    // 只有基础设施故障才判「数据库不健康」—— SQL 写错不该让 /health 变红
+    if (transient) pgOk = false
+    throw new PgError(pgLastError, transient)
   }
   pgOk = true
   return Array.isArray(body) ? body : []
@@ -84,72 +104,6 @@ function genQuestions(req: {
   return buildLevelQuestions(level, inject, n)
 }
 
-// ---------- 同步 ----------
-
-interface Op { opId?: string; kind?: string; data?: Record<string, unknown> }
-
-async function applyOp(childId: string, op: Op): Promise<'applied' | 'skipped'> {
-  const d = op.data ?? {}
-  const opId = String(op.opId ?? '')
-  if (!opId) throw new Error('op missing opId')
-  switch (op.kind) {
-    case 'attempt':
-      await pg(
-        `INSERT INTO attempts (op_id, child_id, day, subject, level_id, question_text, input, correct, first_try, duration_ms, hints_used)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (op_id) DO NOTHING`,
-        [opId, childId, d.day, d.subject, d.levelId ?? null, d.questionText, d.input ?? null,
-         !!d.correct, d.firstTry !== false, d.durationMs ?? null, d.hintsUsed ?? 0],
-      )
-      return 'applied'
-    case 'ledger':
-      await pg(
-        `INSERT INTO ledgers (op_id, child_id, kind, delta, balance, source, note, at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (op_id) DO NOTHING`,
-        [opId, childId, d.kind, d.delta, d.balance ?? null, d.source, d.note ?? null,
-         d.at ? new Date(d.at as string) : new Date()],
-      )
-      return 'applied'
-    case 'snapshot':
-      await pg(
-        `INSERT INTO daily_snapshots (child_id, day, satiety, fed, is_full, body, streak, tasks_done, tasks_total, battles, correct_rate, points_earned, food_earned)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-         ON CONFLICT (child_id, day) DO UPDATE SET
-           satiety=EXCLUDED.satiety, fed=EXCLUDED.fed, is_full=EXCLUDED.is_full, body=EXCLUDED.body,
-           streak=EXCLUDED.streak, tasks_done=EXCLUDED.tasks_done, tasks_total=EXCLUDED.tasks_total,
-           battles=EXCLUDED.battles, correct_rate=EXCLUDED.correct_rate,
-           points_earned=EXCLUDED.points_earned, food_earned=EXCLUDED.food_earned, synced_at=now()`,
-        [childId, d.day, d.satiety ?? 0, d.fed ?? 0, !!d.full, d.body ?? 'normal', d.streak ?? 0,
-         d.tasksDone ?? 0, d.tasksTotal ?? 0, d.battles ?? 0, d.correctRate ?? 0,
-         d.pointsEarned ?? 0, d.foodEarned ?? 0],
-      )
-      return 'applied'
-    case 'level_record':
-      await pg(
-        `INSERT INTO level_records (child_id, level_id, best_stars, cleared, play_count)
-         VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (child_id, level_id) DO UPDATE SET
-           best_stars=GREATEST(level_records.best_stars, EXCLUDED.best_stars),
-           cleared=level_records.cleared OR EXCLUDED.cleared,
-           play_count=EXCLUDED.play_count, updated_at=now()`,
-        [childId, d.levelId, d.bestStars ?? 0, !!d.cleared, d.playCount ?? 1],
-      )
-      return 'applied'
-    case 'wrong_item':
-      await pg(
-        `INSERT INTO wrong_items (child_id, subject, question_text, spec, wrong_count, right_streak, mastered, next_review_day)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         ON CONFLICT (child_id, question_text) DO UPDATE SET
-           wrong_count=EXCLUDED.wrong_count, right_streak=EXCLUDED.right_streak, mastered=EXCLUDED.mastered,
-           next_review_day=EXCLUDED.next_review_day, updated_at=now()`,
-        [childId, d.subject, d.questionText, d.spec ? JSON.stringify(d.spec) : null,
-         d.wrongCount ?? 1, d.rightStreak ?? 0, !!d.mastered, d.nextReviewDay ?? null],
-      )
-      return 'applied'
-    default:
-      throw new Error(`unknown op kind: ${op.kind}`)
-  }
-}
-
 // ---------- HTTP 路由 ----------
 
 const server = http.createServer(async (req, res) => {
@@ -161,7 +115,14 @@ const server = http.createServer(async (req, res) => {
   const url = (req.url ?? '').split('?')[0]
   try {
     if (req.method === 'GET' && url === '/health') {
-      send(res, 200, { ok: true, pgOk, pgLastError, env: ENV_ID, uptime: process.uptime() })
+      // 实探一次数据库：pgOk 缓存值初始为 true，凭据无效（401）时不会自己变红
+      let live = true
+      try {
+        await pg('SELECT 1')
+      } catch {
+        live = false
+      }
+      send(res, 200, { ok: true, pgOk: live, pgLastError, env: ENV_ID, uptime: process.uptime() })
       return
     }
 
@@ -203,11 +164,37 @@ const server = http.createServer(async (req, res) => {
       }
       const body = JSON.parse(await readBody(req)) as { childId?: string; ops?: Op[] }
       const childId = String(body.childId ?? 'default')
-      const ops = Array.isArray(body.ops) ? body.ops.slice(0, 200) : []
+      const ops = Array.isArray(body.ops) ? body.ops.slice(0, OPS_PER_REQUEST) : []
+
       let applied = 0
+      const failedIds: string[] = []
+      const errors: string[] = []
+
+      // 逐条处理 + 逐条上报失败。
+      // 一条坏数据不该让整批 200 条一起失败 —— 上一版就是这样：客户端只看到「这批 500」，
+      // 那条坏 op 永远卡在队头，它后面的数据全推不上去，而且没有任何线索能定位到它。
       for (const op of ops) {
-        if (await applyOp(childId, op) === 'applied') applied++
+        try {
+          await applyOp(pg, childId, op)
+          applied++
+        } catch (e) {
+          const err = e as PgError
+          // 基础设施故障：整批退回 → 客户端保留全部数据，下次重推
+          if (err.transient) throw err
+          failedIds.push(String(op.opId ?? op.kind ?? '?'))
+          if (errors.length < 3) errors.push(`${op.kind}: ${err.message.slice(0, 160)}`)
+        }
       }
+
+      // 一条都没成、且不止一条 —— 更像是基础设施问题被误判成了数据问题。
+      // 宁可整批重推（op 幂等，不会写重），也不要一口气丢掉客户端攒了很久的数据。
+      if (ops.length > 1 && failedIds.length === ops.length) {
+        throw new PgError(
+          `整批 ${ops.length} 条全部失败，按基础设施问题处理：${errors[0] ?? '原因未记录'}`,
+          true,
+        )
+      }
+
       const rows = await pg(
         `INSERT INTO sync_state (child_id, last_sync_at, server_version)
          VALUES ($1, now(), 1)
@@ -215,7 +202,14 @@ const server = http.createServer(async (req, res) => {
          RETURNING server_version`,
         [childId],
       )
-      send(res, 200, { applied, total: ops.length, serverVersion: rows[0]?.server_version ?? 1 })
+      send(res, 200, {
+        applied,
+        failed: failedIds.length,
+        failedIds,
+        errors,
+        total: ops.length,
+        serverVersion: rows[0]?.server_version ?? 1,
+      })
       return
     }
 
