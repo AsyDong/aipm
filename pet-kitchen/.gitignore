@@ -1,0 +1,33 @@
+# 依赖
+node_modules
+
+# 构建产物
+dist
+dist-ssr
+
+# 环境变量（可能含密钥，绝不入库）
+.env
+.env.local
+.env.*.local
+
+# esbuild 打包的临时文件
+smoke.build.cjs
+server/server.build.cjs
+tools/mock-api.build.cjs
+
+# TypeScript 增量构建信息
+*.tsbuildinfo
+
+# Vite 临时文件
+vite.config.ts.timestamp-*
+
+# 诊断输出
+*-out.txt
+*.log
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json

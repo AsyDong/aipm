@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    color: #2f3b4c;
+    background: linear-gradient(180deg, #eaf7ff 0%, #fffbf2 46%, #fff7ea 100%);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-transparent;
+  }
+  .card {
+    @apply rounded-xl2 bg-white/90 p-4 shadow-card;
+  }
+  .btn-main {
+    @apply flex h-[52px] w-full items-center justify-center rounded-2xl bg-sky-400 text-[19px] font-bold text-white shadow-card transition active:scale-[0.97] disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none;
+  }
+  .btn-sub {
+    @apply flex h-[52px] w-full items-center justify-center rounded-2xl bg-white text-[18px] font-bold text-sky-600 shadow-card transition active:scale-[0.97] disabled:bg-slate-100 disabled:text-slate-400;
+  }
+  .btn-chip {
+    @apply flex min-h-[44px] items-center justify-center rounded-xl bg-sky-100 px-4 text-[16px] font-bold text-sky-700 active:scale-[0.97];
+  }
+  .seg {
+    @apply flex rounded-full bg-sky-100 p-1 text-[15px] font-bold text-sky-700;
+  }
+  .seg > button {
+    @apply flex-1 rounded-full py-2 transition;
+  }
+  .seg > button[data-on='true'] {
+    @apply bg-white text-sky-600 shadow-card;
+  }
+  .field {
+    @apply h-12 w-full rounded-xl border-2 border-sky-100 bg-white px-3 text-[16px] outline-none focus:border-sky-300;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
