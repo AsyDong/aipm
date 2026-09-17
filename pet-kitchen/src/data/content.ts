@@ -12,11 +12,11 @@ export interface SpeciesDef {
   open: boolean
 }
 
-/** 山海经主题（Q14）。MVP 只开放白泽，另两种置灰「敬请期待」 */
+/** 山海经主题（Q14）。三只均为《山海经》正向祥瑞，AI 立绘见 public/pets/（糖果祥瑞风格基准板 v1.0） */
 export const SPECIES: SpeciesDef[] = [
-  { id: 'baize', name: '白泽', tagline: '知万物，通人情', c1: '#FFFFFF', c2: '#DCEEFF', accent: '#7FC7F5', open: true },
-  { id: 'taotie', name: '饕餮', tagline: '贪吃但有福气', c1: '#FFF3D6', c2: '#FFD79A', accent: '#F08A3C', open: false },
-  { id: 'qilin', name: '麒麟', tagline: '踏云而来，送好运', c1: '#FFF0F5', c2: '#FFD3E2', accent: '#F2689A', open: false },
+  { id: 'feifei', name: '朏朏', tagline: '养之可以已忧', c1: '#FFFFFF', c2: '#D9F2E3', accent: '#7FCBA0', open: true },
+  { id: 'dangkang', name: '当康', tagline: '见则天下丰收', c1: '#FFF8E8', c2: '#F5E3B8', accent: '#E0A94E', open: true },
+  { id: 'tianguo', name: '天狗', tagline: '可以御凶', c1: '#F7FAFC', c2: '#DCE7EE', accent: '#8FA8BC', open: true },
 ]
 
 export const NAME_POOL = [

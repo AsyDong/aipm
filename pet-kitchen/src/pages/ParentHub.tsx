@@ -42,7 +42,7 @@ export default function ParentHub({ focus }: { focus?: string }) {
       </div>
 
       <div className="mt-3 rounded-xl3 bg-sky-50 px-4 py-3 text-[13px] leading-relaxed text-sky-700">
-        每日 04:00 结算：饱食度 −60，连续未喂 3 天变消瘦，单日喂第 6 份或连续 7 天顶格会变胖。三种体型都不影响属性和闯关。
+        每日 04:00 结算：饱食度 −60（不低于 0）。每天最多喂 5 份，刚好喂到顶格线。投喂只影响饱食度和经验，不影响属性和闯关。
       </div>
 
       <div className="mt-3">

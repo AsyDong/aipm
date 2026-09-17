@@ -9,6 +9,10 @@ import {
   activeProvider, configureProvider, generateQuestions, generateVariants, gradeAnswer,
   isThenable, localProvider, providerStats, resetProviderConfig, resetProviderStats,
 } from './src/engine/provider'
+import {
+  configureSync, dropQueue, flushSync, pendingCount, resetSync, syncStats,
+} from './src/store/sync'
+import { applyOp } from './server/ops'
 
 let fail = 0
 function ok(cond: boolean, msg: string, extra?: unknown) {
@@ -34,7 +38,7 @@ ok(s().templates.length === 5, `默认任务模板 ${s().templates.length} 条`)
 ok(s().prizes.length > 0, `默认现实奖品 ${s().prizes.length} 个`)
 
 console.log('== 2. 领养 / 破壳 / 取名 ==')
-s().adopt('baize')
+s().adopt('feifei')
 ok(!!s().pet, '领养成功')
 ok(s().phase === 'hatch', `phase = ${s().phase}`)
 ok(s().pet!.satiety === 60 && s().pet!.stage === 1, '初始饱食度 60 / stage 1')
@@ -61,21 +65,26 @@ for (const t of s().daily.filter((x) => x.status === 'pending')) s().approveTask
 ok(s().food === 5, `5 个任务共得 ${s().food} 份食物（无全勤奖）`, s().food)
 ok(s().todayTasksDone === 5, `todayTasksDone = ${s().todayTasksDone}`)
 
-console.log('== 5. 喂养规则（1份=20，日上限6，上限120）==')
-useStore.setState({ pet: { ...s().pet!, satiety: 0, fedToday: 0, body: 'normal' } })
+console.log('== 5. 喂养规则（1份=20，日上限5，硬上限120）==')
+useStore.setState({ pet: { ...s().pet!, satiety: 0, fedToday: 0 } })
 s().parentAdjustFood(10, '测试补发')
 s().feed(3)
 ok(s().pet!.satiety === 60, `喂 3 份 → 饱食度 ${s().pet!.satiety}（期望 60）`, s().pet?.satiety)
 ok(s().food === 12, `食物剩余 ${s().food}（5+10-3）`, s().food)
 ok(s().pet!.exp === 30, `经验 ${s().pet!.exp}（3×10）`, s().pet?.exp)
 s().feed(2)
-ok(s().pet!.satiety === 100, `再喂 2 份 → ${s().pet!.satiety}（期望 100）`, s().pet?.satiety)
-ok(s().pet!.fedToday === 5, `当日已喂 ${s().pet!.fedToday} 份`)
-s().feed(1)
-ok(s().pet!.satiety === 120, `第 6 份 → ${s().pet!.satiety}（硬上限 120）`, s().pet?.satiety)
-ok(s().pet!.body === 'fat', `第 6 份触发肥胖：${s().pet!.body}`)
+ok(s().pet!.satiety === 100, `再喂 2 份 → ${s().pet!.satiety}（期望 100，恰好顶格）`, s().pet?.satiety)
+ok(s().pet!.fedToday === 5, `当日已喂 ${s().pet!.fedToday} 份 = 日上限`)
 const feedRes = s().feed(1)
-ok(!feedRes.ok, `超过日上限被拒绝：${feedRes.msg}`)
+ok(!feedRes.ok, `第 6 份被日上限拒绝：${feedRes.msg}`)
+
+// 硬上限仍生效：从 110 起喂 3 份只能补 1 份到 120（room 夹紧）
+useStore.setState({ pet: { ...s().pet!, satiety: 110, fedToday: 0 } })
+s().feed(3)
+ok(s().pet!.satiety === 120, `从 110 喂 3 份 → ${s().pet!.satiety}（硬上限夹紧）`, s().pet?.satiety)
+// 体型机制已移除：喂满也不再产生任何体型状态
+ok(!('body' in s().pet!), '宠物对象已不含 body 字段（体型机制已移除）')
+ok(!('noFeedDays' in s().pet!) && !('fullDays' in s().pet!), '宠物对象已不含连续未喂/连续顶格计数')
 
 console.log('== 6. 跨日结算（-60 衰减 / 计数器重置）==')
 nextDay()
@@ -112,14 +121,14 @@ nextDay() // 结算第 30 天（有完成任务，streak 保留）
 ok(s().streak === 0, `断签后 streak = ${s().streak}（期望 0）`, s().streak)
 ok(s().longestStreak >= 30, `最长连续记录保留 = ${s().longestStreak}`)
 
-console.log('== 9. 三天不喂 → 变瘦 ==')
+console.log('== 9. 三天不喂 → 饱食度归零（不再有体型变化）==')
 {
-  useStore.setState({ pet: { ...s().pet!, satiety: 100, noFeedDays: 0, body: 'normal' } })
+  useStore.setState({ pet: { ...s().pet!, satiety: 100 } })
   nextDay()
   nextDay()
   nextDay()
-  ok(s().pet!.body === 'thin', `连续 3 天没吃 → ${s().pet!.body}`, s().pet?.body)
   ok(s().pet!.satiety === 0, `饱食度归零 ${s().pet!.satiety}`)
+  ok(!('body' in s().pet!), '连续未喂不再改变体型（体型机制已移除）')
 }
 
 console.log('== 10. 出题引擎（12 关 × 10 题）==')
@@ -309,9 +318,14 @@ console.log('== 17. 时间工具（04:00 分界）==')
 console.log('== 18. 数值常量复核 ==')
 ok(rules.FOOD_PER_SATIETY === 20, '1 份 = 20 饱食度')
 ok(rules.DAILY_DECAY === 60, '每日衰减 60')
-ok(rules.FEED_LIMIT === 6, '日投喂上限 6')
+ok(rules.FEED_LIMIT === 5, '日投喂上限 5（体型机制移除后由 6 下调，恰为顶格线所需份数）')
 ok(rules.SATIETY_MAX === 120, '饱食度上限 120')
-ok(rules.FAT_FULL_DAYS === 7 && rules.THIN_DAYS === 3, '连续 7 天顶格变胖 / 3 天没吃变瘦')
+ok(
+  (rules as unknown as Record<string, unknown>).THIN_DAYS === undefined &&
+    (rules as unknown as Record<string, unknown>).FAT_FULL_DAYS === undefined &&
+    (rules as unknown as Record<string, unknown>).BODY_LABEL === undefined,
+  '体型相关常量（THIN_DAYS / FAT_FULL_DAYS / BODY_LABEL）已删除',
+)
 ok(rules.STREAK_7_FOOD === 1 && rules.STREAK_30_FOOD === 5, '连续 7 天 +1 / 30 天 +5')
 ok(rules.POINT_PER_CORRECT === 2, '每题 2 积分')
 
@@ -417,6 +431,282 @@ void (async () => {
   resetProviderConfig()
   resetProviderStats()
   ok(activeProvider().name === 'local', '复位后回到本地实现')
+
+  console.log('== 23. 数据同步（队列 / 幂等 / 降级） ==')
+  {
+    const calls: { url: string; headers: Record<string, string>; body: any }[] = []
+    let reply: () => { status: number; body?: unknown } = () => ({
+      status: 200, body: { applied: 1, serverVersion: 1 },
+    })
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async (url: unknown, init: any) => {
+      calls.push({
+        url: String(url),
+        headers: (init?.headers ?? {}) as Record<string, string>,
+        body: JSON.parse(String(init?.body)),
+      })
+      const r = reply()
+      return {
+        ok: r.status >= 200 && r.status < 300,
+        status: r.status,
+        json: async () => r.body ?? {},
+      } as unknown as Response
+    }) as typeof fetch
+
+    try {
+      resetSync()
+      configureSync({ apiBaseUrl: '', token: '' })
+
+      // 1) 纯本地模式：一个请求都不发、一条都不攒（与接线之前行为完全一致）
+      s().parentGrantPoints(10, '未启用时的奖励')
+      ok(pendingCount() === 0, '未启用同步时队列保持为空（零开销）')
+
+      // 2) 启用后业务动作真的入队 —— 验证埋点确实接上了
+      configureSync({ apiBaseUrl: 'http://127.0.0.1:8787', token: 'test-token' })
+      s().parentGrantPoints(10, '启用后的奖励')
+      ok(pendingCount() >= 1, `启用后账本 op 入队 ${pendingCount()} 条`)
+
+      // 3) 推送成功 → 出队，且请求带齐 childId / ops / 令牌
+      const r1 = await flushSync()
+      ok(r1.ok && r1.pushed >= 1, `推送成功 ${r1.pushed} 条`)
+      ok(pendingCount() === 0, '推送成功后队列清空')
+      const sent = calls[calls.length - 1]
+      ok(sent.url.endsWith('/api/sync'), '打到 /api/sync')
+      ok(sent.headers['x-sync-token'] === 'test-token', '带上了同步令牌')
+      ok(!!sent.body.childId, `childId 已自动生成：${String(sent.body.childId).slice(0, 12)}…`)
+      ok(sent.body.ops.every((o: any) => !!o.opId), '每条 op 都带幂等键 opId')
+      ok(new Set(sent.body.ops.map((o: any) => o.opId)).size === sent.body.ops.length, 'opId 无重复')
+      ok(sent.body.ops.some((o: any) => o.kind === 'ledger'), '账本 op 类型正确')
+
+      // 4) 网络/5xx 失败 → 数据留在本地等下次，不能丢
+      reply = () => ({ status: 500 })
+      s().parentGrantPoints(5, '网络差时的奖励')
+      const before = pendingCount()
+      const r2 = await flushSync()
+      ok(!r2.ok && pendingCount() === before, `失败后 ${pendingCount()} 条仍在本地（下次再推）`)
+
+      // 5) 403 → 判定令牌被拒并暂停，别把队列刷爆
+      reply = () => ({ status: 403 })
+      const r3 = await flushSync()
+      ok(r3.forbidden === true, '403 判定为令牌被拒')
+      const nCalls = calls.length
+      await flushSync()
+      ok(calls.length === nCalls, '暂停后不再发请求（不刷屏也不费流量）')
+      ok(pendingCount() > 0, '数据仍安全留在本地')
+
+      // 6) 换成新令牌 → 同步自愈，不用重装
+      configureSync({ token: 'new-token' })
+      reply = () => ({ status: 200, body: { applied: 1, serverVersion: 2 } })
+      const r4 = await flushSync()
+      ok(r4.ok && pendingCount() === 0, '换令牌后同步恢复且队列清空')
+      ok(syncStats().serverVersion === 2, `记录服务端版本号 ${syncStats().serverVersion}`)
+
+      // 7) 4xx（这批数据服务端不认）→ 丢弃并记账，否则会永久堵住队头
+      reply = () => ({ status: 400 })
+      s().parentGrantPoints(3, '坏数据')
+      const r5 = await flushSync()
+      ok(!r5.ok && pendingCount() === 0, '4xx 丢弃这批，避免堵住后续数据')
+      ok(syncStats().rejected >= 1, `记账 rejected=${syncStats().rejected}`)
+
+      // 8) 家长端「清空待同步数据」入口可用
+      s().parentGrantPoints(1, '待清空的奖励')
+      ok(dropQueue() >= 1 && pendingCount() === 0, 'dropQueue 清空本地队列')
+    } finally {
+      globalThis.fetch = realFetch
+      resetSync()
+      configureSync({ apiBaseUrl: '', token: '' })
+    }
+  }
+
+  console.log('== 24. 实体同步 op（孩子档案 / 宠物 / 任务 / 奖品 / 兑换）==')
+  {
+    const calls: { body: any }[] = []
+    let reply: () => { status: number; body?: unknown } = () => ({
+      status: 200, body: { applied: 1, failed: 0, serverVersion: 9 },
+    })
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async (_url: unknown, init: any) => {
+      calls.push({ body: JSON.parse(String(init?.body)) })
+      const r = reply()
+      return {
+        ok: r.status >= 200 && r.status < 300,
+        status: r.status,
+        json: async () => r.body ?? {},
+      } as unknown as Response
+    }) as typeof fetch
+
+    try {
+      resetSync()
+      configureSync({ apiBaseUrl: 'http://127.0.0.1:8787', token: 'test-token' })
+
+      // 孩子档案：本地原本根本没有这个数据源
+      s().setChildProfile({ name: '豆豆', grade: 'g2', textbookVer: '统编版' })
+
+      // 宠物：改名 / 投喂 都应产生 pet op
+      s().renamePet('小闪电')
+      s().parentAdjustFood(6, '实体埋点测试')
+      s().feed(2)
+
+      // 任务模板：新增 → 改（含停用）→ 删
+      const tid = s().addTemplate({ name: '练字 10 分钟', icon: '✍️', type: 'subjective', foodValue: 2, enabled: true })
+      s().updateTemplate(tid, { foodValue: 3, enabled: false })
+      s().removeTemplate(tid)
+
+      // 奖品：新增 → 删
+      s().addPrize('测试奖品：贴纸', 10, '备注')
+      const pz = s().prizes.find((p) => p.name === '测试奖品：贴纸')!
+
+      // 兑换流转：pending → approved → delivered
+      s().parentGrantPoints(pz.points, '测试积分')
+      s().redeem(pz.id)
+      const rd = s().redeems[0]
+      s().approveRedeem(rd.id)
+      s().deliverRedeem(rd.id)
+      s().removePrize(pz.id)
+
+      // 跨日结算应同时产生 snapshot 与 pet
+      nextDay()
+
+      const r = await flushSync()
+      ok(r.ok, `实体 op 推送成功 ${r.pushed} 条`)
+      ok(pendingCount() === 0, '队列已清空')
+
+      const ops = calls[calls.length - 1].body.ops as any[]
+      const byKind = (k: string) => ops.filter((o) => o.kind === k)
+      const keys = (o: any) => Object.keys(o.data).sort().join(',')
+
+      // 字段名必须和表列对得上 —— 服务端 server/ops.ts 就是直接吃这些名字的
+      const childOp = byKind('child').pop()
+      ok(!!childOp, `child op 已产生（${byKind('child').length} 条）`)
+      ok(keys(childOp) === 'grade,name,textbookVer', `child op 字段：${keys(childOp)}`)
+      ok(childOp.data.name === '豆豆' && childOp.data.grade === 'g2', '孩子昵称与年级同步正确')
+
+      const petOp = byKind('pet').pop()
+      ok(!!petOp, `pet op 已产生（${byKind('pet').length} 条）`)
+      ok(keys(petOp) === 'attrs,body,exp,fedToday,name,satiety,species,stage', `pet op 字段：${keys(petOp)}`)
+      ok(petOp.data.name === '小闪电' && petOp.data.species === 'feifei', '宠物昵称与种类同步正确')
+      ok(!!petOp.data.attrs && typeof petOp.data.attrs.math === 'number', '三科属性以对象同步（服务端写 jsonb）')
+
+      const tplOps = byKind('task_template')
+      ok(tplOps.length === 3, `task_template op ${tplOps.length} 条（新增 / 修改 / 删除）`)
+      ok(keys(tplOps[0]) === 'active,foodValue,id,name,subject,type', `task_template op 字段：${keys(tplOps[0])}`)
+      ok(tplOps[0].data.active === true && tplOps[2].data.active === false, '模板新增 active:true → 启用/删除 active:false')
+
+      const dtOps = byKind('daily_task')
+      ok(dtOps.length > 0, `daily_task op ${dtOps.length} 条（每日实例）`)
+      ok(keys(dtOps[0]) === 'at,day,id,mediaKey,note,status,templateId', `daily_task op 字段：${keys(dtOps[0])}`)
+
+      const prizeOps = byKind('prize')
+      ok(prizeOps.length === 2, `prize op ${prizeOps.length} 条（新增 / 删除）`)
+      ok(keys(prizeOps[0]) === 'active,id,name,note,points', `prize op 字段：${keys(prizeOps[0])}`)
+      ok(prizeOps[0].data.active === true && prizeOps[1].data.active === false, '奖品新增 active:true → 删除 active:false（软删）')
+
+      const rdOps = byKind('redeem')
+      const flow = rdOps.map((o: any) => o.data.status).join('→')
+      ok(rdOps.length === 3, `redeem op ${rdOps.length} 条`)
+      ok(flow === 'pending→approved→delivered', `兑换状态流转 ${flow}`)
+      ok(keys(rdOps[0]) === 'createdAt,decidedAt,id,points,prizeId,prizeName,status', `redeem op 字段：${keys(rdOps[0])}`)
+
+      ok(ops.every((o) => !!o.opId), '队列里每条 op 仍带 opId（排查用）')
+
+      // 服务端逐条上报失败时，队列要照常前进 —— 不能被一条坏数据永久堵死
+      reply = () => ({
+        status: 200,
+        body: { applied: 0, failed: 1, errors: ['task_template: op 缺少必填字段 id'], serverVersion: 10 },
+      })
+      const rejectedBefore = syncStats().rejected
+      s().parentGrantPoints(7, '坏数据测试')
+      const r2 = await flushSync()
+      ok(r2.ok && pendingCount() === 0, '服务端报 failed 时队列照常清空（不堵队头）')
+      ok(syncStats().rejected === rejectedBefore + 1, `rejected 记账 +1（${rejectedBefore} → ${syncStats().rejected}）`)
+      ok(syncStats().lastError.includes('拒绝'), `错误已记录：${syncStats().lastError.slice(0, 40)}`)
+    } finally {
+      globalThis.fetch = realFetch
+      resetSync()
+      configureSync({ apiBaseUrl: '', token: '' })
+    }
+  }
+
+  console.log('== 25. 服务端 op → SQL（假 pg：验表名 / 冲突键 / 占位符个数）==')
+  {
+    const seen: { sql: string; params: unknown[] }[] = []
+    const fakePg = async (sql: string, params: unknown[] = []) => {
+      seen.push({ sql, params })
+      return []
+    }
+    /** 数 SQL 里出现了几个不同的 $n —— 与参数个数对不上，生产环境才会炸 */
+    const placeholders = (sql: string) => new Set(sql.match(/\$\d+/g) ?? []).size
+
+    // [op 类型, data, 期望写入的表, 期望的冲突键]
+    const cases: Array<[string, Record<string, unknown>, string, string]> = [
+      ['child', { name: '豆豆', grade: 'g1', textbookVer: '' }, 'children', '(id)'],
+      ['pet', { species: 'feifei', name: '小闪电', stage: 2, exp: 30, satiety: 80, fedToday: 1, body: 'normal', attrs: { math: 3, chinese: 0, english: 0 } }, 'pets', '(child_id)'],
+      ['task_template', { id: 't1', name: '练字', type: 'subjective', foodValue: 2, active: true }, 'task_templates', '(id)'],
+      ['daily_task', { id: 'd1', day: '2026-09-16', templateId: 't1', status: 'todo' }, 'daily_tasks', '(id)'],
+      ['prize', { id: 'p1', name: '贴纸', points: 10, note: '', active: true }, 'prizes', '(id)'],
+      ['redeem', { id: 'r1', prizeId: 'p1', prizeName: '贴纸', points: 10, status: 'pending', createdAt: '2026-09-16T02:00:00.000Z' }, 'redeems', '(id)'],
+      ['attempt', { day: '2026-09-16', subject: 'math', questionText: '1+1', correct: true }, 'attempts', '(op_id)'],
+      ['ledger', { kind: 'point', delta: 2, balance: 10, source: 'battle' }, 'ledgers', '(op_id)'],
+      ['snapshot', { day: '2026-09-16', satiety: 80 }, 'daily_snapshots', '(child_id, day)'],
+      ['level_record', { levelId: 'm1', bestStars: 3, cleared: true, playCount: 1 }, 'level_records', '(child_id, level_id)'],
+      ['wrong_item', { subject: 'math', questionText: '1+1' }, 'wrong_items', '(child_id, question_text)'],
+    ]
+
+    let bad = 0
+    for (const [kind, data, table, conflict] of cases) {
+      seen.length = 0
+      await applyOp(fakePg, 'c-test', { opId: 'op-1', kind, data })
+      const { sql, params } = seen[seen.length - 1]
+      const okTable = sql.includes(`INTO ${table} `)
+      const okConflict = sql.includes(`ON CONFLICT ${conflict}`)
+      const n = placeholders(sql)
+      if (!okTable || !okConflict || n !== params.length) {
+        bad++
+        console.log(`  FAIL  ${kind}: 表名=${okTable} 冲突键=${okConflict} 占位符 ${n} vs 参数 ${params.length}`)
+      }
+    }
+    ok(bad === 0, `${cases.length} 种 op 的表名 / 冲突键 / 参数个数全部对得上`)
+
+    // children.id 必须取自 childId —— op 里再带一个 id 会造出第二个孩子
+    seen.length = 0
+    await applyOp(fakePg, 'c-from-sync', { kind: 'child', data: { id: 'HACK', name: '豆豆' } })
+    ok(seen[0].params[0] === 'c-from-sync', `children.id 取自 childId（${String(seen[0].params[0])}）`)
+
+    // food_value 越界会被库的 CHECK 拒绝 → 服务端先夹紧，别让它变成整批失败
+    seen.length = 0
+    await applyOp(fakePg, 'c-test', { kind: 'task_template', data: { id: 't9', name: 'x', foodValue: 99 } })
+    ok(seen[0].params[5] === 3, `foodValue 99 → 夹到 ${String(seen[0].params[5])}（库 CHECK 是 1~3）`)
+
+    // 坏数据要抛 transient=false 的 PgError：服务端据此记 failed 而不是整批 500
+    const expectBad = async (kind: string, data: Record<string, unknown>, why: string) => {
+      seen.length = 0
+      try {
+        await applyOp(fakePg, 'c-test', { opId: 'op-bad', kind, data })
+        ok(false, `应拒绝但没拒绝：${why}`)
+      } catch (e) {
+        const err = e as { name?: string; transient?: boolean; message?: string }
+        ok(err.name === 'PgError' && err.transient === false, `拒绝「${why}」→ ${err.message}`)
+      }
+    }
+    await expectBad('task_template', { name: '缺 id' }, '缺必填字段 id')
+    await expectBad('redeem', { id: 'r1', status: '不存在的状态' }, '兑换状态非法')
+    await expectBad('ledger', { kind: 'gold', delta: 1, source: 'x' }, 'ledgers.kind 非法')
+    await expectBad('snapshot', { day: '2026/09/16' }, 'day 格式不对')
+    await expectBad('并不存在的类型', {}, '未知 op 类型')
+
+    // 幂等手段的差别：流水靠 opId，实体靠主键
+    seen.length = 0
+    await applyOp(fakePg, 'c-test', { kind: 'child', data: {} })
+    ok(seen.length === 1, '实体 op 不带 opId 也能写入（按主键 upsert，天然幂等）')
+    try {
+      // 注意这里**不能**走 expectBad：它会顺手补上 opId，就测不出「缺 opId」了
+      await applyOp(fakePg, 'c-test', { kind: 'ledger', data: { kind: 'point', delta: 1, source: 'x' } })
+      ok(false, '流水 op 缺 opId 应被拒绝（没有它就无从去重）')
+    } catch (e) {
+      const err = e as { name?: string; transient?: boolean }
+      ok(err.name === 'PgError' && err.transient === false, '流水 op 缺 opId → 判为坏数据（非 transient）')
+    }
+  }
 
   console.log(`\n结果：${fail === 0 ? '全部通过 ✅' : fail + ' 项失败 ❌'}`)
   if (fail > 0) process.exit(1)

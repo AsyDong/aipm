@@ -1,19 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
-  AppState, BodyType, DailySnapshot, DailyTask, LedgerEntry, Pet, Question,
-  Settings, Subject, TaskTemplate,
+  AppState, ChildProfile, DailySnapshot, DailyTask, LedgerEntry, LevelRecord, Pet,
+  Prize, Question, Redeem, Settings, Subject, TaskTemplate, WrongItem,
 } from '../types'
 import { addDays, diffDays, nowDay } from '../engine/time'
 import {
-  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FAT_FULL_DAYS,
+  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD,
   FEED_LIMIT, FOOD_PER_SATIETY, MASTER_STREAK, POINT_PER_CORRECT, REDEEM_TIMEOUT_DAYS,
   REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STAR_BONUS, STREAK_30_FOOD,
-  STREAK_7_FOOD, THIN_DAYS, stageOf, starsOf,
+  STREAK_7_FOOD, stageOf, starsOf,
 } from '../engine/rules'
 import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
+import { enqueueOp } from './sync'
 
 const emptyPet = (species: Pet['species']): Pet => ({
   species,
@@ -21,10 +22,7 @@ const emptyPet = (species: Pet['species']): Pet => ({
   stage: 1,
   exp: 0,
   satiety: 60,
-  body: 'normal',
   fedToday: 0,
-  noFeedDays: 0,
-  fullDays: 0,
   attrs: { math: 0, chinese: 0, english: 0 },
   locked: false,
   bornAt: Date.now(),
@@ -38,9 +36,13 @@ const baseSettings: Settings = {
   dailyBattleMinutes: 15,
 }
 
+/** 孩子档案的默认值：昵称非真名（PRD 明确要求），年级默认一年级 */
+const defaultChild: ChildProfile = { name: '', grade: 'g1', textbookVer: '' }
+
 const initialState: AppState = {
   phase: 'adopt',
   pet: null,
+  child: { ...defaultChild },
   templates: [],
   daily: [],
   food: 0,
@@ -68,6 +70,7 @@ const initialState: AppState = {
   wrongSolvedTotal: 0,
 }
 
+/** 纯函数：把一笔流水插到队首（只保留最近 300 笔） */
 function pushLedger(
   list: LedgerEntry[],
   kind: LedgerEntry['kind'],
@@ -80,18 +83,183 @@ function pushLedger(
   return [entry, ...list].slice(0, 300)
 }
 
-/** 结算单个游戏日：饱食度衰减 → 体型判定 → 连击判定 → 计数器归零 */
+/**
+ * 记账 + 同步。
+ *
+ * 所有食物/积分流水都必须走这里，而不是直接调 pushLedger ——
+ * 埋点收口在一个函数里，将来加 op 类型只改这儿，不会漏掉某条业务路径。
+ */
+function recordLedger(
+  list: LedgerEntry[],
+  kind: LedgerEntry['kind'],
+  delta: number,
+  balance: number,
+  source: LedgerEntry['source'],
+  note: string,
+): LedgerEntry[] {
+  const next = pushLedger(list, kind, delta, balance, source, note)
+  const entry = next[0]
+  if (entry) {
+    enqueueOp('ledger', {
+      kind: entry.kind,
+      delta: entry.delta,
+      balance: entry.balance,
+      source: entry.source,
+      note: entry.note,
+      at: new Date(entry.at).toISOString(),
+    })
+  }
+  return next
+}
+
+/** 跨日结算产出的快照 → snapshot op（服务端按 child_id + day upsert，后到覆盖） */
+function recordSnapshot(s: DailySnapshot): void {
+  enqueueOp('snapshot', {
+    day: s.day,
+    satiety: s.satiety,
+    fed: s.fed,
+    full: s.full,
+    // 体型机制已移除（2026-09-17），恒发 'normal'。
+    // 这里**显式**发送而非依赖库列默认值：库表 daily_snapshots.body 保留不动（历史体型轨迹仍可查），
+    // 若靠默认值，「确实是 normal」和「字段漏发」在报表里会长得一模一样，事后无法区分。
+    body: 'normal',
+    streak: s.streak,
+    tasksDone: s.tasksDone,
+    tasksTotal: s.tasksTotal,
+    battles: s.battles,
+    correctRate: s.correctRate,
+    pointsEarned: s.pointsEarned,
+    foodEarned: s.foodEarned,
+  })
+}
+
+/** 关卡记录 → level_record op（服务端对 best_stars 取 GREATEST，进度不会回退） */
+function recordLevel(r: LevelRecord): void {
+  enqueueOp('level_record', {
+    levelId: r.levelId,
+    bestStars: r.bestStars,
+    cleared: r.cleared,
+    playCount: r.playCount ?? 1,
+  })
+}
+
+/** 错题 → wrong_item op（服务端按 child_id + question_text upsert） */
+function recordWrong(w: WrongItem): void {
+  enqueueOp('wrong_item', {
+    subject: w.subject,
+    questionText: w.text,
+    spec: w.spec,
+    wrongCount: w.wrongCount,
+    rightStreak: w.rightStreak,
+    mastered: w.mastered,
+    nextReviewDay: w.nextReviewDay,
+  })
+}
+
+// ============ 实体快照的埋点（v1.3 补齐六张表）============
+//
+// 与账本流水一样收口在函数里：将来加字段只改一处，不会漏掉某条业务路径。
+// 这六类对象在服务端是「一行一实体」，按业务主键 upsert，天然幂等 ——
+// 所以既不需要 opId，也不要求到达顺序（这正是 pets 外键被去掉的原因）。
+
+/** 服务端 redeems.status 的取值集合（比本地多一个 'timeout'） */
+type RedeemDbStatus = 'pending' | 'approved' | 'rejected' | 'timeout' | 'delivered'
+
+/** 孩子档案 → child op（服务端拿 sync 自管的 childId 当主键，不接受 op 里另带 id） */
+function recordChild(c: ChildProfile): void {
+  enqueueOp('child', {
+    name: c.name || '宝贝',
+    grade: c.grade || 'g1',
+    textbookVer: c.textbookVer || '',
+  })
+}
+
+/** 宠物档案 → pet op（一个孩子一只，按 child_id upsert） */
+function recordPet(p: Pet): void {
+  enqueueOp('pet', {
+    species: p.species,
+    name: p.nickname,
+    stage: p.stage,
+    exp: p.exp,
+    satiety: p.satiety,
+    fedToday: p.fedToday,
+    // 体型机制已移除（2026-09-17），恒发 'normal'。库列 pets.body 保留不动，
+    // 与 snapshot 同理：显式发送才能区分「确实是 normal」和「字段漏发」。
+    body: 'normal',
+    // 三科属性整体送过去，服务端写进 jsonb
+    attrs: p.attrs,
+  })
+}
+
+/** 任务模板 → task_template op。删除发 active:false（软删），不物理删行。 */
+function recordTemplate(t: TaskTemplate, deleted = false): void {
+  enqueueOp('task_template', {
+    id: t.id,
+    name: t.name,
+    type: t.type,
+    // 本地模板还没有学科维度（都是综合任务），服务端那列用 math 兜底
+    subject: 'math',
+    foodValue: t.foodValue,
+    // active = 还在用：既没被删，也没被家长停用
+    active: !deleted && t.enabled,
+  })
+}
+
+/** 每日任务实例 → daily_task op。名称/图标/食物值是模板的冗余副本，不落库（按 template_id JOIN 回模板） */
+function recordDailyTask(t: DailyTask): void {
+  enqueueOp('daily_task', {
+    id: t.id,
+    day: t.day,
+    templateId: t.templateId,
+    status: t.status,
+    mediaKey: t.mediaId ?? null,
+    note: t.rejectReason ?? null,
+    at: t.doneAt ? new Date(t.doneAt).toISOString() : null,
+  })
+}
+
+/** 现实奖品 → prize op。删除同样走 active:false。 */
+function recordPrize(p: Prize, deleted = false): void {
+  enqueueOp('prize', {
+    id: p.id,
+    name: p.name,
+    points: p.points,
+    note: p.note ?? '',
+    active: !deleted,
+  })
+}
+
+/**
+ * 兑换单 → redeem op。
+ *
+ * 有一处必须由调用方显式指定：「超时自动退回」在本地也只能记成 state='rejected'，
+ * 但它和家长手动驳回不是一回事 —— 服务端 CHECK 里它们是两个值（timeout / rejected）。
+ */
+function recordRedeem(r: Redeem, status?: RedeemDbStatus): void {
+  enqueueOp('redeem', {
+    id: r.id,
+    prizeId: r.prizeId,
+    prizeName: r.prizeName,
+    points: r.points,
+    status: status ?? r.state,
+    createdAt: new Date(r.at).toISOString(),
+    decidedAt: r.reviewedAt ?? r.deliveredAt ?? null,
+  })
+}
+
+/**
+ * 结算单个游戏日：饱食度衰减 → 连击判定 → 计数器归零
+ *
+ * 体型机制已移除（2026-09-17）：不再统计「连续未喂天数」「连续顶格天数」，也不再推导
+ * 瘦 / 正常 / 胖。跨日只做衰减与归零，宠物形态只随阶段（exp）变化。
+ * 保留 `full`（当日结算饱和食度是否顶格）—— 那是饱食度的事实记录，不隶属体型机制，
+ * 与库列 daily_snapshots.is_full 一一对应。
+ */
 function settleDayOnce(s: AppState): Partial<AppState> {
   const pet = s.pet
   const fed = pet?.fedToday ?? 0
 
-  const noFeed = fed === 0 ? (pet?.noFeedDays ?? 0) + 1 : 0
   const fullToday = (pet?.satiety ?? 0) >= SATIETY_FULL
-  const full = fullToday ? (pet?.fullDays ?? 0) + 1 : 0
-
-  let body: BodyType = 'normal'
-  if (noFeed >= THIN_DAYS) body = 'thin'
-  else if (fed >= FEED_LIMIT || full >= FAT_FULL_DAYS) body = 'fat'
 
   const satiety = Math.max(0, (pet?.satiety ?? 0) - DAILY_DECAY)
   const streak = s.todayTasksDone > 0 ? s.streak : 0
@@ -101,7 +269,6 @@ function settleDayOnce(s: AppState): Partial<AppState> {
     satiety,
     fed,
     full: fullToday,
-    body,
     streak,
     tasksDone: s.todayTasksDone,
     tasksTotal: s.daily.length,
@@ -113,7 +280,7 @@ function settleDayOnce(s: AppState): Partial<AppState> {
 
   return {
     activeDay: addDays(s.activeDay, 1),
-    pet: pet ? { ...pet, satiety, body, noFeedDays: noFeed, fullDays: full, fedToday: 0 } : null,
+    pet: pet ? { ...pet, satiety, fedToday: 0 } : null,
     streak,
     longestStreak: Math.max(s.longestStreak, streak),
     daily: [],
@@ -133,6 +300,8 @@ export interface BattleResult { points: number; stars: number; attr: number; fir
 interface Actions {
   bootstrap: () => void
   ensureDay: () => void
+  /** 修改孩子档案（P13 的采集入口待加；在此之前只有默认值） */
+  setChildProfile: (patch: Partial<ChildProfile>) => void
   adopt: (species: Pet['species']) => void
   hatchDone: () => void
   setName: (name: string) => void
@@ -173,10 +342,35 @@ export const useStore = create<Store>()(
       const advanceDays = () => {
         let guard = 0
         while (get().activeDay !== nowDay() && guard < 20) {
-          set(settleDayOnce(get()))
+          const patch = settleDayOnce(get())
+          set(patch)
+          // 结算出的快照是成长报告的原始数据，逐日入队（补结算多天则各记一条）
+          const snaps = patch.snapshots
+          if (snaps && snaps.length > 0) recordSnapshot(snaps[snaps.length - 1])
+          // 结算会改饱食度与体型，宠物档案要跟着更新
+          if (patch.pet) recordPet(patch.pet)
           guard += 1
         }
         return guard
+      }
+
+      /**
+       * 补发一遍「实体快照」，启动时调一次。
+       *
+       * 全是 upsert，重复推不会写重；换来的是「同步是后来才打开的」也能把已有档案补齐 ——
+       * 否则早先建好的任务模板、奖品、宠物档案永远进不了库。
+       *
+       * 注意每个都套了一层箭头：直接写 `forEach(recordTemplate)` 会把数组下标当成第二个
+       * 参数（也就是 deleted）传进去，把第二条之后的模板统统标成「已删除」。
+       */
+      const seedEntities = () => {
+        const s = get()
+        if (!s.pet) return
+        recordChild(s.child)
+        recordPet(s.pet)
+        s.templates.forEach((t) => recordTemplate(t))
+        s.prizes.forEach((p) => recordPrize(p))
+        s.daily.forEach((d) => recordDailyTask(d))
       }
 
       /** 生成当日任务实例；家长中途新增的任务会即时补进来 */
@@ -196,10 +390,15 @@ export const useStore = create<Store>()(
         if (s.daily.length > 0 && s.daily[0].day === s.activeDay) {
           const have = new Set(s.daily.map((d) => d.templateId))
           const add = s.templates.filter((t) => t.enabled && !have.has(t.id)).map(mk)
-          if (add.length > 0) set({ daily: [...s.daily, ...add] })
+          if (add.length > 0) {
+            set({ daily: [...s.daily, ...add] })
+            add.forEach((d) => recordDailyTask(d))
+          }
           return
         }
-        set({ daily: s.templates.filter((t) => t.enabled).map(mk) })
+        const todayTasks = s.templates.filter((t) => t.enabled).map(mk)
+        set({ daily: todayTasks })
+        todayTasks.forEach((d) => recordDailyTask(d))
       }
 
       /** 超时未审批的兑换自动解冻（REDEEM_TIMEOUT_DAYS） */
@@ -214,8 +413,11 @@ export const useStore = create<Store>()(
           if (diffDays(nowDay(r.at), today) < REDEEM_TIMEOUT_DAYS) return r
           points += r.points
           frozen -= r.points
-          ledger = pushLedger(ledger, 'point', r.points, points, 'refund', `超时未审批退回：${r.prizeName}`)
-          return { ...r, state: 'rejected' as const, reason: '超过 7 天未处理，已自动退回积分' }
+          ledger = recordLedger(ledger, 'point', r.points, points, 'refund', `超时未审批退回：${r.prizeName}`)
+          const expired = { ...r, state: 'rejected' as const, reason: '超过 7 天未处理，已自动退回积分' }
+          // 本地只能记成 rejected，但要跟服务端说清楚：这是「超时」不是家长驳回
+          recordRedeem(expired, 'timeout')
+          return expired
         })
         if (points !== s.points) set({ redeems, points, frozenPoints: frozen, pointLedger: ledger })
       }
@@ -226,7 +428,7 @@ export const useStore = create<Store>()(
         set({
           food,
           todayFoodEarned: s.todayFoodEarned + Math.max(0, n),
-          foodLedger: pushLedger(s.foodLedger, 'food', n, food, source, note),
+          foodLedger: recordLedger(s.foodLedger, 'food', n, food, source, note),
         })
       }
 
@@ -250,6 +452,7 @@ export const useStore = create<Store>()(
           advanceDays()
           ensureTasks()
           autoUnfreeze()
+          seedEntities()
           void pruneMedia()
         },
 
@@ -259,20 +462,37 @@ export const useStore = create<Store>()(
           autoUnfreeze()
         },
 
-        adopt: (species) => set({ pet: emptyPet(species), phase: 'hatch' }),
+        setChildProfile: (patch) => {
+          const child = { ...get().child, ...patch }
+          set({ child })
+          recordChild(child)
+        },
+
+        adopt: (species) => {
+          const pet = emptyPet(species)
+          set({ pet, phase: 'hatch' })
+          recordPet(pet)
+        },
 
         hatchDone: () => set({ phase: 'name' }),
 
         setName: (name) => {
           const pet = get().pet
           if (!pet) return
-          set({ pet: { ...pet, nickname: name, locked: true }, phase: 'home' })
+          const next = { ...pet, nickname: name, locked: true }
+          set({ pet: next, phase: 'home' })
+          recordPet(next)
+          // 走到 home 才算真正落地，顺手把孩子档案补上（否则要等下一次启动）
+          recordChild(get().child)
           ensureTasks()
         },
 
         renamePet: (name) => {
           const pet = get().pet
-          if (pet) set({ pet: { ...pet, nickname: name } })
+          if (!pet) return
+          const next = { ...pet, nickname: name }
+          set({ pet: next })
+          recordPet(next)
         },
 
         feed: (n) => {
@@ -291,15 +511,17 @@ export const useStore = create<Store>()(
           const satiety = Math.min(SATIETY_MAX, pet.satiety + actual * FOOD_PER_SATIETY)
           const exp = pet.exp + actual * EXP_PER_FOOD
           const fedToday = pet.fedToday + actual
-          const body: BodyType = fedToday >= FEED_LIMIT ? 'fat' : pet.body
           const food = s.food - actual
+          // 体型机制已移除：投喂只影响 饱食度 / 经验 / 阶段，不再改变形态
+          const nextPet = { ...pet, satiety, exp, stage: stageOf(exp), fedToday }
 
           set({
             food,
-            foodLedger: pushLedger(s.foodLedger, 'food', -actual, food, 'feed', `喂养 ${actual} 份`),
-            pet: { ...pet, satiety, exp, stage: stageOf(exp), fedToday, body, noFeedDays: 0 },
+            foodLedger: recordLedger(s.foodLedger, 'food', -actual, food, 'feed', `喂养 ${actual} 份`),
+            pet: nextPet,
           })
-          if (fedToday >= FEED_LIMIT) return { ok: true, msg: '吃太饱了，变胖啦！' }
+          recordPet(nextPet)
+          if (fedToday >= FEED_LIMIT) return { ok: true, msg: '今天喂满啦，明天再来吧～' }
           if (satiety >= SATIETY_FULL) return { ok: true, msg: '吃饱啦，好幸福～' }
           return { ok: true, msg: `喂了 ${actual} 份，饱食度 +${actual * FOOD_PER_SATIETY}` }
         },
@@ -316,10 +538,12 @@ export const useStore = create<Store>()(
           if (t.type === 'subjective') {
             next[idx] = { ...t, status: 'pending', mediaId }
             set({ daily: next })
+            recordDailyTask(next[idx])
             return
           }
           next[idx] = { ...t, status: 'done', mediaId, doneAt: Date.now() }
           set({ daily: next, todayTasksDone: s.todayTasksDone + 1 })
+          recordDailyTask(next[idx])
           completeOne(t)
         },
 
@@ -333,13 +557,18 @@ export const useStore = create<Store>()(
           const next = s.daily.slice()
           next[idx] = { ...t, status: 'done', doneAt: Date.now() }
           set({ daily: next, todayTasksDone: s.todayTasksDone + 1 })
+          recordDailyTask(next[idx])
           completeOne(t)
         },
 
-        rejectTask: (taskId, reason) =>
-          set((s) => ({
-            daily: s.daily.map((t) => (t.id === taskId ? { ...t, status: 'rejected', rejectReason: reason } : t)),
-          })),
+        rejectTask: (taskId, reason) => {
+          const s = get()
+          const next = s.daily.map((t) =>
+            t.id === taskId ? { ...t, status: 'rejected' as const, rejectReason: reason } : t)
+          set({ daily: next })
+          const updated = next.find((t) => t.id === taskId)
+          if (updated) recordDailyTask(updated)
+        },
 
         parentAdjustFood: (n, note) => {
           get().ensureDay()
@@ -353,7 +582,7 @@ export const useStore = create<Store>()(
           set({
             points,
             todayPoints: s.todayPoints + Math.max(0, n),
-            pointLedger: pushLedger(s.pointLedger, 'point', n, points, 'parent', note || '家长奖励'),
+            pointLedger: recordLedger(s.pointLedger, 'point', n, points, 'parent', note || '家长奖励'),
           })
         },
 
@@ -396,8 +625,7 @@ export const useStore = create<Store>()(
             }
           }
 
-          const levels = s.levels.filter((l) => l.levelId !== levelId)
-          levels.push({
+          const record: LevelRecord = {
             levelId,
             subject,
             bestStars: Math.max(stars, rec?.bestStars ?? 0),
@@ -405,20 +633,34 @@ export const useStore = create<Store>()(
             bestCorrect: Math.max(correct, rec?.bestCorrect ?? 0),
             total,
             lastAt: Date.now(),
-          })
+            playCount: (rec?.playCount ?? 0) + 1,
+          }
+          const levels = s.levels.filter((l) => l.levelId !== levelId)
+          levels.push(record)
 
+          const nextPet = pet
+            ? { ...pet, attrs: { ...pet.attrs, [subject]: pet.attrs[subject] + attrGain } }
+            : pet
           const newPoints = s.points + points
           set({
             points: newPoints,
             todayPoints: s.todayPoints + points,
-            pointLedger: pushLedger(s.pointLedger, 'point', points, newPoints, 'battle', `闯关获得 ${points} 分`),
+            pointLedger: recordLedger(s.pointLedger, 'point', points, newPoints, 'battle', `闯关获得 ${points} 分`),
             levels,
             wrong,
             todayBattles: s.todayBattles + 1,
             todayCorrect: s.todayCorrect + correct,
             todayTotal: s.todayTotal + total,
-            pet: pet ? { ...pet, attrs: { ...pet.attrs, [subject]: pet.attrs[subject] + attrGain } } : pet,
+            pet: nextPet,
           })
+
+          recordLevel(record)
+          // 三科属性变了，宠物档案跟着更新
+          if (nextPet) recordPet(nextPet)
+          for (const q of wrongQs) {
+            const item = wrong.find((w) => w.text === q.text)
+            if (item) recordWrong(item)
+          }
           return { points, stars, attr: attrGain, firstClear }
         },
 
@@ -449,6 +691,8 @@ export const useStore = create<Store>()(
             }
           })
           set({ wrong, wrongSolvedTotal: s.wrongSolvedTotal + solved })
+          const updated = wrong.find((w) => w.id === wrongId)
+          if (updated) recordWrong(updated)
         },
 
         buyItem: (itemId, cost) => {
@@ -458,7 +702,7 @@ export const useStore = create<Store>()(
           set({
             points,
             owned: s.owned.includes(itemId) ? s.owned : [...s.owned, itemId],
-            pointLedger: pushLedger(s.pointLedger, 'point', -cost, points, 'spend', '购买装饰'),
+            pointLedger: recordLedger(s.pointLedger, 'point', -cost, points, 'spend', '购买装饰'),
           })
           return true
         },
@@ -478,15 +722,17 @@ export const useStore = create<Store>()(
           const prize = s.prizes.find((p) => p.id === prizeId)
           if (!prize || s.points < prize.points) return false
           const points = s.points - prize.points
+          const order: Redeem = {
+            id: uid('r'), prizeId: prize.id, prizeName: prize.name,
+            points: prize.points, state: 'pending', at: Date.now(),
+          }
           set({
             points,
             frozenPoints: s.frozenPoints + prize.points,
-            redeems: [
-              { id: uid('r'), prizeId: prize.id, prizeName: prize.name, points: prize.points, state: 'pending', at: Date.now() },
-              ...s.redeems,
-            ],
-            pointLedger: pushLedger(s.pointLedger, 'point', -prize.points, points, 'exchange', `兑换冻结：${prize.name}`),
+            redeems: [order, ...s.redeems],
+            pointLedger: recordLedger(s.pointLedger, 'point', -prize.points, points, 'exchange', `兑换冻结：${prize.name}`),
           })
+          recordRedeem(order)
           return true
         },
 
@@ -494,10 +740,11 @@ export const useStore = create<Store>()(
           const s = get()
           const r = s.redeems.find((x) => x.id === id)
           if (!r || r.state !== 'pending') return
-          set({
-            frozenPoints: Math.max(0, s.frozenPoints - r.points),
-            redeems: s.redeems.map((x) => (x.id === id ? { ...x, state: 'approved', reviewedAt: Date.now() } : x)),
-          })
+          const next = s.redeems.map((x) =>
+            x.id === id ? { ...x, state: 'approved' as const, reviewedAt: Date.now() } : x)
+          set({ frozenPoints: Math.max(0, s.frozenPoints - r.points), redeems: next })
+          const updated = next.find((x) => x.id === id)
+          if (updated) recordRedeem(updated)
         },
 
         rejectRedeem: (id, reason) => {
@@ -505,37 +752,72 @@ export const useStore = create<Store>()(
           const r = s.redeems.find((x) => x.id === id)
           if (!r || r.state !== 'pending') return
           const points = s.points + r.points
+          const next = s.redeems.map((x) =>
+            x.id === id ? { ...x, state: 'rejected' as const, reviewedAt: Date.now(), reason } : x)
           set({
             points,
             frozenPoints: Math.max(0, s.frozenPoints - r.points),
-            pointLedger: pushLedger(s.pointLedger, 'point', r.points, points, 'refund', `兑换被驳回：${r.prizeName}`),
-            redeems: s.redeems.map((x) => (x.id === id ? { ...x, state: 'rejected', reviewedAt: Date.now(), reason } : x)),
+            pointLedger: recordLedger(s.pointLedger, 'point', r.points, points, 'refund', `兑换被驳回：${r.prizeName}`),
+            redeems: next,
           })
+          const updated = next.find((x) => x.id === id)
+          if (updated) recordRedeem(updated)
         },
 
-        deliverRedeem: (id) =>
-          set((s) => ({
-            redeems: s.redeems.map((x) => (x.id === id ? { ...x, state: 'delivered', deliveredAt: Date.now() } : x)),
-          })),
+        deliverRedeem: (id) => {
+          const s = get()
+          const next = s.redeems.map((x) =>
+            x.id === id ? { ...x, state: 'delivered' as const, deliveredAt: Date.now() } : x)
+          set({ redeems: next })
+          const updated = next.find((x) => x.id === id)
+          if (updated) recordRedeem(updated)
+        },
 
-        addPrize: (name, points, note) =>
-          set((s) => ({ prizes: [...s.prizes, { id: uid('p'), name, points, note }] })),
+        addPrize: (name, points, note) => {
+          const prize: Prize = { id: uid('p'), name, points, note }
+          set((s) => ({ prizes: [...s.prizes, prize] }))
+          recordPrize(prize)
+        },
 
-        updatePrize: (id, patch) =>
-          set((s) => ({ prizes: s.prizes.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+        updatePrize: (id, patch) => {
+          const s = get()
+          const next = s.prizes.map((p) => (p.id === id ? { ...p, ...patch } : p))
+          set({ prizes: next })
+          const updated = next.find((p) => p.id === id)
+          if (updated) recordPrize(updated)
+        },
 
-        removePrize: (id) => set((s) => ({ prizes: s.prizes.filter((p) => p.id !== id) })),
+        removePrize: (id) => {
+          const s = get()
+          const removed = s.prizes.find((p) => p.id === id)
+          set({ prizes: s.prizes.filter((p) => p.id !== id) })
+          // 软删：服务端只把 active 置 false —— 历史兑换单还要引用这个奖品
+          if (removed) recordPrize(removed, true)
+        },
 
         addTemplate: (t) => {
           const id = uid('t')
-          set((s) => ({ templates: [...s.templates, { ...t, id, createdAt: Date.now() }] }))
+          const created: TaskTemplate = { ...t, id, createdAt: Date.now() }
+          set((s) => ({ templates: [...s.templates, created] }))
+          recordTemplate(created)
           return id
         },
 
-        updateTemplate: (id, patch) =>
-          set((s) => ({ templates: s.templates.map((t) => (t.id === id ? { ...t, ...patch } : t)) })),
+        updateTemplate: (id, patch) => {
+          const s = get()
+          const next = s.templates.map((t) => (t.id === id ? { ...t, ...patch } : t))
+          set({ templates: next })
+          const updated = next.find((t) => t.id === id)
+          if (updated) recordTemplate(updated)
+        },
 
-        removeTemplate: (id) => set((s) => ({ templates: s.templates.filter((t) => t.id !== id) })),
+        removeTemplate: (id) => {
+          const s = get()
+          const removed = s.templates.find((t) => t.id === id)
+          set({ templates: s.templates.filter((t) => t.id !== id) })
+          // 软删：历史 daily_tasks 的 template_id 还得能 JOIN 回这个模板
+          if (removed) recordTemplate(removed, true)
+        },
 
         setPin: (pin) => set((s) => ({ settings: { ...s.settings, parentPin: pin, pinChanged: true } })),
 

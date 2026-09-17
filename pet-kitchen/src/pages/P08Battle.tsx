@@ -14,6 +14,7 @@ import { gradeAnswer, isThenable } from '../engine/provider'
 import type { GradeResult } from '../engine/provider'
 import { useGeneratedQuestions } from '../hooks/useGeneratedQuestions'
 import { speak } from '../utils/speech'
+import { enqueueOp } from '../store/sync'
 import type { Question } from '../types'
 
 function Hearts({ n, total }: { n: number; total: number }) {
@@ -99,6 +100,12 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q?.text])
 
+  /** 换一道题就重置计时，用来记「这题实际想了多久」 */
+  const qStart = useRef(Date.now())
+  useEffect(() => {
+    qStart.current = Date.now()
+  }, [q?.text])
+
   useEffect(() => {
     if (result) return
     const t = setInterval(() => setLeft((v) => Math.max(0, v - 1)), 1000)
@@ -126,6 +133,29 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     }
     const r = finishBattle(level.subject, level.id, firstCorrect, total, missed)
     setResult({ win: true, correct: firstCorrect, total, ...r })
+  }
+
+  /**
+   * 记一条答题流水。
+   *
+   * 这是服务端 attempts 表的唯一数据源 —— 每答一次记一条（只增不改），
+   * 自适应出题、薄弱考点分析、模型批改都要靠它。
+   * 「跳过」也记（input 为空、correct=false），因为「不会做」本身就是有信息量的信号。
+   */
+  const recordAttempt = (question: Question, answer: string | null, correct: boolean) => {
+    enqueueOp('attempt', {
+      day: nowDay(),
+      subject: level.subject,
+      levelId: level.id,
+      questionText: question.text,
+      input: answer,
+      correct,
+      // 此前没错过 = 这道题第一次作答
+      firstTry: !missed.some((x) => x.text === question.text),
+      durationMs: Math.max(0, Date.now() - qStart.current),
+      // 点过提示，或这是回炉重做的题（回炉会自动给思路，等于用过脚手架）
+      hintsUsed: hinted || isRetry ? 1 : 0,
+    })
   }
 
   /** 答错 / 跳过：不公布答案，题目回队尾，扣 1 血 */
@@ -160,12 +190,25 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
   const submit = () => {
     if (!q || passing || result || !input) return
+    const cur = q
     const raw = input
     setInput('')
-    const g = gradeAnswer(q, raw)
+    const g = gradeAnswer(cur, raw)
+    // 先记流水再结算：答对答错都要留下痕迹（记在结算之前，避免 passToBack 改动了 missed 影响 firstTry 判定）
+    const handle = (res: GradeResult) => {
+      recordAttempt(cur, raw, res.correct)
+      settle(res)
+    }
     // 数学题本地精确判定，同步返回；开放题（语文英语开放答案）才落到模型，异步返回
-    if (isThenable(g)) g.then(settle)
-    else settle(g)
+    if (isThenable(g)) g.then(handle)
+    else handle(g)
+  }
+
+  /** 跳过：记一条未作答的流水，再回队尾 */
+  const skipQuestion = () => {
+    if (!q || passing || result) return
+    recordAttempt(q, null, false)
+    passToBack(true)
   }
 
   const reset = () => {
@@ -285,7 +328,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
       <div className="mt-3 flex items-center justify-between rounded-2xl bg-white px-3 py-2 shadow-card">
         <div className="flex items-center gap-2">
-          <PetAvatar species={pet.species} stage={pet.stage} body={pet.body} size={40} />
+          <PetAvatar species={pet.species} stage={pet.stage} size={40} />
           <div>
             <div className="text-[13px] font-extrabold text-ink">{pet.nickname}</div>
             <Hearts n={petHp} total={maxHp} />
@@ -329,7 +372,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         >
           💡 提示 ({hints})
         </button>
-        <button className="btn-chip" disabled={passing} onClick={() => passToBack(true)}>
+        <button className="btn-chip" disabled={passing} onClick={skipQuestion}>
           ⏭ 跳过
         </button>
       </div>

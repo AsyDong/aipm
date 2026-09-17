@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useStore } from './store/useStore'
 import { useNav } from './store/nav'
 import { useParent } from './store/parent'
+import { flushSync } from './store/sync'
 import TabBar from './components/TabBar'
 import { ToastLayer } from './components/ui'
 import P01Adopt from './pages/P01Adopt'
@@ -33,11 +34,17 @@ export default function App() {
 
   useEffect(() => {
     bootstrap()
+    // 起手推一次：上一次会话可能是在断网 / 直接关页面时结束的，队列里还攒着东西
+    void flushSync()
   }, [bootstrap])
 
-  // 回到前台 / 跨天时重新结算
+  // 回到前台 / 跨天时重新结算，并顺手把攒着的数据推上去
   useEffect(() => {
-    const onVis = () => document.visibilityState === 'visible' && ensureDay()
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return
+      ensureDay()
+      void flushSync()
+    }
     document.addEventListener('visibilitychange', onVis)
     const t = setInterval(ensureDay, 60_000)
     return () => {

@@ -1,7 +1,6 @@
 // ============ 萌宠打卡 · 领域模型（对应 PRD v0.4 第 6 节） ============
 
-export type PetSpecies = 'baize' | 'taotie' | 'qilin'
-export type BodyType = 'thin' | 'normal' | 'fat'
+export type PetSpecies = 'feifei' | 'dangkang' | 'tianguo'
 export type Subject = 'math' | 'chinese' | 'english'
 
 /** 任务类型：拍照/录音自动通过，主观需家长确认 */
@@ -63,13 +62,8 @@ export interface Pet {
   exp: number
   /** 0~120 */
   satiety: number
-  body: BodyType
   /** 当日已投喂份数（04:00 重置） */
   fedToday: number
-  /** 连续未投喂天数 */
-  noFeedDays: number
-  /** 连续顶格（结算饱食度 ≥100）天数 */
-  fullDays: number
   attrs: Record<Subject, number>
   /** Q26：确认领养后不可更改种类 */
   locked: boolean
@@ -84,6 +78,8 @@ export interface LevelRecord {
   bestCorrect: number
   total: number
   lastAt: number
+  /** 累计游玩次数（同步到服务端 level_records.play_count，用于观察重复练习） */
+  playCount?: number
 }
 
 export interface WrongItem {
@@ -172,7 +168,6 @@ export interface DailySnapshot {
   satiety: number
   fed: number
   full: boolean
-  body: BodyType
   streak: number
   tasksDone: number
   tasksTotal: number
@@ -190,10 +185,30 @@ export interface Settings {
   dailyBattleMinutes: number
 }
 
+/**
+ * 孩子档案（对应服务端 `children` 表）。
+ *
+ * 注意这是**孩子**的信息，不是宠物的 —— 宠物昵称在 `Pet` 里。
+ * 默认昵称取「宝贝」而非真名：PRD 明确要求昵称非真名（未成年人信息合规）。
+ *
+ * 本地此前没有任何采集入口，v1.3 补上数据结构；UI 入口（P13「我的」）待加，
+ * 在此之前这几个字段都是默认值。
+ */
+export interface ChildProfile {
+  /** 昵称（非真名）→ children.name */
+  name: string
+  /** 年级，如 'g1' / 'g2' → children.grade */
+  grade: string
+  /** 教材版本，如「统编版」→ children.textbookVer（可空） */
+  textbookVer: string
+}
+
 export interface AppState {
   /** 引导阶段：adopt -> hatch -> name -> home */
   phase: 'adopt' | 'hatch' | 'name' | 'home'
   pet: Pet | null
+  /** 孩子本人的档案（与宠物档案分开） */
+  child: ChildProfile
   templates: TaskTemplate[]
   daily: DailyTask[]
   food: number

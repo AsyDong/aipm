@@ -4,7 +4,7 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { CoinBar, Empty, SatietyBar, toast } from '../components/ui'
 import { SHOP_ITEMS, SPECIES, PET_LINES } from '../data/content'
-import { BODY_LABEL, FEED_LIMIT, SATIETY_MAX, STAGE_TITLE, STAGE_EXP, THIN_DAYS } from '../engine/rules'
+import { FEED_LIMIT, SATIETY_MAX, STAGE_TITLE, STAGE_EXP } from '../engine/rules'
 import { pick } from '../utils/id'
 import { speak } from '../utils/speech'
 
@@ -92,12 +92,10 @@ function FeedDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
           <span>食物剩余 {food} 份</span>
         </div>
 
-        {pet.fedToday === 5 ? (
-          <div className="mt-3 rounded-xl bg-warn/15 px-3 py-2 text-[13px] font-bold text-warn">⚠ 喂第 6 份会变胖哦</div>
-        ) : pet.fedToday === 4 ? (
+        {pet.fedToday >= FEED_LIMIT ? (
+          <div className="mt-3 rounded-xl bg-sky-50 px-3 py-2 text-[13px] font-bold text-sky-600">今天喂满啦，明天再来吧～</div>
+        ) : pet.fedToday === FEED_LIMIT - 1 ? (
           <div className="mt-3 rounded-xl bg-warn/15 px-3 py-2 text-[13px] font-bold text-warn">⚠ 再喂 1 份就顶格啦</div>
-        ) : pet.fullDays === 6 ? (
-          <div className="mt-3 rounded-xl bg-warn/15 px-3 py-2 text-[13px] font-bold text-warn">已经连续 6 天吃得好饱，明天别喂满啦</div>
         ) : null}
 
         <button
@@ -148,22 +146,9 @@ export default function P04Home() {
   const cannotFeed =
     s.food <= 0 || pet.satiety >= SATIETY_MAX || pet.fedToday >= FEED_LIMIT
 
-  const warn =
-    pet.body === 'thin'
-      ? `${pet.nickname}好几天没吃东西啦`
-      : pet.noFeedDays >= THIN_DAYS - 1 && pet.noFeedDays > 0
-        ? `今天还没喂${pet.nickname}哦`
-        : pet.body === 'fat'
-          ? `${pet.nickname}吃太多啦，明天别喂满哦`
-          : null
-
   return (
     <div className="pb-4">
       <CoinBar food={s.food} points={s.points} />
-
-      {warn && (
-        <div className="mx-4 mb-1 rounded-xl bg-warn/18 px-3 py-2 text-center text-[13px] font-bold text-warn">{warn}</div>
-      )}
 
       {/* 宠物主视觉 */}
       <div className="relative mx-4 mt-1 h-[240px] overflow-hidden rounded-xl3 bg-gradient-to-b from-sky-100 to-white shadow-card">
@@ -180,7 +165,7 @@ export default function P04Home() {
           }}
         >
           <div className="animate-floaty">
-            <PetAvatar species={pet.species} stage={pet.stage} body={pet.body} size={190} mood={mood} />
+            <PetAvatar species={pet.species} stage={pet.stage} size={190} mood={mood} />
           </div>
         </button>
         {line && (
@@ -191,11 +176,6 @@ export default function P04Home() {
         <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-extrabold text-sky-600 shadow-card">
           {def.name} · {STAGE_TITLE[pet.stage - 1]}
         </div>
-        {pet.body !== 'normal' && (
-          <div className="absolute right-3 top-3 rounded-full bg-warn/90 px-2.5 py-1 text-[12px] font-extrabold text-white shadow-card">
-            {BODY_LABEL[pet.body]}
-          </div>
-        )}
       </div>
 
       <div className="mt-3 px-4">

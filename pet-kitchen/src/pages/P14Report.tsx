@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { monthDays, weekDays, dayLabel, nowDay } from '../engine/time'
-import { BODY_LABEL, MAINTAIN_FOOD, SATIETY_FULL, STAGE_TITLE } from '../engine/rules'
+import { MAINTAIN_FOOD, SATIETY_FULL, STAGE_TITLE } from '../engine/rules'
 import type { DailySnapshot } from '../types'
 
 type Range = 'week' | 'month' | 'all'
@@ -34,7 +34,6 @@ export default function P14Report() {
     satiety: pet?.satiety ?? 0,
     fed: pet?.fedToday ?? 0,
     full: (pet?.satiety ?? 0) >= SATIETY_FULL,
-    body: pet?.body ?? 'normal',
     streak: curStreak,
     tasksDone: todayTasksDone,
     tasksTotal: dailyCount,
@@ -102,7 +101,7 @@ export default function P14Report() {
 
       <div className="mt-3 rounded-xl3 bg-white p-4 shadow-card">
         <div className="mb-1 text-[14px] font-extrabold text-ink">宠物状态</div>
-        <Stat label="当前" value={`Lv.${pet?.stage ?? 1} ${STAGE_TITLE[(pet?.stage ?? 1) - 1]} · ${BODY_LABEL[pet?.body ?? 'normal']} · 饱食度 ${pet?.satiety ?? 0}`} />
+        <Stat label="当前" value={`Lv.${pet?.stage ?? 1} ${STAGE_TITLE[(pet?.stage ?? 1) - 1]} · 饱食度 ${pet?.satiety ?? 0}`} />
         {noFeedDays > 0 && (
           <div className="mt-2 rounded-xl bg-warn/15 px-3 py-2 text-[13px] font-bold text-warn">
             ⚠ 这段时间有 {noFeedDays} 天没喂，差点变瘦

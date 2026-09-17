@@ -1,4 +1,4 @@
-import type { BodyType, Subject } from '../types'
+import type { Subject } from '../types'
 
 // ============ PRD v0.4 定稿数值，集中在此，便于数值策划调整 ============
 
@@ -10,14 +10,14 @@ export const DAILY_DECAY = 60
 export const SATIETY_MAX = 120
 /** 顶格判定线 */
 export const SATIETY_FULL = 100
-/** 日投喂上限（第 6 份 → 当日肥胖） */
-export const FEED_LIMIT = 6
+/**
+ * 日投喂上限 5 份。
+ * 2026-09-17 需求变更：体型机制移除，上限由 6 降到 5 —— 恰好是顶格线（100）所需份数，
+ * 从此物理上喂不到「撑」。「第 6 份 → 肥胖」这条规则已不存在。
+ */
+export const FEED_LIMIT = 5
 /** 维持成本：60 / 20 = 3 份/天 */
 export const MAINTAIN_FOOD = DAILY_DECAY / FOOD_PER_SATIETY
-/** 连续 N 天没吃 → 消瘦 */
-export const THIN_DAYS = 3
-/** 连续 N 天顶格 → 肥胖（C2 保留） */
-export const FAT_FULL_DAYS = 7
 
 /** 连击奖励（D1：一次性，仅在第 7 / 30 天当天发放） */
 export const STREAK_7_FOOD = 1
@@ -66,12 +66,6 @@ export const ATTR_LABEL: Record<Subject, string> = {
   chinese: '语文力',
   english: '英语力',
 }
-export const BODY_LABEL: Record<BodyType, string> = {
-  thin: '消瘦',
-  normal: '正常',
-  fat: '肥胖',
-}
-
 export const STAGE_TITLE = ['幼崽', '小兽', '灵兽', '瑞兽', '圣兽', '神兽']
 
 /**

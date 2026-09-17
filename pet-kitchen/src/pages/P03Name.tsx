@@ -30,7 +30,7 @@ export default function P03Name() {
 
       <div className="mt-6 flex justify-center">
         <div className="animate-floaty">
-          <PetAvatar species={pet.species} stage={1} body="normal" size={170} mood="idle" />
+          <PetAvatar species={pet.species} stage={1} size={170} mood="idle" />
         </div>
       </div>
 

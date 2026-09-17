@@ -82,7 +82,7 @@ export default function P12Decorate() {
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           style={{ pointerEvents: 'none' }}
         >
-          <PetAvatar species={pet.species} stage={pet.stage} body={pet.body} size={150} />
+          <PetAvatar species={pet.species} stage={pet.stage} size={150} />
         </div>
       </div>
 

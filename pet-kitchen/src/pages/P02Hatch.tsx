@@ -12,7 +12,7 @@ export default function P02Hatch() {
   const [taps, setTaps] = useState(0)
   const [done, setDone] = useState(false)
 
-  const species = pet?.species ?? 'baize'
+  const species = pet?.species ?? 'feifei'
   const def = SPECIES.find((s) => s.id === species)!
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function P02Hatch() {
         ) : (
           <div className="flex h-full flex-col items-center justify-center">
             <div className="animate-popin">
-              <PetAvatar species={species} stage={1} body="normal" size={200} mood="happy" />
+              <PetAvatar species={species} stage={1} size={200} mood="happy" />
             </div>
             <div className="mt-2 animate-popin text-[20px] font-extrabold text-sky-600">哇！出来啦！</div>
           </div>

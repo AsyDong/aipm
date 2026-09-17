@@ -4,7 +4,7 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { Confirm, Modal, toast } from '../components/ui'
 import { SPECIES } from '../data/content'
-import { ATTR_LABEL, BODY_LABEL, STAGE_EXP, STAGE_TITLE } from '../engine/rules'
+import { ATTR_LABEL, STAGE_EXP, STAGE_TITLE } from '../engine/rules'
 import { fmtDate } from '../engine/time'
 import { checkName } from '../utils/sensitive'
 import type { LedgerEntry } from '../types'
@@ -49,14 +49,14 @@ export default function P13Mine() {
   return (
     <div className="pb-8">
       <div className="mx-4 mt-3 flex items-center gap-3 rounded-xl3 bg-white p-4 shadow-card">
-        <PetAvatar species={pet.species} stage={pet.stage} body={pet.body} size={78} />
+        <PetAvatar species={pet.species} stage={pet.stage} size={78} />
         <div className="flex-1">
           <div className="text-[20px] font-extrabold text-ink">{pet.nickname}</div>
           <div className="text-[13px] font-bold text-sky-600">
             Lv.{pet.stage} {STAGE_TITLE[pet.stage - 1]} · {def.name}
           </div>
           <div className="text-[12px] text-muted">
-            陪伴第 {Math.max(1, Math.floor((Date.now() - pet.bornAt) / 86400000) + 1)} 天 · {BODY_LABEL[pet.body]}
+            陪伴第 {Math.max(1, Math.floor((Date.now() - pet.bornAt) / 86400000) + 1)} 天
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function P13Mine() {
       {/* 宠物档案 */}
       <Modal open={profile} title="宠物档案" onClose={() => setProfile(false)}>
         <div className="flex justify-center">
-          <PetAvatar species={pet.species} stage={pet.stage} body={pet.body} size={140} />
+          <PetAvatar species={pet.species} stage={pet.stage} size={140} />
         </div>
         <div className="mt-2 text-center text-[13px] text-muted">
           {def.name} · {def.tagline}（已确认，不能更换啦）
@@ -110,10 +110,6 @@ export default function P13Mine() {
           <div className="flex justify-between">
             <span className="text-muted">经验</span>
             <span>{pet.exp} / {pet.stage >= 6 ? '满级' : expNext}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">体型</span>
-            <span>{BODY_LABEL[pet.body]}</span>
           </div>
           {(['math', 'chinese', 'english'] as const).map((k) => (
             <div key={k} className="flex justify-between">
