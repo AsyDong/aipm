@@ -27,12 +27,12 @@ export const NAME_POOL = [
 
 export const SHOP_ITEMS: ShopItem[] = [
   { id: 'hut', name: '小木屋', points: 80, emoji: '🏠', x: 22, y: 62 },
-  { id: 'tree', name: '摇摇树', points: 50, emoji: '🌳', x: 70, y: 60 },
-  { id: 'lamp', name: '云朵灯', points: 120, emoji: '🏮', x: 46, y: 30 },
+  { id: 'tree', name: '摇摇树', points: 30, emoji: '🌳', x: 70, y: 60 },
+  { id: 'lamp', name: '云朵灯', points: 100, emoji: '🏮', x: 46, y: 30 },
   { id: 'pond', name: '小池塘', points: 200, emoji: '⛲', x: 78, y: 74 },
   { id: 'bridge', name: '彩虹桥', points: 260, emoji: '🌈', x: 50, y: 16 },
   { id: 'carpet', name: '星辰毯', points: 150, emoji: '🟪', x: 30, y: 80 },
-  { id: 'lantern', name: '石灯笼', points: 90, emoji: '🕯️', x: 14, y: 46 },
+  { id: 'lantern', name: '石灯笼', points: 80, emoji: '🕯️', x: 14, y: 46 },
   { id: 'swing', name: '秋千', points: 180, emoji: '🎠', x: 62, y: 78 },
 ]
 
