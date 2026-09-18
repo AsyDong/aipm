@@ -20,7 +20,7 @@ export interface TaskTemplate {
 
 export interface DailyTask {
   id: string
-  /** 游戏日 YYYY-MM-DD（04:00 分界） */
+  /** 游戏日 YYYY-MM-DD（0 点分界） */
   day: string
   templateId: string
   name: string
@@ -62,7 +62,7 @@ export interface Pet {
   exp: number
   /** 0~120 */
   satiety: number
-  /** 当日已投喂份数（04:00 重置） */
+  /** 当日已投喂份数（0 点重置） */
   fedToday: number
   attrs: Record<Subject, number>
   /** Q26：确认领养后不可更改种类 */

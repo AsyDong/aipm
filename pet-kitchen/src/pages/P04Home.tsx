@@ -255,7 +255,7 @@ export default function P04Home() {
                     <span className="text-[20px]">✅</span>
                   ) : (
                     <span className="rounded-full bg-food/15 px-2 py-1 text-[12px] font-extrabold text-food">
-                      +{t.foodValue} 份
+                      🍖+{t.foodValue}
                     </span>
                   )}
                 </button>

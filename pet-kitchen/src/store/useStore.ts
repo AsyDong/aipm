@@ -6,9 +6,9 @@ import type {
 } from '../types'
 import { addDays, diffDays, nowDay } from '../engine/time'
 import {
-  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD,
-  FEED_LIMIT, FOOD_PER_SATIETY, MASTER_STREAK, POINT_PER_CORRECT, REDEEM_TIMEOUT_DAYS,
-  REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STAR_BONUS, STREAK_30_FOOD,
+  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FIRST_CLEAR_BONUS,
+  FEED_LIMIT, FOOD_PER_SATIETY, MASTER_STREAK, REDEEM_TIMEOUT_DAYS,
+  REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STREAK_30_FOOD,
   STREAK_7_FOOD, stageOf, starsOf,
 } from '../engine/rules'
 import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
@@ -312,7 +312,7 @@ interface Actions {
   rejectTask: (taskId: string, reason: string) => void
   parentAdjustFood: (n: number, note: string) => void
   parentGrantPoints: (n: number, note: string) => void
-  finishBattle: (subject: Subject, levelId: string, correct: number, total: number, wrongQs: Question[]) => BattleResult
+  finishBattle: (subject: Subject, levelId: string, correct: number, total: number, wrongQs: Question[], durationMs?: number) => BattleResult
   reviewWrong: (wrongId: string, ok: boolean) => void
   buyItem: (itemId: string, cost: number) => boolean
   placeItem: (itemId: string, x: number, y: number) => void
@@ -586,17 +586,18 @@ export const useStore = create<Store>()(
           })
         },
 
-        finishBattle: (subject, levelId, correct, total, wrongQs) => {
+        finishBattle: (subject, levelId, correct, total, wrongQs, durationMs) => {
           get().ensureDay()
           const s = get()
           const pet = s.pet
-          const stars = starsOf(correct, total)
+          const stars = starsOf(correct, total, durationMs, subject)
           const zero: BattleResult = { points: 0, stars: 0, attr: 0, firstClear: false }
           if (stars === 0) return zero
 
           const rec = s.levels.find((l) => l.levelId === levelId)
           const firstClear = !rec?.cleared
-          const points = (correct * POINT_PER_CORRECT + STAR_BONUS[stars]) * (firstClear ? 2 : 1)
+          // 得几颗星就得几分，首通额外 +1（FIRST_CLEAR_BONUS）
+          const points = stars + (firstClear ? FIRST_CLEAR_BONUS : 0)
           const attrGain = Math.min(ATTR_GAIN_CAP, Math.floor(correct / ATTR_PER_CORRECT))
 
           const today = nowDay()

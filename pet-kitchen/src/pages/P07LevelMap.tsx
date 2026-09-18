@@ -25,7 +25,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
     return attr < l.unlockAttr
   }
 
-  const ordered = [...MATH_LEVELS].reverse()
+  const ordered = MATH_LEVELS
 
   return (
     <div className="pb-4">
@@ -45,6 +45,13 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
             {k !== 'math' && <span className="ml-1 text-[11px]">快来了</span>}
           </button>
         ))}
+        <button
+          onClick={() => nav.go('wrong', subject)}
+          className="flex-1 rounded-2xl bg-white py-2.5 text-[15px] font-extrabold text-ink active:scale-[0.98]"
+        >
+          📕 错题集
+          {dueWrong.length > 0 && <span className="ml-1 text-[11px] text-danger">{dueWrong.length}</span>}
+        </button>
       </div>
 
       <div className="mx-4 mt-3 rounded-xl3 bg-white p-4 shadow-card">
@@ -72,7 +79,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
                 </span>
               </span>
               <span className="text-[13px]">
-                {[0, 1, 2, 3].slice(1).map((n) => (
+                {[1, 2, 3].map((n) => (
                   <span key={n} className={(rec?.bestStars ?? 0) >= n ? 'text-amber-400' : 'text-slate-200'}>
                     ★
                   </span>
@@ -81,12 +88,6 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
             </button>
           )
         })}
-      </div>
-
-      <div className="mx-4 mt-3 flex gap-3">
-        <button className="btn-sub flex-1" onClick={() => nav.go('wrong', subject)}>
-          📕 错题集 ({dueWrong.length})
-        </button>
       </div>
 
       <div className="mx-4 mt-3 rounded-xl3 bg-white p-4 shadow-card">

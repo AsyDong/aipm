@@ -105,9 +105,11 @@ pet-kitchen/
 
 ### 前端
 
+前置：Node 18+（推荐 22，后端容器用 node:22-alpine）。
+
 ```bash
 npm install
-npm run dev       # http://127.0.0.1:5180
+npm run dev       # http://localhost:5173（vite.config.ts 中配置）
 ```
 
 不配任何环境变量即可完整游玩（纯本地模式，零网络、零成本）。

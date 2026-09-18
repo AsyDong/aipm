@@ -34,7 +34,7 @@
     @apply flex h-[52px] w-full items-center justify-center rounded-2xl bg-white text-[18px] font-bold text-sky-600 shadow-card transition active:scale-[0.97] disabled:bg-slate-100 disabled:text-slate-400;
   }
   .btn-chip {
-    @apply flex min-h-[44px] items-center justify-center rounded-xl bg-sky-100 px-4 text-[16px] font-bold text-sky-700 active:scale-[0.97];
+    @apply flex min-h-[44px] items-center justify-center rounded-xl bg-sky-100 px-4 text-[16px] font-bold text-sky-700 transition active:scale-[0.97] disabled:bg-slate-100 disabled:text-slate-400;
   }
   .seg {
     @apply flex rounded-full bg-sky-100 p-1 text-[15px] font-bold text-sky-700;

@@ -16,11 +16,12 @@ export default function P02Hatch() {
   const def = SPECIES.find((s) => s.id === species)!
 
   useEffect(() => {
-    if (taps < 3 || done) return
+    if (taps < 3) return
+    // deps 不含 done：setDone 触发的重渲染不会重跑本 effect，timer 才不会被 cleanup 清掉
     setDone(true)
     const t = setTimeout(hatchDone, 1600)
     return () => clearTimeout(t)
-  }, [taps, done, hatchDone])
+  }, [taps, hatchDone])
 
   if (!pet) return null
 

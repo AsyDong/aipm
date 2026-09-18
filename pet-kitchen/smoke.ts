@@ -184,10 +184,10 @@ console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
   const beforeP = s().points
   const beforeAttr = s().pet!.attrs.math
   const res = s().finishBattle('math', lv.id, 10, 10, [])
-  const expected = (10 * rules.POINT_PER_CORRECT + rules.STAR_BONUS[3]) * 2
+  const expected = 3 + rules.FIRST_CLEAR_BONUS
   ok(res.stars === 3, `10/10 → ${res.stars} 星`)
   ok(res.firstClear, '首次通关')
-  ok(res.points === expected, `积分 +${res.points}（期望 ${expected}）`, res.points)
+  ok(res.points === expected, `积分 +${res.points}（3 星 + 首通 1 = ${expected}）`, res.points)
   ok(s().points === beforeP + expected, `总积分 ${beforeP} → ${s().points}`)
   ok(s().pet!.attrs.math === beforeAttr + res.attr, `数学属性 +${res.attr}`)
   const rec = s().levels.find((l) => l.levelId === lv.id)!
@@ -196,7 +196,7 @@ console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
   // 二周目不再双倍
   const before2 = s().points
   const res2 = s().finishBattle('math', lv.id, 10, 10, [])
-  ok(!res2.firstClear && res2.points === expected / 2, `二周目积分 ${res2.points}（无双倍）`)
+  ok(!res2.firstClear && res2.points === expected - rules.FIRST_CLEAR_BONUS, `二周目积分 ${res2.points}（无首通奖励）`)
 
   // 低于 50% 正确率 = 0 星 = 未通关，不给分不记通关
   const before3 = s().points
@@ -205,6 +205,21 @@ console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
   ok(s().points === before3, '未通关不涨积分')
   ok(!s().levels.some((l) => l.levelId === MATH_LEVELS[1].id), '未通关不写通关记录')
   ok(rules.starsOf(5, 10) === 1 && rules.starsOf(7, 10) === 2 && rules.starsOf(9, 10) === 3, '星级门槛 50/70/90%')
+
+  // 快速通关：限时内通关 → 基础星 +1（数学 2 分钟 / 语文英语 5 分钟，总最高 4 星）
+  ok(rules.starsOf(10, 10, rules.FAST_CLEAR_MS.math, 'math') === 4, '全对 + 2分钟内 → 4 星')
+  ok(rules.starsOf(10, 10, rules.FAST_CLEAR_MS.math + 1) === 3, '全对但超 2 分钟 → 3 星')
+  ok(rules.starsOf(9, 10, 30_000, 'math') === 4, '9/10 限时内 → 3+1 = 4 星')
+  ok(rules.starsOf(9, 10, 120_001, 'math') === 3, '9/10 超时 → 3 星')
+  ok(rules.starsOf(5, 10, 60_000, 'math') === 2, '5/10 限时内 → 1+1 = 2 星')
+  ok(rules.starsOf(6, 10, 4 * 60_000, 'chinese') === 2, '语文 5 分钟内 → +1 星')
+  ok(rules.starsOf(6, 10, 5 * 60_000 + 1, 'chinese') === 1, '语文超 5 分钟 → 无奖励')
+  const before4 = s().points
+  const res4 = s().finishBattle('math', lv.id, 10, 10, [], rules.FAST_CLEAR_MS.math)
+  ok(res4.stars === 4, `全对快通 → ${res4.stars} 星`)
+  ok(res4.points === 4, `4 星积分 ${res4.points}（4 星 = 4 分，非首通无奖励）`)
+  ok(s().points === before4 + res4.points, '4 星积分已入账')
+  ok(s().levels.find((l) => l.levelId === lv.id)!.bestStars === 4, 'bestStars 记为 4')
 }
 
 console.log('== 12. 错题本（入库 / 复习 / 掌握）==')
@@ -305,14 +320,14 @@ console.log('== 16. 家长手动调整 / 发积分 ==')
   ok(s().pointLedger[0].source === 'parent', '账本记录来源正确')
 }
 
-console.log('== 17. 时间工具（04:00 分界）==')
+console.log('== 17. 时间工具（0 点分界）==')
 {
   const mk = (y: number, m: number, d: number, h: number) => new Date(y, m - 1, d, h, 0, 0).getTime()
-  ok(toDay(mk(2026, 9, 15, 3)) === toDay(mk(2026, 9, 14, 5)), '凌晨 3 点归属前一天')
-  ok(toDay(mk(2026, 9, 15, 5)) === '2026-09-15', '早上 5 点归属当天')
+  ok(toDay(mk(2026, 9, 15, 23)) === '2026-09-15', '晚上 11 点归属当天')
+  ok(toDay(mk(2026, 9, 16, 0)) === '2026-09-16', '0 点整起归属新的一天')
   ok(addDays('2026-09-30', 1) === '2026-10-01', `跨月 ${addDays('2026-09-30', 1)}`)
   ok(addDays('2026-12-31', 1) === '2027-01-01', `跨年 ${addDays('2026-12-31', 1)}`)
-  ok(DAY_START_HOUR === 4, '分界点为 04:00')
+  ok(DAY_START_HOUR === 0, '分界点为 0 点')
 }
 
 console.log('== 18. 数值常量复核 ==')
@@ -327,7 +342,7 @@ ok(
   '体型相关常量（THIN_DAYS / FAT_FULL_DAYS / BODY_LABEL）已删除',
 )
 ok(rules.STREAK_7_FOOD === 1 && rules.STREAK_30_FOOD === 5, '连续 7 天 +1 / 30 天 +5')
-ok(rules.POINT_PER_CORRECT === 2, '每题 2 积分')
+ok(rules.FIRST_CLEAR_BONUS === 1, '首通额外 +1 积分')
 
 console.log('== 19. 答题队列循环（写对为止）==')
 {

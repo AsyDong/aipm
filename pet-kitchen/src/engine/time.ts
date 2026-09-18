@@ -1,5 +1,5 @@
-/** 一「天」= 04:00 ~ 次日 04:00（避免孩子熬夜赶任务，见线框 1.3） */
-export const DAY_START_HOUR = 4
+/** 一「天」= 当天 00:00 ~ 24:00（每天 0 点为分界线） */
+export const DAY_START_HOUR = 0
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -12,7 +12,7 @@ export function nowDay(ts: number = Date.now()): string {
   return toDay(ts)
 }
 
-/** 游戏日起点时间戳（该日 04:00） */
+/** 游戏日起点时间戳（该日 00:00） */
 export function dayStart(day: string): number {
   const [y, m, d] = day.split('-').map(Number)
   return new Date(y, m - 1, d, DAY_START_HOUR, 0, 0, 0).getTime()

@@ -117,12 +117,10 @@ export function CoinBar({ food, points }: { food: number; points: number }) {
       <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 shadow-card">
         <span className="text-[17px]">🍖</span>
         <span className="text-[16px] font-extrabold text-food">{food}</span>
-        <span className="text-[12px] text-muted">份</span>
       </div>
       <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 shadow-card">
-        <span className="text-[17px]">⭐</span>
+        <span className="text-[17px]">🪙</span>
         <span className={`text-[16px] font-extrabold ${points > 0 ? 'text-amber-500' : 'text-slate-300'}`}>{points}</span>
-        <span className="text-[12px] text-muted">分</span>
       </div>
     </div>
   )

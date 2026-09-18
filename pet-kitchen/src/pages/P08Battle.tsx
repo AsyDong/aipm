@@ -106,6 +106,9 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     qStart.current = Date.now()
   }, [q?.text])
 
+  /** 整关用时（快速通关 +1 星的判定依据） */
+  const battleStart = useRef(Date.now())
+
   useEffect(() => {
     if (result) return
     const t = setInterval(() => setLeft((v) => Math.max(0, v - 1)), 1000)
@@ -126,12 +129,13 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const finish = (win: boolean) => {
     if (settled.current) return
     settled.current = true
-    const stars = starsOf(firstCorrect, total)
+    const durationMs = Date.now() - battleStart.current
+    const stars = starsOf(firstCorrect, total, durationMs, level.subject)
     if (!win || stars === 0) {
       setResult({ win: false, correct: firstCorrect, total, points: 0, stars: 0, attr: 0, firstClear: false })
       return
     }
-    const r = finishBattle(level.subject, level.id, firstCorrect, total, missed)
+    const r = finishBattle(level.subject, level.id, firstCorrect, total, missed, durationMs)
     setResult({ win: true, correct: firstCorrect, total, ...r })
   }
 
@@ -213,6 +217,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
   const reset = () => {
     settled.current = false
+    battleStart.current = Date.now()
     setQueue(questions)
     setPetHp(maxHp)
     setHints(hintCount(attr))
@@ -234,8 +239,8 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </div>
         {result.win && (
           <div className="mt-3 text-[34px] tracking-widest">
-            {[1, 2, 3].map((n) => (
-              <span key={n} className={result.stars >= n ? 'text-amber-400' : 'text-slate-200'}>★</span>
+            {[1, 2, 3, 4].map((n) => (
+              <span key={n} className={result.stars >= n ? '' : 'opacity-25'}>🪙</span>
             ))}
           </div>
         )}

@@ -95,7 +95,7 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
       <div className="flex items-center gap-3">
         <button className="text-[15px] font-bold text-muted" onClick={() => nav.back()}>← 返回</button>
         <div className="flex-1 text-center text-[18px] font-extrabold text-ink">{task.name}</div>
-        <div className="rounded-full bg-food/15 px-2 py-1 text-[12px] font-extrabold text-food">+{task.foodValue} 份</div>
+        <div className="rounded-full bg-food/15 px-2 py-1 text-[12px] font-extrabold text-food">🍖+{task.foodValue}</div>
       </div>
 
       <p className="mt-4 text-center text-[14px] text-muted">{TYPE_HINT[task.type]}</p>

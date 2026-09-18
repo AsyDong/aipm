@@ -4,7 +4,11 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { Confirm, Modal, toast } from '../components/ui'
 import { SPECIES } from '../data/content'
-import { ATTR_LABEL, STAGE_EXP, STAGE_TITLE } from '../engine/rules'
+import {
+  ATTR_GAIN_CAP, ATTR_LABEL, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FEED_LIMIT,
+  FIRST_CLEAR_BONUS, FOOD_PER_SATIETY, MAINTAIN_FOOD, REVIEW_INTERVALS, SATIETY_FULL,
+  SATIETY_MAX, STAGE_EXP, STAGE_TITLE, STREAK_30_FOOD, STREAK_7_FOOD,
+} from '../engine/rules'
 import { fmtDate } from '../engine/time'
 import { checkName } from '../utils/sensitive'
 import type { LedgerEntry } from '../types'
@@ -40,6 +44,7 @@ export default function P13Mine() {
   const [profile, setProfile] = useState(false)
   const [rename, setRename] = useState('')
   const [ledger, setLedger] = useState<'food' | 'point' | null>(null)
+  const [rules, setRules] = useState(false)
   const [askParent, setAskParent] = useState(false)
 
   if (!pet) return null
@@ -65,8 +70,9 @@ export default function P13Mine() {
         <Row icon="📋" text="宠物档案" onClick={() => { setRename(pet.nickname); setProfile(true) }} />
         <Row icon="📈" text="成长报告" onClick={() => nav.go('report')} />
         <Row icon="📕" text="错题集" onClick={() => nav.go('wrong', 'math')} />
-        <Row icon="⭐" text="积分流水" onClick={() => setLedger('point')} />
+        <Row icon="🪙" text="积分流水" onClick={() => setLedger('point')} />
         <Row icon="🍖" text="食物流水" onClick={() => setLedger('food')} />
+        <Row icon="📖" text="规则详情" onClick={() => setRules(true)} />
       </div>
 
       <div className="mx-4 mt-3 overflow-hidden rounded-xl3 bg-white shadow-card">
@@ -77,6 +83,26 @@ export default function P13Mine() {
       <div className="mx-4 mt-5">
         <button className="btn-sub" onClick={() => setAskParent(true)}>爸 爸 妈 妈 请 进</button>
       </div>
+
+      {/* 规则详情（数值取自 engine/rules.ts，改规则这里自动跟着变） */}
+      <Modal open={rules} title="规则详情" onClose={() => setRules(false)}>
+        <div className="space-y-3 text-[13px] leading-relaxed">
+          {[
+            ['🪙 积分', `闯关按「第一次就答对」的题数拿积分：≥90% 得 3 分 / ≥70% 得 2 分 / ≥50% 得 1 分，限时内通关再多 1 分（数学 2 分钟内、语文英语 5 分钟内，单关最多 4 分）；首次通关额外 +${FIRST_CLEAR_BONUS} 分；重做答对不重复计分`],
+            ['🍖 食物', `完成打卡任务获得（家长可设 1–3 份）；连续打卡 7 天 +${STREAK_7_FOOD} 份、30 天 +${STREAK_30_FOOD} 份`],
+            ['🍚 饱食度', `每份食物 +${FOOD_PER_SATIETY}，每天自然饿 −${DAILY_DECAY}（维持要 ${MAINTAIN_FOOD} 份/天）；上限 ${SATIETY_MAX}，到 ${SATIETY_FULL} 算吃饱；每天最多喂 ${FEED_LIMIT} 次`],
+            ['🎂 经验', `每投喂 1 份 +${EXP_PER_FOOD} 经验，攒够门槛就升阶：${STAGE_TITLE.join(' → ')}`],
+            ['💪 属性', `闯关每答对 ${ATTR_PER_CORRECT} 题 +1 点，一关最多 +${ATTR_GAIN_CAP} 点；属性够才能解锁后面的关卡`],
+            ['📕 错题', `答错的题进错题集，隔 ${REVIEW_INTERVALS.join('/')} 天复习，连续答对 3 次算掌握；没掌握的会自动出现在后面的关卡里`],
+            ['🌙 小提醒', '每天 0 点为一天的分界线，早点睡觉哦'],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <div className="font-extrabold text-ink">{k}</div>
+              <div className="text-muted">{v}</div>
+            </div>
+          ))}
+        </div>
+      </Modal>
 
       {/* 宠物档案 */}
       <Modal open={profile} title="宠物档案" onClose={() => setProfile(false)}>

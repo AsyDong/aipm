@@ -28,9 +28,8 @@ export const EXP_PER_FOOD = 10
 /** 6 阶累计经验门槛，index 0 = Lv1 起点 */
 export const STAGE_EXP = [0, 150, 400, 800, 1400, 2200]
 
-/** 闯关积分：答对 ×2 + 星级奖励(1/3/5)，首次通关 ×2 */
-export const POINT_PER_CORRECT = 2
-export const STAR_BONUS = [0, 1, 3, 5]
+/** 闯关积分：得几颗星就得几分（4 星 = 4 分），首次通关额外 +1 分 */
+export const FIRST_CLEAR_BONUS = 1
 /**
  * 属性提升：每答对 3 题 +1，单关上限 +3（答对 9~10 题拿满）
  * 关卡解锁门槛按「每关 +3」的节奏排布，正常发挥即可一路解锁，不用回头刷属性
@@ -68,17 +67,26 @@ export const ATTR_LABEL: Record<Subject, string> = {
 }
 export const STAGE_TITLE = ['幼崽', '小兽', '灵兽', '瑞兽', '圣兽', '神兽']
 
+/** 快速通关线：限时内通关额外 +1 星（数学 2 分钟，语文/英语 5 分钟） */
+export const FAST_CLEAR_MS: Record<Subject, number> = {
+  math: 2 * 60_000,
+  chinese: 5 * 60_000,
+  english: 5 * 60_000,
+}
+
 /**
- * 星级：≥90% 3星 / ≥70% 2星 / ≥50% 1星 / 低于 50% 0 星视为未通关
+ * 星级：≥90% 3星 / ≥70% 2星 / ≥50% 1星 / 低于 50% 0 星视为未通关（基础最高 3 星）
+ * 限时内通关（数学 2 分钟 / 语文英语 5 分钟）：额外 +1 星，总最高 4 星
  * 0 星时不发积分、不计通关、不解锁下一关（P08 结算页走「未通过」分支）
  */
-export function starsOf(correct: number, total: number): number {
+export function starsOf(correct: number, total: number, durationMs?: number, subject: Subject = 'math'): number {
   if (total <= 0) return 0
   const r = correct / total
-  if (r >= 0.9) return 3
-  if (r >= 0.7) return 2
-  if (r >= 0.5) return 1
-  return 0
+  if (r < 0.5) return 0
+  const fast = durationMs !== undefined && durationMs <= FAST_CLEAR_MS[subject]
+  if (r >= 0.9) return fast ? 4 : 3
+  if (r >= 0.7) return fast ? 3 : 2
+  return fast ? 2 : 1
 }
 
 export function stageOf(exp: number): number {

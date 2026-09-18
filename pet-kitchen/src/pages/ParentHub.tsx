@@ -42,14 +42,14 @@ export default function ParentHub({ focus }: { focus?: string }) {
       </div>
 
       <div className="mt-3 rounded-xl3 bg-sky-50 px-4 py-3 text-[13px] leading-relaxed text-sky-700">
-        每日 04:00 结算：饱食度 −60（不低于 0）。每天最多喂 5 份，刚好喂到顶格线。投喂只影响饱食度和经验，不影响属性和闯关。
+        每日 0 点结算：饱食度 −60（不低于 0）。每天最多喂 5 份，刚好喂到顶格线。投喂只影响饱食度和经验，不影响属性和闯关。
       </div>
 
       <div className="mt-3">
         <Entry icon="📝" title="任务管理" desc={`当前 ${s.templates.filter((t) => t.enabled).length} 个任务 · 待确认 ${s.daily.filter((t) => t.status === 'pending').length}`} onClick={() => nav.go('ptasks')} />
         <Entry icon="🎁" title="现实奖品管理" desc={`${s.prizes.length} 个奖品 · 待审批 ${s.redeems.filter((r) => r.state === 'pending').length}`} onClick={() => nav.go('pprizes')} />
         <Entry icon="📈" title="成长报告" desc="任务完成率、闯关正确率、宠物状态" onClick={() => nav.go('report')} />
-        <Entry icon="⭐" title="奖励积分" desc="孩子表现好时手动奖励（积分兜底出口）" onClick={() => setGrant(true)} />
+        <Entry icon="🪙" title="奖励积分" desc="孩子表现好时手动奖励（积分兜底出口）" onClick={() => setGrant(true)} />
         <Entry icon="🔑" title="修改家长密码" desc={s.settings.pinChanged ? '已修改过' : '当前仍是默认密码 1234'} onClick={() => nav.go('pin', 'change')} />
       </div>
 

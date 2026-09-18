@@ -16,7 +16,7 @@ export default function P14Report() {
   const templates = useStore((s) => s.templates)
   const [range, setRange] = useState<Range>('week')
 
-  // 当天还没结算（04:00 才跨日），把实时计数补成一行，否则今天的数据全是 0
+  // 当天还没结算（0 点才跨日），把实时计数补成一行，否则今天的数据全是 0
   const today = nowDay()
   // 逐项取值，避免返回新对象导致 zustand 无限重渲染
   const activeDay = useStore((s) => s.activeDay)
