@@ -4,9 +4,9 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
-import { MATH_LEVELS, levelById } from '../engine/questions'
+import { MATH_LEVELS, LEVELS_BY_SUBJECT, levelById } from '../engine/questions'
 import {
-  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, baseHp, hintCount, starsOf, FIRST_CLEAR_BONUS,
+  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, baseHp, hintCount, starsOf, FIRST_CLEAR_BONUS,
 } from '../engine/rules'
 import { nowDay } from '../engine/time'
 import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
@@ -253,7 +253,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   }
 
   if (result) {
-    const nextLevel = MATH_LEVELS.find((l) => l.index === level.index + 1)
+    const nextLevel = LEVELS_BY_SUBJECT[level.subject].find((l) => l.index === level.index + 1)
     return (
       <div className="flex min-h-screen flex-col items-center px-6 pb-10 pt-14">
         <div className="animate-popin text-[54px]">{result.win ? '🎉' : '💪'}</div>
@@ -295,7 +295,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         {result.win && (
           <div className="mt-5 w-full max-w-[340px] rounded-xl3 bg-white p-4 shadow-card">
             <Row label="积分" value={`+${result.points}`} tone="point" />
-            <Row label="数学力" value={`+${result.attr}`} tone="attr" />
+            <Row label={ATTR_LABEL[level.subject]} value={`+${result.attr}`} tone="attr" />
             {missed.length > 0 ? (
               <button
                 className="flex w-full items-center justify-between border-b border-sky-50 py-2 last:border-0"

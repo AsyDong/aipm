@@ -20,7 +20,7 @@
 
 import http from 'node:http'
 import {
-  MATH_LEVELS, buildLevelQuestions, variantsOf, buildQuestion, type LevelDef,
+  MATH_LEVELS, levelById, buildLevelQuestions, variantsOf, buildQuestion, type LevelDef,
 } from '../src/engine/questions'
 import { gradeLocally, needsModel, normalizeNumeric } from '../src/engine/grading'
 import { QUESTIONS_PER_LEVEL } from '../src/engine/rules'
@@ -98,7 +98,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 function genQuestions(req: {
   subject?: string; levelId?: string; count?: number; inject?: unknown[]; attr?: number
 }) {
-  const level: LevelDef = MATH_LEVELS.find((l) => l.id === req.levelId) ?? MATH_LEVELS[0]
+  const level: LevelDef = levelById(req.levelId ?? '') ?? MATH_LEVELS[0]
   const inject = Array.isArray(req.inject) ? (req.inject as import('../src/types').QSpec[]) : []
   const n = Math.min(Math.max(req.count ?? QUESTIONS_PER_LEVEL, 1), 20)
   return buildLevelQuestions(level, inject, n)

@@ -59,7 +59,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
         {ordered.map((l) => {
           const rec = levels.find((x) => x.levelId === l.id)
           const isLocked = locked(l)
-          const need = l.boss ? '前 5 关都要 2 星' : `数学力还差 ${Math.max(0, l.unlockAttr - attr)} 点`
+          const need = l.boss ? '前 5 关都要 2 星' : `${ATTR_LABEL[subject]}还差 ${Math.max(0, l.unlockAttr - attr)} 点`
           return (
             <button
               key={l.id}
