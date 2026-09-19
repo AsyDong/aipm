@@ -37,7 +37,8 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
         {(['math', 'chinese', 'english'] as const).map((k) => (
           <button
             key={k}
-            onClick={() => nav.go('level', k)}
+            // 原地换科目参数而不是压栈：压栈会让 stack.length 变 2，底部 TabBar 消失
+            onClick={() => nav.replace('battle', k)}
             className={`flex-1 rounded-2xl py-2.5 text-[15px] font-extrabold ${
               k === subject ? 'bg-sky-400 text-white shadow-card' : 'bg-white text-muted'
             }`}

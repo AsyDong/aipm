@@ -25,9 +25,11 @@ function ok(cond: boolean, msg: string, extra?: unknown) {
 
 const s = () => useStore.getState()
 
-/** 模拟"过了一天"：把 activeDay 回拨一天，再让 ensureDay 结算推进回来 */
+/** 模拟"过了一天"：把 activeDay 回拨一天，再让 ensureDay 结算推进回来。
+ *  daily 一并清空 —— 结算现在只清「被结算那天」的实例（给跨设备拉取留路），
+ *  回拨出来的旧行不属于被结算日，得靠这里模拟真实跨天时「当日行就是被结算行」。 */
 function nextDay() {
-  useStore.setState({ activeDay: addDays(s().activeDay, -1) })
+  useStore.setState({ activeDay: addDays(s().activeDay, -1), daily: [] })
   s().ensureDay()
 }
 
@@ -693,7 +695,7 @@ void (async () => {
 
       const tplOps = byKind('task_template')
       ok(tplOps.length === 3, `task_template op ${tplOps.length} 条（新增 / 修改 / 删除）`)
-      ok(keys(tplOps[0]) === 'active,foodValue,id,name,subject,type', `task_template op 字段：${keys(tplOps[0])}`)
+      ok(keys(tplOps[0]) === 'active,enabled,foodValue,icon,id,kind,name,note,onceDay,subject,type,weekdays', `task_template op 字段：${keys(tplOps[0])}`)
       ok(tplOps[0].data.active === true && tplOps[2].data.active === false, '模板新增 active:true → 启用/删除 active:false')
 
       const dtOps = byKind('daily_task')

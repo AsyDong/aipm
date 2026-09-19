@@ -85,7 +85,9 @@ export interface FlushResult {
 const DEFAULTS: SyncConfig = {
   apiBaseUrl: '',
   token: '',
-  timeoutMs: 8000,
+  // 一批最多 200 条 op，服务端逐条走 CloudBase 网关（每条一次公网往返，实测整批 40s+）。
+  // 8s 会把每批都掐死在半路 → 队列永远排不空，越积越多（2026-09-19 实测 328 条积压的根因）
+  timeoutMs: 60000,
   batchSize: 200,
 }
 
@@ -336,6 +338,67 @@ async function pushOnce(): Promise<FlushResult> {
   }
 }
 
+// ============ 拉取（跨设备传播的另一半） ============
+//
+// 推是「本地 → 服务端」，拉是反过来。合并策略刻意简单：
+// **客户端只在队列清空（本地改动全部推完）时才拉**，拉到什么就信什么 ——
+// 队列清空意味着本地和服务端一致，服务端上任何不一样的内容都来自另一台设备且更新。
+// 这换来零时间戳、零 LWW、零冲突标记：队列没空就先推，推完自然能拉。
+//
+// 不回放事件流（attempt / snapshot / level_record / wrong_item）：那是统计与审计数据，
+// 报表在服务端看；拉它们只会把另一台设备的练习记录复制一份。
+
+/** 服务端 /api/state 的行结构（列名已在 SQL 里别名为驼峰） */
+export interface RemoteState {
+  childId: string
+  child: { name: string; grade: string; textbookVer: string | null } | null
+  pet: {
+    species: string; name: string | null; stage: number; exp: number
+    satiety: number; fedToday: number; attrs: Record<string, number>
+  } | null
+  templates: {
+    id: string; name: string; type: string; foodValue: number
+    active: boolean; enabled: boolean
+    icon: string | null; note: string | null; kind: string | null
+    weekdays: number[] | null; onceDay: string | null
+  }[]
+  daily: {
+    id: string; day: string; templateId: string | null; status: string
+    mediaKey: string | null; note: string | null; at: string | null
+    tplName: string | null; tplIcon: string | null; tplType: string | null
+    tplNote: string | null; tplKind: string | null; tplFood: number | null
+  }[]
+  prizes: { id: string; name: string; points: number; note: string | null; active: boolean }[]
+  redeems: {
+    id: string; prizeId: string; prizeName: string; points: number
+    state: string; at: string; decidedAt: string | null
+  }[]
+  ledgers: {
+    opId: string; kind: string; delta: number; balance: number | null
+    source: string; note: string | null; at: string
+  }[]
+  levels: { levelId: string; bestStars: number; cleared: boolean; playCount: number | null }[]
+  lastStreak: { day: string; streak: number } | null
+}
+
+/** GET /api/state。传输层只管取回，合并语义在 useStore.pullRemote 里。失败返回 null（孩子照玩）。 */
+export async function pullState(id: string): Promise<RemoteState | null> {
+  if (!enabled()) return null
+  const ctrl = new AbortController()
+  const abortTimer = setTimeout(() => ctrl.abort(), config.timeoutMs)
+  try {
+    const res = await fetch(
+      `${config.apiBaseUrl}/api/state?childId=${encodeURIComponent(id)}`,
+      { headers: { 'x-sync-token': config.token }, signal: ctrl.signal },
+    )
+    if (!res.ok) return null
+    return (await res.json()) as RemoteState
+  } catch {
+    return null
+  } finally {
+    clearTimeout(abortTimer)
+  }
+}
 /** 清空队列与计数（冒烟测试用）。childId 保留 —— 换设备才是换孩子。 */
 export function resetSync(): void {
   state.queue = []

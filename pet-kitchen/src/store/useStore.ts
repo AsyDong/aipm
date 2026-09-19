@@ -12,9 +12,13 @@ import {
   STREAK_7_FOOD, stageOf, starsOf,
 } from '../engine/rules'
 import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
+import { levelById } from '../engine/questions'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
-import { enqueueOp } from './sync'
+import {
+  childId as syncChildId, enabled as syncEnabled, enqueueOp, flushSync,
+  pendingCount, pullState,
+} from './sync'
 
 // ============ 任务排期（常规 / 今日） ============
 
@@ -230,7 +234,7 @@ function recordPet(p: Pet): void {
   })
 }
 
-/** 任务模板 → task_template op。删除发 active:false（软删），不物理删行。 */
+/** 任务模板 → task_template op。删除发 active:false（软删），不物理删行；enabled 单独传（停用≠删除） */
 function recordTemplate(t: TaskTemplate, deleted = false): void {
   enqueueOp('task_template', {
     id: t.id,
@@ -239,8 +243,15 @@ function recordTemplate(t: TaskTemplate, deleted = false): void {
     // 本地模板还没有学科维度（都是综合任务），服务端那列用 math 兜底
     subject: 'math',
     foodValue: t.foodValue,
-    // active = 还在用：既没被删，也没被家长停用
-    active: !deleted && t.enabled,
+    // active = 没被删；enabled = 没被家长停用。以前两者挤在 active 里，
+    // 另一台设备无法区分「已删除」和「停用中」，拉回来只能丢 —— 分开后 /api/state 才能原样重建
+    active: !deleted,
+    enabled: t.enabled,
+    icon: t.icon,
+    note: t.note ?? null,
+    kind: t.kind ?? 'regular',
+    weekdays: t.weekdays ?? null,
+    onceDay: t.onceDay ?? null,
   })
 }
 
@@ -322,7 +333,9 @@ function settleDayOnce(s: AppState): Partial<AppState> {
     pet: pet ? { ...pet, satiety, fedToday: 0 } : null,
     streak,
     longestStreak: Math.max(s.longestStreak, streak),
-    daily: [],
+    // 只清掉被结算的那一天。此前 daily: [] 会把跨天时刚从另一台设备拉回来的
+    // 今日实例一并抹掉 → 本地重新生成 → 服务端出现两套 id 不同的当日任务
+    daily: s.daily.filter((d) => d.day !== s.activeDay),
     todayBattles: 0,
     todayCorrect: 0,
     todayTotal: 0,
@@ -338,6 +351,12 @@ export interface BattleResult { points: number; stars: number; attr: number; fir
 
 interface Actions {
   bootstrap: () => void
+  /** 启动入口（App 挂载调一次）：新设备先拉后种，老设备先种后推拉 —— 见实现内注释 */
+  init: () => void
+  /** 推完就拉：回到前台 / 定时等场景用 */
+  syncNow: () => void
+  /** 从服务端拉实体快照并合并。队列没排空（本地有没推完的改动）时直接跳过 */
+  pullRemote: () => Promise<void>
   ensureDay: () => void
   /** 修改孩子档案（P13 的采集入口待加；在此之前只有默认值） */
   setChildProfile: (patch: Partial<ChildProfile>) => void
@@ -347,6 +366,8 @@ interface Actions {
   renamePet: (name: string) => void
   feed: (n: number) => FeedResult
   submitTask: (taskId: string, mediaId?: string) => void
+  /** 口算等自动判分任务：做完即完成，不经家长确认 */
+  completeQuiz: (taskId: string) => void
   approveTask: (taskId: string) => void
   rejectTask: (taskId: string, reason: string) => void
   parentAdjustFood: (n: number, note: string) => void
@@ -519,10 +540,184 @@ export const useStore = create<Store>()(
           if (get().templates.length === 0) set({ templates: defaultTemplates() })
           if (get().prizes.length === 0) set({ prizes: DEFAULT_PRIZES })
           advanceDays()
+          // 模板已删但今日实例还挂着（旧版删除逻辑只清 todo，已提交/已完成的漏了）→ 启动时补撤
+          const tpls = new Set(get().templates.map((t) => t.id))
+          const today = nowDay()
+          const kept = get().daily.filter((d) => !(d.day === today && !tpls.has(d.templateId)))
+          if (kept.length !== get().daily.length) set({ daily: kept })
           ensureTasks()
           autoUnfreeze()
           seedEntities()
           void pruneMedia()
+        },
+
+        init: () => {
+          void (async () => {
+            // 新设备（本地还没引导出宠物）：先拉后种 —— 否则 bootstrap 会先种一套
+            // 随机 id 的默认模板并推上服务端，把真实孩子的数据污染成两套。
+            if (!get().pet) await get().pullRemote()
+            get().bootstrap()
+            // 一批最多 200 条，队列超过一批时循环推到排空（拉取要求队列清零）
+            for (let i = 0; i < 10 && pendingCount() > 0; i++) await flushSync()
+            await get().pullRemote()
+          })()
+        },
+
+        syncNow: () => {
+          void (async () => {
+            for (let i = 0; i < 10 && pendingCount() > 0; i++) await flushSync()
+            await get().pullRemote()
+          })()
+        },
+
+        // 合并策略（刻意简单）：只在本地队列排空后拉，拉到什么信什么。
+        // 队列排空 = 本地已与服务器一致，服务器上任何不一样的行都来自另一台设备且更新。
+        // 因此不需要时间戳、不需要 LWW、不会有冲突 —— 队列没空就先推，推完自然能拉。
+        // ponytail: 钱包只对齐余额（服务端流水尾行），todayX 当日计数与 streak 不跨设备，报表以服务端快照为准。
+        pullRemote: async () => {
+          if (!syncEnabled() || pendingCount() > 0) return
+          const remote = await pullState(syncChildId())
+          // 服务端还没有这个孩子的档案（从没引导过）→ 无从拉起，走本地引导流程
+          if (!remote || !remote.pet) return
+          const s = get()
+
+          const localTpl = new Map(s.templates.map((t) => [t.id, t]))
+          const templates: TaskTemplate[] = remote.templates
+            .filter((r) => r.active)
+            .map((r) => {
+              const local = localTpl.get(r.id)
+              return {
+                id: r.id,
+                name: r.name,
+                icon: r.icon ?? local?.icon ?? '📋',
+                type: r.type === 'photo' || r.type === 'audio' ? r.type : 'subjective',
+                note: r.note ?? local?.note,
+                kind: r.kind === 'once' ? 'once' : 'regular',
+                weekdays: r.weekdays ?? local?.weekdays,
+                onceDay: r.onceDay ?? local?.onceDay,
+                foodValue: r.foodValue,
+                enabled: r.enabled,
+                createdAt: local?.createdAt ?? Date.now(),
+              }
+            })
+
+          const pullDay = nowDay()
+          const daily: DailyTask[] = remote.daily.map((r) => ({
+            id: r.id,
+            day: String(r.day).slice(0, 10),
+            templateId: r.templateId ?? '',
+            // 模板被软删后 JOIN 不到名字 —— 实例是历史事实，兜个底别显示成空白
+            name: r.tplName ?? '（已删除的任务）',
+            icon: r.tplIcon ?? '📋',
+            type: r.tplType === 'photo' || r.tplType === 'audio' ? r.tplType : 'subjective',
+            note: r.tplNote ?? undefined,
+            kind: r.tplKind === 'once' ? 'once' : 'regular',
+            foodValue: r.tplFood ?? 1,
+            status:
+              r.status === 'done' || r.status === 'pending' || r.status === 'rejected'
+                ? r.status
+                : 'todo',
+            mediaId: r.mediaKey ?? undefined,
+            // daily_tasks.note 存的就是驳回理由（recordDailyTask 的映射），服务端没有独立的 reason 列
+            rejectReason: r.note ?? undefined,
+            doneAt: r.at ? Date.parse(r.at) : undefined,
+          }))
+          // 服务端只给了 pullDay 起的行；更早的本地历史行保留（本地通常也只有今天，跨天结算会清）
+          const dailyMerged = [...s.daily.filter((d) => d.day < pullDay), ...daily]
+
+          const prizes: Prize[] = remote.prizes
+            .filter((r) => r.active)
+            .map((r) => ({ id: r.id, name: r.name, points: r.points, note: r.note ?? undefined }))
+
+          const redeems: Redeem[] = remote.redeems.map((r) => ({
+            id: r.id,
+            prizeId: r.prizeId,
+            prizeName: r.prizeName,
+            points: r.points,
+            // 服务端多一个 timeout 状态，本地只有 rejected
+            state: r.state === 'approved' || r.state === 'delivered' || r.state === 'pending'
+              ? r.state
+              : 'rejected',
+            at: Date.parse(r.at),
+            ...(r.state === 'delivered' && r.decidedAt
+              ? { deliveredAt: Date.parse(r.decidedAt) }
+              : r.decidedAt
+                ? { reviewedAt: Date.parse(r.decidedAt) }
+                : {}),
+          }))
+
+          const toLedger = (kind: 'food' | 'point') =>
+            remote.ledgers
+              .filter((l) => l.kind === kind)
+              .map((l) => ({
+                id: l.opId,
+                kind,
+                delta: l.delta,
+                balance: l.balance ?? 0,
+                source: l.source as LedgerEntry['source'],
+                note: l.note ?? '',
+                at: Date.parse(l.at),
+              }))
+          const foodLedger = toLedger('food')
+          const pointLedger = toLedger('point')
+
+          const pet: Pet = {
+            species:
+              remote.pet.species === 'dangkang' || remote.pet.species === 'tianguo'
+                ? remote.pet.species
+                : 'feifei',
+            nickname: remote.pet.name ?? '',
+            stage: remote.pet.stage,
+            exp: remote.pet.exp,
+            satiety: remote.pet.satiety,
+            fedToday: remote.pet.fedToday,
+            attrs: { math: 0, chinese: 0, english: 0, ...remote.pet.attrs },
+            locked: true,
+            bornAt: s.pet?.bornAt ?? Date.now(),
+          }
+          const child: ChildProfile = {
+            name: remote.child?.name ?? s.child.name,
+            grade: remote.child?.grade ?? s.child.grade,
+            textbookVer: remote.child?.textbookVer ?? s.child.textbookVer,
+          }
+
+          set({
+            // 新设备拉到了别处引导的档案 → 直接落地进家，不再走领养流程
+            phase: s.pet ? s.phase : 'home',
+            pet,
+            child,
+            templates,
+            daily: dailyMerged,
+            prizes,
+            redeems,
+            // 闯关进度：服务端 best_stars 取 GREATEST，不回退；服务端还没有记录时保留本地
+            levels:
+              remote.levels.length > 0
+                ? remote.levels.map((r) => ({
+                    levelId: r.levelId,
+                    subject: levelById(r.levelId)?.subject ?? 'math',
+                    bestStars: r.bestStars,
+                    cleared: r.cleared,
+                    bestCorrect: 0,
+                    total: 0,
+                    lastAt: 0,
+                    playCount: r.playCount ?? 1,
+                  }))
+                : s.levels,
+            // 连续打卡：快照里最后一天的 streak（昨天或今天的才算数，太久远的不认）
+            streak:
+              remote.lastStreak && remote.lastStreak.day >= addDays(pullDay, -1)
+                ? remote.lastStreak.streak
+                : s.streak,
+            frozenPoints: redeems
+              .filter((r) => r.state === 'pending')
+              .reduce((n, r) => n + r.points, 0),
+            foodLedger: foodLedger.length > 0 ? foodLedger : s.foodLedger,
+            pointLedger: pointLedger.length > 0 ? pointLedger : s.pointLedger,
+            // 服务端流水最新一行的 balance 就是当前余额；服务端还没有流水时保留本地
+            food: foodLedger[0]?.balance ?? s.food,
+            points: pointLedger[0]?.balance ?? s.points,
+          })
         },
 
         ensureDay: () => {
@@ -611,6 +806,20 @@ export const useStore = create<Store>()(
             return
           }
           next[idx] = { ...t, status: 'done', mediaId, doneAt: Date.now() }
+          set({ daily: next, todayTasksDone: s.todayTasksDone + 1 })
+          recordDailyTask(next[idx])
+          completeOne(t)
+        },
+
+        completeQuiz: (taskId) => {
+          get().ensureDay()
+          const s = get()
+          const idx = s.daily.findIndex((t) => t.id === taskId)
+          if (idx < 0) return
+          const t = s.daily[idx]
+          if (t.status === 'done' || t.status === 'pending') return
+          const next = s.daily.slice()
+          next[idx] = { ...t, status: 'done', doneAt: Date.now() }
           set({ daily: next, todayTasksDone: s.todayTasksDone + 1 })
           recordDailyTask(next[idx])
           completeOne(t)
@@ -899,10 +1108,10 @@ export const useStore = create<Store>()(
           set({ templates: s.templates.filter((t) => t.id !== id) })
           // 软删：历史 daily_tasks 的 template_id 还得能 JOIN 回这个模板
           if (removed) recordTemplate(removed, true)
-          // 今天的实例同步撤下（已提交/已完成的保留，审批流不能断）
+          // 今天的实例全部撤下（孩子端不该再看到已删除的任务；已推到服务器的记录不受影响）
           get().ensureDay()
           const cur = get()
-          set({ daily: cur.daily.filter((d) => !(d.templateId === id && (d.status === 'todo' || d.status === 'rejected'))) })
+          set({ daily: cur.daily.filter((d) => d.templateId !== id) })
         },
 
         setPin: (pin) => set((s) => ({ settings: { ...s.settings, parentPin: pin, pinChanged: true } })),

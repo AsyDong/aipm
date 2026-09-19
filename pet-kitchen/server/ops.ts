@@ -221,15 +221,23 @@ export async function applyOp(pg: PgFn, childId: string, op: Op): Promise<void> 
     // 任务模板。家长删除（active=false）走软删（2026-09-19 裁决：保留本设计）——
     // 不物理删行，历史 daily_tasks / 报表还要 JOIN 回模板拿名字；
     // 客户端从不读这张表，active=false 的行只是审计留存，不会出现在任何界面。
+    // enabled 与 active 分列：active=已删除，enabled=家长停用（停用的要拉回另一台设备）。
+    // icon/note/kind/weekdays/once_day 是模板全量字段 —— /api/state 拉回时要能原样重建，
+    // 缺了就会在另一台设备上退化成「无图标 · 每天出现」。
     case 'task_template':
       await pg(
-        `INSERT INTO task_templates (id, child_id, name, type, subject, food_value, active)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO task_templates (id, child_id, name, type, subject, food_value, active, enabled,
+                                     icon, note, kind, weekdays, once_day)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13::date)
          ON CONFLICT (id) DO UPDATE SET
            name=EXCLUDED.name, type=EXCLUDED.type, subject=EXCLUDED.subject,
-           food_value=EXCLUDED.food_value, active=EXCLUDED.active`,
+           food_value=EXCLUDED.food_value, active=EXCLUDED.active, enabled=EXCLUDED.enabled,
+           icon=EXCLUDED.icon, note=EXCLUDED.note, kind=EXCLUDED.kind,
+           weekdays=EXCLUDED.weekdays, once_day=EXCLUDED.once_day`,
         [req(d.id, 'id'), childId, req(d.name, 'name'), str(d.type) ?? 'subjective',
-         str(d.subject) ?? 'math', foodValue(d.foodValue), bool(d.active, true)],
+         str(d.subject) ?? 'math', foodValue(d.foodValue), bool(d.active, true), bool(d.enabled, true),
+         str(d.icon), str(d.note), str(d.kind) ?? 'regular',
+         Array.isArray(d.weekdays) ? JSON.stringify(d.weekdays) : null, str(d.onceDay)],
       )
       return
 

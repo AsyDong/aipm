@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useStore } from './store/useStore'
 import { useNav } from './store/nav'
 import { useParent } from './store/parent'
-import { flushSync } from './store/sync'
 import TabBar from './components/TabBar'
 import { ToastLayer } from './components/ui'
 import P01Adopt from './pages/P01Adopt'
@@ -27,23 +26,23 @@ const TAB_PAGES = ['home', 'battle', 'shop', 'mine']
 
 export default function App() {
   const phase = useStore((s) => s.phase)
-  const bootstrap = useStore((s) => s.bootstrap)
+  const init = useStore((s) => s.init)
   const ensureDay = useStore((s) => s.ensureDay)
+  const syncNow = useStore((s) => s.syncNow)
   const stack = useNav((s) => s.stack)
   const unlockedAt = useParent((s) => s.unlockedAt)
 
   useEffect(() => {
-    bootstrap()
-    // 起手推一次：上一次会话可能是在断网 / 直接关页面时结束的，队列里还攒着东西
-    void flushSync()
-  }, [bootstrap])
+    // 拉远端（新设备先拉再种）→ 引导 → 推 → 再拉
+    init()
+  }, [init])
 
-  // 回到前台 / 跨天时重新结算，并顺手把攒着的数据推上去
+  // 回到前台 / 跨天时重新结算，并顺手把攒着的数据推上去、把另一台设备的改动拉下来
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== 'visible') return
       ensureDay()
-      void flushSync()
+      syncNow()
     }
     document.addEventListener('visibilitychange', onVis)
     const t = setInterval(ensureDay, 60_000)
@@ -51,7 +50,7 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVis)
       clearInterval(t)
     }
-  }, [ensureDay])
+  }, [ensureDay, syncNow])
 
   const top = stack[stack.length - 1] ?? { page: 'home' }
   const unlocked = unlockedAt > 0 && Date.now() - unlockedAt < 5 * 60 * 1000
@@ -73,8 +72,8 @@ export default function App() {
     <div className="app-shell">
       <main className={`flex-1 ${showTab ? 'pb-[68px]' : ''}`}>
         {page === 'home' && <P04Home />}
-        {page === 'battle' && <P07LevelMap />}
-        {page === 'level' && <P07LevelMap subject={top.arg as 'math' | undefined} />}
+        {/* 闯关地图就是 battle 本页：切科目用 replace 原地换参（go 会压栈，TabBar 就没了） */}
+        {page === 'battle' && <P07LevelMap subject={top.arg as 'math' | 'chinese' | 'english' | undefined} />}
         {/* key 绑定关卡/任务 id：连续闯关时必须重挂载，否则上一关的答题状态会残留 */}
         {page === 'play' && <P08Battle key={top.arg ?? 'm1'} levelId={top.arg ?? 'm1'} />}
         {page === 'task' && <P06TaskSubmit key={top.arg ?? ''} taskId={top.arg ?? ''} />}

@@ -6,6 +6,7 @@
 //   POST /api/variants               举一反三变式
 //   POST /api/grade                  判分（答案唯一的题本地判，永不调模型）
 //   POST /api/sync                   客户端数据入库（op 幂等，重试不会写重）
+//   GET  /api/state                  跨设备拉取（实体快照 + 最近账本，配合客户端合并）
 //   GET  /api/report                 成长报告（按孩子 + 天数查快照）
 //
 // op → SQL 的分发在 server/ops.ts；本文件只管 HTTP、鉴权、PG 连接。
@@ -236,6 +237,69 @@ const server = http.createServer(async (req, res) => {
         childId, days,
         snapshots: snapshots.map((s) => ({ ...s, full: s.is_full, is_full: undefined })),
         weakSkills: weak,
+      })
+      return
+    }
+
+    // 跨设备拉取：客户端把本地排空（队列清零）后来拉全量实体，按「服务端为准」合并。
+    // 只拉实体快照与账本；题目/答题记录等事件流是 AppendOp，不回放。
+    // day 由客户端传入（游戏日按 UTC+8，服务端时区未必一致，不能拿服务端 current_date 拼）。
+    if (req.method === 'GET' && url === '/api/state') {
+      if (SYNC_TOKEN && req.headers['x-sync-token'] !== SYNC_TOKEN) {
+        send(res, 403, { error: 'forbidden' })
+        return
+      }
+      const q = new URLSearchParams((req.url ?? '').split('?')[1] ?? '')
+      const childId = q.get('childId') ?? 'default'
+      const day = q.get('day') ?? ''
+      const [child] = await pg(
+        `SELECT name, grade, textbook_ver AS "textbookVer" FROM children WHERE id=$1`, [childId],
+      )
+      const [pet] = await pg(
+        `SELECT species, name, stage, exp, satiety, fed_today AS "fedToday", attrs
+         FROM pets WHERE child_id=$1`, [childId],
+      )
+      const templates = await pg(
+        `SELECT id, name, type, subject, food_value AS "foodValue", active, enabled,
+                icon, note, kind, weekdays, once_day AS "onceDay"
+         FROM task_templates WHERE child_id=$1`, [childId],
+      )
+      const daily = await pg(
+        `SELECT d.id, d.day, d.template_id AS "templateId", d.status, d.media_key AS "mediaKey",
+                d.note, d.at,
+                t.name AS "tplName", t.icon AS "tplIcon", t.type AS "tplType",
+                t.note AS "tplNote", t.kind AS "tplKind", t.food_value AS "tplFood"
+         FROM daily_tasks d LEFT JOIN task_templates t ON t.id = d.template_id
+         WHERE d.child_id=$1 AND d.day >= COALESCE($2::date, current_date - 7)
+         ORDER BY d.day`, [childId, day || null],
+      )
+      const prizes = await pg(
+        `SELECT id, name, points, note, active FROM prizes WHERE child_id=$1`, [childId],
+      )
+      const redeems = await pg(
+        `SELECT id, prize_id AS "prizeId", prize_name AS "prizeName", points, status AS "state",
+                created_at AS "at", decided_at AS "decidedAt"
+         FROM redeems WHERE child_id=$1 ORDER BY created_at DESC LIMIT 200`, [childId],
+      )
+      // 账本按时间倒序取最近 400 条（food/point 各约 200）——首行的 balance 就是当前余额，
+      // 客户端拿它对齐钱包，不必回放全部流水重算。
+      const ledgers = await pg(
+        `SELECT op_id AS "opId", kind, delta, balance, source, note, at
+         FROM ledgers WHERE child_id=$1 ORDER BY at DESC LIMIT 400`, [childId],
+      )
+      // 闯关进度（best_stars 服务端取 GREATEST，天然不回退）；星级/通关/次数足够重建进度，
+      // bestCorrect/total 服务端没存，置 0 不影响解锁与星显。
+      const levels = await pg(
+        `SELECT level_id AS "levelId", best_stars AS "bestStars", cleared, play_count AS "playCount"
+         FROM level_records WHERE child_id=$1`, [childId],
+      )
+      // 连续打卡天数：快照里最后一天的 streak 就是当前值（跨天结算时写入）
+      const [lastSnap] = await pg(
+        `SELECT day, streak FROM daily_snapshots WHERE child_id=$1 ORDER BY day DESC LIMIT 1`, [childId],
+      )
+      send(res, 200, {
+        childId, child: child ?? null, pet: pet ?? null, templates, daily, prizes, redeems, ledgers,
+        levels, lastStreak: lastSnap ?? null,
       })
       return
     }
