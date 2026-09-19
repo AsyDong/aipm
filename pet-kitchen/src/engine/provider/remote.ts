@@ -20,10 +20,8 @@ export class ProviderError extends Error {
   }
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const { apiBaseUrl, timeoutMs } = providerConfig()
-  if (!apiBaseUrl) throw new ProviderError('未配置后端地址')
-
+async function postOnce<T>(path: string, body: unknown, timeoutMs: number): Promise<T> {
+  const { apiBaseUrl } = providerConfig()
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
@@ -42,6 +40,32 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   } finally {
     clearTimeout(timer)
   }
+}
+
+/**
+ * 重试策略：服务重启窗口 / 弱网抖动（ERR_CONNECTION_CLOSED、Failed to fetch）
+ * 是瞬时故障，间隔 400ms / 1s 重试两次，孩子基本无感；
+ * HTTP 4xx 是确定性失败（请求本身有问题），重试没有意义，立即抛出走降级。
+ */
+const RETRY_DELAYS_MS = [0, 400, 1000]
+const TRANSIENT = /Failed to fetch|NetworkError|ERR_|aborted|timeout|返回 50[234]/
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const { apiBaseUrl, timeoutMs } = providerConfig()
+  if (!apiBaseUrl) throw new ProviderError('未配置后端地址')
+
+  let lastErr: unknown
+  for (const delay of RETRY_DELAYS_MS) {
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay))
+    try {
+      return await postOnce<T>(path, body, timeoutMs)
+    } catch (e) {
+      lastErr = e
+      const msg = e instanceof Error ? e.message : String(e)
+      if (!(e instanceof ProviderError) || !TRANSIENT.test(msg)) throw e
+    }
+  }
+  throw lastErr instanceof ProviderError ? lastErr : new ProviderError(String(lastErr))
 }
 
 export const remoteProvider: AsyncQuestionProvider = {
