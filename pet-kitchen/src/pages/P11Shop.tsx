@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { Confirm, Empty, toast } from '../components/ui'
 import { SHOP_ITEMS } from '../data/content'
+import Coin from '../components/Coin'
 
 type Sub = 'decor' | 'prize'
 
@@ -31,7 +32,7 @@ export default function P11Shop() {
 
       <div className="mx-4 mt-3 rounded-2xl bg-white px-4 py-2.5 text-center shadow-card">
         <span className="text-[13px] font-bold text-muted">积分余额 </span>
-        <span className="text-[22px] font-extrabold text-amber-500">🪙{points}</span>
+        <span className="inline-flex items-center gap-1 text-[22px] font-extrabold text-amber-500"><Coin size={20} />{points}</span>
       </div>
 
       {sub === 'decor' ? (
@@ -43,7 +44,7 @@ export default function P11Shop() {
               <div key={it.id} className="rounded-xl3 bg-white p-3 text-center shadow-card">
                 <div className="text-[44px]">{it.emoji}</div>
                 <div className="mt-1 text-[15px] font-extrabold text-ink">{it.name}</div>
-                <div className="mt-0.5 text-[13px] font-bold text-amber-500">🪙{it.points}</div>
+                <div className="mt-0.5 flex items-center justify-center gap-0.5 text-[13px] font-bold text-amber-500"><Coin size={14} />{it.points}</div>
                 {has ? (
                   <button className="btn-chip mt-2 w-full" onClick={() => nav.go('decorate')}>去 布 置</button>
                 ) : (
@@ -54,7 +55,7 @@ export default function P11Shop() {
                       if (buyItem(it.id, it.points)) toast(`买到${it.name}啦，去布置吧`)
                     }}
                   >
-                    {short > 0 ? `还差 🪙${short}` : '购 买'}
+                    {short > 0 ? <span className="inline-flex items-center gap-0.5">还差 <Coin size={13} />{short}</span> : '购 买'}
                   </button>
                 )}
               </div>
@@ -71,7 +72,7 @@ export default function P11Shop() {
               <div key={p.id} className="mb-3 rounded-xl3 bg-white p-4 shadow-card">
                 <div className="flex items-center justify-between">
                   <div className="text-[17px] font-extrabold text-ink">{p.name}</div>
-                  <div className="text-[16px] font-extrabold text-amber-500">🪙{p.points}</div>
+                  <div className="flex items-center gap-1 text-[16px] font-extrabold text-amber-500"><Coin size={15} />{p.points}</div>
                 </div>
                 {p.note && <div className="mt-0.5 text-[12px] text-muted">{p.note}</div>}
                 <button
@@ -84,7 +85,7 @@ export default function P11Shop() {
                       ? '⏳ 待爸爸妈妈同意'
                       : '✅ 已同意，等兑现'
                     : short > 0
-                      ? `还差 🪙${short}`
+                      ? <span className="inline-flex items-center gap-0.5">还差 <Coin size={13} />{short}</span>
                       : '兑 换'}
                 </button>
               </div>
@@ -98,7 +99,7 @@ export default function P11Shop() {
 
       <Confirm
         open={!!target}
-        title={`要用 🪙${target?.points ?? 0} 换「${target?.name ?? ''}」吗？`}
+        title={<span className="inline-flex items-center gap-1"><Coin size={17} />{target?.points ?? 0} 换「{target?.name ?? ''}」吗？</span>}
         desc="兑换后会先冻结积分，等爸爸妈妈同意才算成功"
         okText="要 换"
         onOk={() => {

@@ -72,6 +72,35 @@ export function AnswerPad({
   )
 }
 
+/**
+ * 四选一选项板：语文 / 英语认读题用（拼音、汉字、单词）。
+ * 点了就算作答 —— 低龄孩子没有「选完再确定」的耐心。
+ */
+export function ChoicePad({
+  options,
+  onPick,
+  disabled,
+}: {
+  options: string[]
+  onPick: (choice: string) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {options.map((o, i) => (
+        <button
+          key={`${o}-${i}`}
+          disabled={disabled}
+          onClick={() => onPick(o)}
+          className="flex min-h-[56px] items-center justify-center rounded-2xl bg-white px-2 py-2 text-center text-[17px] font-extrabold leading-snug text-ink shadow-card transition active:scale-[0.95] disabled:opacity-40"
+        >
+          {o}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /** 答案显示框 */
 export function AnswerBox({ value, size = 'lg' }: { value: string; size?: 'lg' | 'md' }) {
   const big = size === 'lg'

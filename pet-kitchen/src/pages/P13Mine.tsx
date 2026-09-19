@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { Confirm, Modal, toast } from '../components/ui'
+import Coin from '../components/Coin'
 import { SPECIES } from '../data/content'
 import {
   ATTR_GAIN_CAP, ATTR_LABEL, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FEED_LIMIT,
@@ -70,7 +71,7 @@ export default function P13Mine() {
         <Row icon="📋" text="宠物档案" onClick={() => { setRename(pet.nickname); setProfile(true) }} />
         <Row icon="📈" text="成长报告" onClick={() => nav.go('report')} />
         <Row icon="📕" text="错题集" onClick={() => nav.go('wrong', 'math')} />
-        <Row icon="🪙" text="积分流水" onClick={() => setLedger('point')} />
+        <Row icon={<Coin size={18} />} text="积分流水" onClick={() => setLedger('point')} />
         <Row icon="🍖" text="食物流水" onClick={() => setLedger('food')} />
         <Row icon="📖" text="规则详情" onClick={() => setRules(true)} />
       </div>
@@ -88,15 +89,15 @@ export default function P13Mine() {
       <Modal open={rules} title="规则详情" onClose={() => setRules(false)}>
         <div className="space-y-3 text-[13px] leading-relaxed">
           {[
-            ['🪙 积分', `闯关按「第一次就答对」的题数拿积分：≥90% 得 3 分 / ≥70% 得 2 分 / ≥50% 得 1 分，限时内通关再多 1 分（数学 2 分钟内、语文英语 5 分钟内，单关最多 4 分）；首次通关额外 +${FIRST_CLEAR_BONUS} 分；重做答对不重复计分`],
+            [<span className="inline-flex items-center gap-1"><Coin size={15} />金币</span>, `闯关按星数拿金币：≥90% 得 3 枚 / ≥70% 得 2 枚 / ≥50% 得 1 枚，限时内通关再多 1 枚（数学 2 分钟内、语文英语 5 分钟内，单关最多 4 枚）；首次通关额外 +${FIRST_CLEAR_BONUS} 枚；重复闯关固定只给 1 枚；重做答对不重复计分`],
             ['🍖 食物', `完成打卡任务获得（家长可设 1–3 份）；连续打卡 7 天 +${STREAK_7_FOOD} 份、30 天 +${STREAK_30_FOOD} 份`],
             ['🍚 饱食度', `每份食物 +${FOOD_PER_SATIETY}，每天自然饿 −${DAILY_DECAY}（维持要 ${MAINTAIN_FOOD} 份/天）；上限 ${SATIETY_MAX}，到 ${SATIETY_FULL} 算吃饱；每天最多喂 ${FEED_LIMIT} 次`],
             ['🎂 经验', `每投喂 1 份 +${EXP_PER_FOOD} 经验，攒够门槛就升阶：${STAGE_TITLE.join(' → ')}`],
             ['💪 属性', `闯关每答对 ${ATTR_PER_CORRECT} 题 +1 点，一关最多 +${ATTR_GAIN_CAP} 点；属性够才能解锁后面的关卡`],
             ['📕 错题', `答错的题进错题集，隔 ${REVIEW_INTERVALS.join('/')} 天复习，连续答对 3 次算掌握；没掌握的会自动出现在后面的关卡里`],
             ['🌙 小提醒', '每天 0 点为一天的分界线，早点睡觉哦'],
-          ].map(([k, v]) => (
-            <div key={k}>
+          ].map(([k, v], i) => (
+            <div key={i}>
               <div className="font-extrabold text-ink">{k}</div>
               <div className="text-muted">{v}</div>
             </div>
@@ -166,7 +167,7 @@ export default function P13Mine() {
   )
 }
 
-function Row({ icon, text, onClick }: { icon: string; text: string; onClick: () => void }) {
+function Row({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 border-b border-sky-50 px-4 py-3.5 last:border-0 active:bg-sky-50">
       <span className="text-[19px]">{icon}</span>

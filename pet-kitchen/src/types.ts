@@ -7,11 +7,22 @@ export type Subject = 'math' | 'chinese' | 'english'
 export type TaskType = 'photo' | 'audio' | 'subjective'
 export type TaskStatus = 'todo' | 'done' | 'pending' | 'rejected'
 
+/** 任务种类：常规（按星期重复出现）/ 今日（仅发布当天，完成后即消失） */
+export type TaskKind = 'regular' | 'once'
+
 export interface TaskTemplate {
   id: string
   name: string
   icon: string
   type: TaskType
+  /** 给孩子看的说明（任务页展示，带朗读按钮）；选填 */
+  note?: string
+  /** 任务种类，缺省 = 常规（兼容历史存档） */
+  kind?: TaskKind
+  /** 常规任务每周出现的日子（1=周一 … 7=周日）；缺省 = 每天 */
+  weekdays?: number[]
+  /** 今日任务限定的游戏日 YYYY-MM-DD；仅 kind==='once' 有效 */
+  onceDay?: string
   /** 单任务食物值 1~3（D4 兜底：家长可调高，避免任务少导致宠物必然饿瘦） */
   foodValue: number
   enabled: boolean
@@ -26,6 +37,10 @@ export interface DailyTask {
   name: string
   icon: string
   type: TaskType
+  /** 从模板带来的说明（任务页展示 + 朗读） */
+  note?: string
+  /** 从模板带来的种类（今日任务完成后首页不再展示） */
+  kind?: TaskKind
   foodValue: number
   status: TaskStatus
   /** 佐证 mediaId（IndexedDB），主观类才有 pending */
@@ -106,12 +121,21 @@ export interface QSpec {
   a: number
   b: number
   c?: number
-  op: '+' | '-' | 'add3' | 'sub3'
+  op?: '+' | '-' | 'add3' | 'sub3'
+  // —— 语文 / 英语题载荷（math 不用）——
+  // 干扰项与答案都进 spec：无论本地生成还是从库里回放，同一 spec 重建出的题目完全一致
+  /** 题面主体：要认读的汉字 / 拼音 / 英文句型（含 ___ 空位） */
+  prompt?: string
+  /** 正确答案文本（选项之一） */
+  ans?: string
+  /** 干扰项文本（与 ans 合成选项） */
+  opts?: string[]
 }
 
 export interface Question {
   text: string
   speech: string
+  /** numeric = 答案数值；choice = 正确选项下标 */
   answer: number
   skill: string
   /** 提示：只给解题思路，不含答案 */
@@ -119,10 +143,14 @@ export interface Question {
   explain: string
   spec: QSpec
   /**
-   * 判分方式：numeric 本地精确比对（数学速算），open 需模型批改（语文英语开放题，预留）。
-   * 缺省按 numeric 处理。
+   * 判分方式：numeric 本地精确比对（数学速算），choice 本地选项比对（语文英语认读题），
+   * open 需模型批改（开放题，预留）。缺省按 numeric 处理。
    */
-  answerType?: 'numeric' | 'open'
+  answerType?: 'numeric' | 'open' | 'choice'
+  /** choice 题的选项文本（answer 为下标） */
+  options?: string[]
+  /** 朗读语言（英语题用 en-US），缺省 zh-CN */
+  speechLang?: 'zh-CN' | 'en-US'
 }
 
 export type PrizeState = 'available' | 'pending' | 'approved' | 'delivered' | 'rejected'

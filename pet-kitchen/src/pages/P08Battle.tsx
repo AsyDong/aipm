@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
-import { AnswerBox, AnswerPad } from '../components/AnswerPad'
+import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
-import { MATH_LEVELS } from '../engine/questions'
+import { MATH_LEVELS, levelById } from '../engine/questions'
 import {
-  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, baseHp, hintCount, starsOf,
+  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, baseHp, hintCount, starsOf, FIRST_CLEAR_BONUS,
 } from '../engine/rules'
 import { nowDay } from '../engine/time'
 import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
@@ -14,6 +14,8 @@ import { gradeAnswer, isThenable } from '../engine/provider'
 import type { GradeResult } from '../engine/provider'
 import { useGeneratedQuestions } from '../hooks/useGeneratedQuestions'
 import { speak } from '../utils/speech'
+import { coinDrops } from '../utils/sfx'
+import Coin from '../components/Coin'
 import { enqueueOp } from '../store/sync'
 import type { Question } from '../types'
 
@@ -37,8 +39,9 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const wrong = useStore((s) => s.wrong)
   const finishBattle = useStore((s) => s.finishBattle)
   const readAloud = useStore((s) => s.settings.readAloud)
+  const sound = useStore((s) => s.settings.sound)
 
-  const level = MATH_LEVELS.find((l) => l.id === levelId) ?? MATH_LEVELS[0]
+  const level = levelById(levelId) ?? MATH_LEVELS[0]
   const attr = pet?.attrs[level.subject] ?? 0
   const maxHp = baseHp(attr)
 
@@ -96,7 +99,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const isRetry = !!q && missed.some((m) => m.text === q.text)
 
   useEffect(() => {
-    if (q) speak(q.speech, readAloud)
+    if (q) speak(q.speech, readAloud, q.speechLang)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q?.text])
 
@@ -119,6 +122,13 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     if (left === 0 && !result) finish(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left])
+
+  /** 结算音效：金币逐枚落袋的「叮」，节奏与下方掉落动画一致（0.16s/枚） */
+  useEffect(() => {
+    if (!result?.win || !sound) return
+    coinDrops(result.firstClear ? result.stars + 1 : 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result])
 
   // 说明：血量只表示「本关失误次数」，扣到 0 也不再判负——
   // 本关的完成标准是「每题都真正做对」，判负会和这个目标直接冲突。
@@ -208,6 +218,19 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     else handle(g)
   }
 
+  /** 选择题（语文英语认读题）：点选项即作答 */
+  const pickChoice = (choice: string) => {
+    if (!q || passing || result) return
+    const cur = q
+    const g = gradeAnswer(cur, choice)
+    const handle = (res: GradeResult) => {
+      recordAttempt(cur, choice, res.correct)
+      settle(res)
+    }
+    if (isThenable(g)) g.then(handle)
+    else handle(g)
+  }
+
   /** 跳过：记一条未作答的流水，再回队尾 */
   const skipQuestion = () => {
     if (!q || passing || result) return
@@ -238,10 +261,26 @@ export default function P08Battle({ levelId }: { levelId: string }) {
           {result.win ? '过 关 啦 ！' : '差 一 点 点 ！'}
         </div>
         {result.win && (
-          <div className="mt-3 text-[34px] tracking-widest">
-            {[1, 2, 3, 4].map((n) => (
-              <span key={n} className={result.stars >= n ? '' : 'opacity-25'}>🪙</span>
-            ))}
+          <div className="mt-3">
+            {/* 金币逐枚掉落：实心 = 本关获得的星数（首通额外 +1，见下方文案），空心 = 未拿到 */}
+            <div className="flex items-end justify-center gap-1.5">
+              {[1, 2, 3, 4].map((n) => (
+                <span
+                  key={n}
+                  className={`inline-block ${result.stars >= n ? 'animate-coindrop' : 'opacity-20'}`}
+                  style={result.stars >= n ? { animationDelay: `${(n - 1) * 0.16}s` } : undefined}
+                >
+                  <Coin size={36} />
+                </span>
+              ))}
+            </div>
+            <div
+              className={`mt-1.5 text-center text-[13px] font-extrabold ${
+                result.firstClear ? 'text-amber-500' : 'text-muted'
+              }`}
+            >
+              {result.firstClear ? '首次通关，金币再 +1 枚！' : '重复闯关，金币固定 1 枚'}
+            </div>
           </div>
         )}
         <div className="mt-3 text-center text-[15px] font-bold text-muted">
@@ -270,7 +309,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
             ) : (
               <Row label="新错题" value="0 道，全对啦！" tone="muted" />
             )}
-            {result.firstClear && <div className="mt-2 text-center text-[13px] font-extrabold text-amber-500">首次通关，积分 ×2！</div>}
+            {result.firstClear && <div className="mt-2 text-center text-[13px] font-extrabold text-amber-500">首通奖励：金币 +{FIRST_CLEAR_BONUS} 枚</div>}
           </div>
         )}
 
@@ -362,7 +401,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
       <div className={`mt-3 flex items-center justify-center gap-2 rounded-xl3 bg-white py-5 shadow-card ${passing ? 'opacity-40' : ''}`}>
         <button className="text-[22px]" onClick={() => speak(q.speech, true)}>🔊</button>
-        <div className="text-[42px] font-extrabold text-ink">{q.text}</div>
+        <div className={`font-extrabold text-ink ${q.text.length > 14 ? "text-[24px] leading-snug" : "text-[42px]"}`}>{q.text}</div>
       </div>
 
       <div className="mt-3 flex gap-3">
@@ -394,13 +433,21 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </div>
       )}
 
-      <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
-        <AnswerBox value={input} />
-      </div>
+      {q.answerType === 'choice' && q.options ? (
+        <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+          <ChoicePad options={q.options} onPick={pickChoice} disabled={passing} />
+        </div>
+      ) : (
+        <>
+          <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+            <AnswerBox value={input} />
+          </div>
 
-      <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
-        <AnswerPad value={input} onChange={setInput} onSubmit={submit} disabled={passing} />
-      </div>
+          <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+            <AnswerPad value={input} onChange={setInput} onSubmit={submit} disabled={passing} />
+          </div>
+        </>
+      )}
 
       {confirmQuit && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center bg-ink/45 px-6">

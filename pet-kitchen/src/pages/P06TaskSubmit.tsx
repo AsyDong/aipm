@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { toast } from '../components/ui'
 import { compressImage, putMedia } from '../utils/media'
+import { speak } from '../utils/speech'
 import { uid } from '../utils/id'
 
 const TYPE_HINT: Record<string, string> = {
@@ -99,6 +100,23 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
       </div>
 
       <p className="mt-4 text-center text-[14px] text-muted">{TYPE_HINT[task.type]}</p>
+
+      {/* 爸爸妈妈的说明：大字展示 + 朗读按钮（点按钮是明确意图，不受全局朗读开关限制） */}
+      {task.note && (
+        <div className="mt-3 rounded-xl3 bg-sky-50 px-4 py-3">
+          <div className="flex items-start gap-2">
+            <p className="flex-1 text-[15px] font-extrabold leading-relaxed text-sky-700">{task.note}</p>
+            <button
+              className="shrink-0 rounded-full bg-white px-2.5 py-1.5 text-[18px] shadow-card active:scale-95"
+              aria-label="朗读说明"
+              onClick={() => speak(task.note!, true)}
+            >
+              🔊
+            </button>
+          </div>
+          <div className="mt-1 text-right text-[11px] font-bold text-sky-500">爸爸妈妈的说明</div>
+        </div>
+      )}
 
       {preview && (
         <img src={preview} alt="佐证" className="mt-4 w-full rounded-xl3 object-cover shadow-card" />

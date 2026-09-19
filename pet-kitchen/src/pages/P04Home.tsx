@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useStore } from '../store/useStore'
+import { useStore, dailyTaskVisible } from '../store/useStore'
 import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { CoinBar, Empty, SatietyBar, toast } from '../components/ui'
@@ -134,10 +134,13 @@ export default function P04Home() {
   if (!pet) return null
   const def = SPECIES.find((x) => x.id === pet.species)!
 
-  const undone = s.daily.filter((t) => t.status === 'todo' || t.status === 'rejected')
-  const done = s.daily.filter((t) => t.status === 'done' || t.status === 'pending')
+  // 今日任务（kind=once）提交/通过后即从列表消失；驳回的还要重做，保留展示。
+  // 常规任务完成项照旧沉底划线。
+  const visible = s.daily.filter(dailyTaskVisible)
+  const undone = visible.filter((t) => t.status === 'todo' || t.status === 'rejected')
+  const done = visible.filter((t) => t.status === 'done' || t.status === 'pending')
   const sorted = [...undone, ...done]
-  const allDone = s.daily.length > 0 && undone.length === 0
+  const allDone = undone.length === 0
 
   const expBase = STAGE_EXP[pet.stage - 1] ?? 0
   const expNext = STAGE_EXP[pet.stage] ?? STAGE_EXP[5]
@@ -230,7 +233,9 @@ export default function P04Home() {
         ) : allDone ? (
           <div className="card text-center">
             <div className="animate-floaty text-[44px]">🎉</div>
-            <div className="mt-1 text-[16px] font-extrabold text-ok">今天全部完成啦！</div>
+            <div className="mt-1 text-[16px] font-extrabold text-ok">
+              {visible.length === 0 && s.daily.length > 0 ? '今日任务都做完啦！' : '今天全部完成啦！'}
+            </div>
             <div className="mt-1 text-[13px] text-muted">（全部完成没有额外食物哦）</div>
           </div>
         ) : (

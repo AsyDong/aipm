@@ -1,5 +1,9 @@
 import type { QSpec, Question, Subject } from '../types'
 import { rnd, shuffle } from '../utils/id'
+import {
+  CHAR_BANK, EN_UNITS, PINYIN_BANKS, POEMS,
+  type EnWord, type PinyinBankItem,
+} from '../data/courses'
 
 // ============ 数学题库：学而思一年级速算体系（程序化生成，Q25） ============
 
@@ -33,15 +37,239 @@ export const MATH_LEVELS: LevelDef[] = [
 /** Boss 解锁：需其之前 5 关全部 ≥2 星 */
 export function bossRequires(level: LevelDef): string[] {
   if (!level.boss) return []
-  const idx = MATH_LEVELS.findIndex((l) => l.id === level.id)
-  return MATH_LEVELS.slice(Math.max(0, idx - 5), idx)
+  const list = LEVELS_BY_SUBJECT[level.subject]
+  const idx = list.findIndex((l) => l.id === level.id)
+  return list.slice(Math.max(0, idx - 5), idx)
     .filter((l) => !l.boss)
     .map((l) => l.id)
 }
 
+// ============ 语文关卡（一年级上册：拼音 / 识字 / 古诗课文） ============
+// 拼音分阶参考 pinyin-world 的单元排布；素材取自 src/data/courses.ts
+
+export const CHINESE_LEVELS: LevelDef[] = [
+  { id: 'c1', subject: 'chinese', index: 1, name: '单韵母', skill: 'a o e i u ü', kinds: ['py_pick_char:single', 'char_py:single'], unlockAttr: 0 },
+  { id: 'c2', subject: 'chinese', index: 2, name: '声母', skill: '23 个声母', kinds: ['py_pick_char:initial', 'char_py:initial'], unlockAttr: 3 },
+  { id: 'c3', subject: 'chinese', index: 3, name: '复韵母', skill: 'ai ei ui …', kinds: ['py_pick_char:compound', 'char_py:compound'], unlockAttr: 6 },
+  { id: 'c4', subject: 'chinese', index: 4, name: '前后鼻韵母', skill: 'an en in ang …', kinds: ['py_pick_char:nasal', 'char_py:nasal'], unlockAttr: 9 },
+  { id: 'c5', subject: 'chinese', index: 5, name: '整体认读音节', skill: 'zhi chi shi …', kinds: ['py_pick_char:zhengti', 'char_py:zhengti'], unlockAttr: 12 },
+  { id: 'cb1', subject: 'chinese', index: 6, name: '拼音小状元', skill: '拼音综合', kinds: ['py_pick_char:mixpy', 'char_py:mixpy'], unlockAttr: 15, boss: true },
+  { id: 'c6', subject: 'chinese', index: 7, name: '看字标音', skill: '识字表·认读', kinds: ['char_py:char'], unlockAttr: 18 },
+  { id: 'c7', subject: 'chinese', index: 8, name: '看拼音识字', skill: '识字表·拼读', kinds: ['py_pick_char:char'], unlockAttr: 21 },
+  { id: 'c8', subject: 'chinese', index: 9, name: '古诗对句', skill: '必背古诗文', kinds: ['poem_next'], unlockAttr: 24 },
+  { id: 'c9', subject: 'chinese', index: 10, name: '拼音识字双修', skill: '综合认读', kinds: ['py_pick_char:mixpy', 'char_py:char'], unlockAttr: 27 },
+  { id: 'cb2', subject: 'chinese', index: 11, name: '语文大挑战', skill: '综合', kinds: ['py_pick_char:char', 'char_py:char', 'poem_next', 'py_pick_char:mixpy'], unlockAttr: 30, boss: true },
+]
+
+// ============ 英语关卡（一年级上册 6 个单元 + 句型，docs/courses/1-1-english.md） ============
+
+export const ENGLISH_LEVELS: LevelDef[] = [
+  { id: 'e1', subject: 'english', index: 1, name: 'My Family', skill: '家人词汇', kinds: ['en_word:family', 'en_meaning:family'], unlockAttr: 0 },
+  { id: 'e2', subject: 'english', index: 2, name: 'How Are You?', skill: '感受与情绪', kinds: ['en_word:feeling', 'en_meaning:feeling'], unlockAttr: 3 },
+  { id: 'e3', subject: 'english', index: 3, name: 'School Things', skill: '文具与数字', kinds: ['en_word:school', 'en_meaning:school'], unlockAttr: 6 },
+  { id: 'e4', subject: 'english', index: 4, name: 'I Can…', skill: '能力与动作', kinds: ['en_word:ability', 'en_meaning:ability'], unlockAttr: 9 },
+  { id: 'e5', subject: 'english', index: 5, name: 'Animals', skill: '动物词汇', kinds: ['en_word:animal', 'en_meaning:animal'], unlockAttr: 12 },
+  { id: 'e6', subject: 'english', index: 6, name: 'Colours', skill: '颜色词汇', kinds: ['en_word:colour', 'en_meaning:colour'], unlockAttr: 15 },
+  { id: 'eb1', subject: 'english', index: 7, name: '期中挑战', skill: 'U1–U3 综合', kinds: ['en_word:family', 'en_meaning:family', 'en_word:feeling', 'en_meaning:feeling', 'en_word:school', 'en_meaning:school'], unlockAttr: 18, boss: true },
+  { id: 'e7', subject: 'english', index: 8, name: '句型闯关', skill: '核心句型', kinds: ['en_sentence:family', 'en_sentence:feeling', 'en_sentence:school', 'en_sentence:ability', 'en_sentence:animal', 'en_sentence:colour'], unlockAttr: 21 },
+  { id: 'eb2', subject: 'english', index: 9, name: '期末大挑战', skill: '综合', kinds: ['en_word:animal', 'en_meaning:colour', 'en_sentence:family', 'en_sentence:ability', 'en_word:family', 'en_sentence:animal'], unlockAttr: 24, boss: true },
+]
+
+/** 全科目关卡注册表 */
+export const LEVELS_BY_SUBJECT: Record<Subject, LevelDef[]> = {
+  math: MATH_LEVELS,
+  chinese: CHINESE_LEVELS,
+  english: ENGLISH_LEVELS,
+}
+
+export function levelById(id: string): LevelDef | undefined {
+  for (const list of Object.values(LEVELS_BY_SUBJECT)) {
+    const hit = list.find((l) => l.id === id)
+    if (hit) return hit
+  }
+  return undefined
+}
+
 const ri = (min: number, max: number) => min + rnd(max - min + 1)
 
+// ============ 语文 / 英语题库（docs/courses 教材内容，四选一认读题） ============
+//
+// 内容题与数学题共用 spec 回放链路（错题本 / 服务端 jsonb / 举一反三）：
+// 答案与干扰项全部进 spec，任何一端用同一 spec 都能重建出同构的题。
+// kind 采用「题型：素材组」的写法（如 py_pick_char:single），genSpec 据此取材。
+
+export type ContentKind =
+  | 'py_pick_char' // 看拼音选汉字
+  | 'char_py' // 看汉字选读音
+  | 'poem_next' // 古诗课文对句
+  | 'en_word' // 看英文选中文
+  | 'en_meaning' // 看中文选英文
+  | 'en_sentence' // 句型填空
+
+const CONTENT_KINDS = new Set<string>([
+  'py_pick_char', 'char_py', 'poem_next', 'en_word', 'en_meaning', 'en_sentence',
+])
+
+const MIX_PY: PinyinBankItem[] = [
+  ...PINYIN_BANKS.single, ...PINYIN_BANKS.compound, ...PINYIN_BANKS.nasal,
+  ...PINYIN_BANKS.zhengti, ...PINYIN_BANKS.initial,
+]
+
+function bankOf(group: string): PinyinBankItem[] {
+  return group === 'mixpy' ? MIX_PY : PINYIN_BANKS[group as keyof typeof PINYIN_BANKS] ?? MIX_PY
+}
+
+/** 从池子里挑 n 个不等于答案、互不重复的干扰项 */
+function pickDistractors<T>(pool: T[], exclude: T, key: (x: T) => string, n = 3): T[] {
+  return shuffle(pool.filter((x) => key(x) !== key(exclude))).slice(0, n)
+}
+
+function genContentSpec(kind: string): QSpec {
+  const [base, group] = kind.split(':')
+  switch (base) {
+    case 'py_pick_char': {
+      const bank = group === 'char' ? CHAR_BANK : bankOf(group)
+      const item = bank[rnd(bank.length)]
+      const opts = pickDistractors(bank, item, (s) => s.zh)
+      return { kind: base, a: 0, b: 0, prompt: item.py, ans: item.zh, opts: opts.map((o) => o.zh) }
+    }
+    case 'char_py': {
+      const item = CHAR_BANK[rnd(CHAR_BANK.length)]
+      const opts = pickDistractors(CHAR_BANK, item, (s) => s.zh)
+      return { kind: base, a: 0, b: 0, prompt: item.zh, ans: item.py, opts: opts.map((o) => o.py) }
+    }
+    case 'poem_next': {
+      const poem = POEMS[rnd(POEMS.length)]
+      const i = rnd(poem.lines.length - 2) // 保证有下一句
+      const opts = pickDistractors(POEMS.flatMap((p) => p.lines), poem.lines[i + 1], (l) => l)
+      return {
+        kind: base, a: 0, b: 0,
+        prompt: `${poem.title}|${poem.lines[i]}`,
+        ans: poem.lines[i + 1], opts: opts.map((o) => o),
+      }
+    }
+    case 'en_word': {
+      const unit = EN_UNITS[group] ?? EN_UNITS.family
+      const w: EnWord = unit.words[rnd(unit.words.length)]
+      const opts = pickDistractors(unit.words, w, (x) => x.en)
+      return { kind: base, a: 0, b: 0, prompt: w.en, ans: w.zh, opts: opts.map((o) => o.zh) }
+    }
+    case 'en_meaning': {
+      const unit = EN_UNITS[group] ?? EN_UNITS.family
+      const w: EnWord = unit.words[rnd(unit.words.length)]
+      const opts = pickDistractors(unit.words, w, (x) => x.en)
+      return { kind: base, a: 0, b: 0, prompt: w.zh, ans: w.en, opts: opts.map((o) => o.en) }
+    }
+    default: {
+      // en_sentence
+      const unit = EN_UNITS[group] ?? EN_UNITS.family
+      const sent = unit.sentences?.[rnd(unit.sentences.length)] ?? { before: 'Hello', after: '!', answer: 'Hi', distractors: ['Bye'] }
+      return { kind: 'en_sentence', a: 0, b: 0, prompt: `${sent.before}|${sent.after}`, ans: sent.answer, opts: sent.distractors.slice(0, 3) }
+    }
+  }
+}
+
+/** 带调拼音 → 朗读用近似音（TTS 对带调字母支持不稳，先抹掉声调符号） */
+function plainPy(py: string): string {
+  const map: Record<string, string> = {
+    'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+    'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+    'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+    'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+    'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+    'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
+  }
+  return py.replace(/./g, (c) => map[c] ?? c)
+}
+
+const CONTENT_SKILL: Record<string, string> = {
+  py_pick_char: '拼音认读',
+  char_py: '识字标音',
+  poem_next: '古诗课文',
+  en_word: '英语词汇',
+  en_meaning: '英语词汇',
+  en_sentence: '英语句型',
+}
+
+/** 由 spec 重建内容题（顺序重新洗牌没关系，正确性由 ans 决定） */
+function buildContentQuestion(spec: QSpec): Question {
+  const ans = spec.ans ?? ''
+  const options = shuffle([ans, ...(spec.opts ?? []).filter((o) => o && o !== ans)])
+  const base = {
+    answer: Math.max(0, options.indexOf(ans)),
+    options,
+    answerType: 'choice' as const,
+    skill: CONTENT_SKILL[spec.kind] ?? '认读',
+    spec,
+  }
+  const zhHint = '先想一想再选，选错了没关系'
+  switch (spec.kind) {
+    case 'py_pick_char': {
+      const py = spec.prompt ?? ''
+      return {
+        ...base,
+        text: `哪个字读「${py}」？`,
+        speech: `想一想，哪个字读${plainPy(py)}`,
+        hint: '先自己拼一拼，再从下面选',
+        explain: `「${py}」对应的字是「${ans}」`,
+      }
+    }
+    case 'char_py': {
+      const zh = spec.prompt ?? ''
+      return {
+        ...base,
+        text: `「${zh}」的读音是？`,
+        speech: zh,
+        hint: zhHint,
+        explain: `「${zh}」读作「${ans}」`,
+      }
+    }
+    case 'poem_next': {
+      const [title, line] = (spec.prompt ?? '|').split('|')
+      return {
+        ...base,
+        text: `《${title}》「${line}」的下一句是？`,
+        speech: `《${title}》，${line}，的下一句是`,
+        hint: '一句一句往下背，回忆课文顺序',
+        explain: `《${title}》的下一句是「${ans}」`,
+      }
+    }
+    case 'en_word': {
+      const en = spec.prompt ?? ''
+      return {
+        ...base,
+        speechLang: 'en-US',
+        text: `${en} 是什么意思？`,
+        speech: en,
+        hint: '听听发音，再想想意思',
+        explain: `${en} = ${ans}`,
+      }
+    }
+    case 'en_meaning': {
+      const zh = spec.prompt ?? ''
+      return {
+        ...base,
+        text: `「${zh}」的英文是？`,
+        speech: `选出${zh}的英文`,
+        hint: zhHint,
+        explain: `${zh} = ${ans}`,
+      }
+    }
+    default: {
+      const [before, after] = (spec.prompt ?? '|').split('|')
+      return {
+        ...base,
+        text: `补全句子：${before} ___ ${after}`,
+        speech: `把句子补充完整`,
+        hint: '把单词放进去读一读，通顺吗？',
+        explain: `${before}${ans}${after}`,
+      }
+    }
+  }
+}
+
 function genSpec(kind: string): QSpec {
+  if (CONTENT_KINDS.has(kind.split(':')[0] ?? '')) return genContentSpec(kind)
   switch (kind) {
     case 'add10': {
       const a = ri(1, 9)
@@ -240,6 +468,7 @@ const SKILL_LABEL: Record<string, string> = {
 }
 
 export function buildQuestion(spec: QSpec): Question {
+  if (CONTENT_KINDS.has(spec.kind)) return buildContentQuestion(spec)
   const ans = calc(spec)
   const { text, speech } = render(spec)
   return {
@@ -257,9 +486,24 @@ export function questionOfKind(kind: string): Question {
   return buildQuestion(genSpec(kind))
 }
 
-/** 举一反三：3 道变式题（换数字 / 逆运算 / 再换一组） */
+/** 内容题变式用的默认素材组 */
+const CONTENT_VARIANT_KIND: Record<string, string> = {
+  py_pick_char: 'py_pick_char:mixpy',
+  char_py: 'char_py:char',
+  poem_next: 'poem_next',
+  en_word: 'en_word:family',
+  en_meaning: 'en_meaning:family',
+  en_sentence: 'en_sentence:family',
+}
+
+/** 举一反三：3 道变式题（数学换数字/逆运算，内容题换素材再出一道） */
 export function variantsOf(spec: QSpec): Question[] {
   const out: Question[] = []
+  if (CONTENT_KINDS.has(spec.kind)) {
+    const kind = CONTENT_VARIANT_KIND[spec.kind] ?? spec.kind
+    out.push(buildQuestion(genSpec(kind)), buildQuestion(genSpec(kind)), buildQuestion(genSpec(kind)))
+    return out
+  }
   if (spec.op === '+' || spec.op === '-') {
     const sum = spec.op === '+' ? spec.a + spec.b : spec.a
     const other = spec.op === '+' ? spec.a : spec.b
@@ -277,17 +521,18 @@ export function variantsOf(spec: QSpec): Question[] {
   return out.slice(0, 3)
 }
 
-/** 生成本关题目（含未掌握错题注入，线框 P08） */
+/** 生成本关题目（含未掌握错题注入，线框 P08）。按 spec 去重：同一 spec 只出一次 */
 export function buildLevelQuestions(level: LevelDef, inject: QSpec[], n: number): Question[] {
   const qs: Question[] = inject.slice(0, n).map(buildQuestion)
-  const seen = new Set(qs.map((q) => q.text))
+  const seen = new Set(qs.map((q) => JSON.stringify(q.spec)))
   let guard = 0
-  while (qs.length < n && guard < 200) {
+  while (qs.length < n && guard < 400) {
     const kind = level.kinds[rnd(level.kinds.length)]
-    const q = buildQuestion(genSpec(kind))
-    if (!seen.has(q.text)) {
-      seen.add(q.text)
-      qs.push(q)
+    const spec = genSpec(kind)
+    const key = JSON.stringify(spec)
+    if (!seen.has(key)) {
+      seen.add(key)
+      qs.push(buildQuestion(spec))
     }
     guard += 1
   }

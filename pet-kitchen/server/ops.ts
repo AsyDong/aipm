@@ -218,8 +218,9 @@ export async function applyOp(pg: PgFn, childId: string, op: Op): Promise<void> 
       )
       return
 
-    // 任务模板。active=false 表示「家长已删除或已停用」——软删，不物理删行，
-    // 否则历史 daily_tasks 的 template_id 会指向不存在的模板。
+    // 任务模板。家长删除（active=false）走软删（2026-09-19 裁决：保留本设计）——
+    // 不物理删行，历史 daily_tasks / 报表还要 JOIN 回模板拿名字；
+    // 客户端从不读这张表，active=false 的行只是审计留存，不会出现在任何界面。
     case 'task_template':
       await pg(
         `INSERT INTO task_templates (id, child_id, name, type, subject, food_value, active)

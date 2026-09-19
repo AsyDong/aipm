@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { useEffect, type ReactNode } from 'react'
 import { uid } from '../utils/id'
+import Coin from './Coin'
 
 // ============ Toast ============
 interface ToastItem { id: string; msg: string; tone: 'ok' | 'warn' }
@@ -80,7 +81,7 @@ export function Confirm({
   onCancel,
 }: {
   open: boolean
-  title: string
+  title: ReactNode
   desc?: string
   okText?: string
   cancelText?: string
@@ -119,7 +120,7 @@ export function CoinBar({ food, points }: { food: number; points: number }) {
         <span className="text-[16px] font-extrabold text-food">{food}</span>
       </div>
       <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 shadow-card">
-        <span className="text-[17px]">🪙</span>
+        <Coin size={18} />
         <span className={`text-[16px] font-extrabold ${points > 0 ? 'text-amber-500' : 'text-slate-300'}`}>{points}</span>
       </div>
     </div>

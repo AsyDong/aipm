@@ -51,6 +51,8 @@ export function defaultTemplates(): TaskTemplate[] {
     name,
     icon,
     type,
+    kind: 'regular' as const,
+    weekdays: [1, 2, 3, 4, 5, 6, 7],
     foodValue: 1,
     enabled: true,
     createdAt: Date.now(),

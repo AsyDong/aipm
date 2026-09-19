@@ -1,7 +1,7 @@
 /* 冒烟脚本：在 Node 里跑一遍核心状态机，验证 PRD 规则是否被正确执行 */
-import { useStore } from './src/store/useStore'
+import { useStore, dailyTaskVisible, templateAppliesOn, weekdayOf } from './src/store/useStore'
 import * as rules from './src/engine/rules'
-import { MATH_LEVELS, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion } from './src/engine/questions'
+import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion } from './src/engine/questions'
 import { advanceQueue, firstCorrectCount } from './src/engine/queue'
 import { toDay, addDays, nowDay, DAY_START_HOUR } from './src/engine/time'
 import { gradeLocally, needsModel, normalizeNumeric } from './src/engine/grading'
@@ -178,6 +178,47 @@ console.log('== 10. 出题引擎（12 关 × 10 题）==')
   ok(withInject.every((q) => typeof q.answer === 'number' && !!q.hint), '注入题含答案与提示')
 }
 
+console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / 英语单元）==')
+{
+  ok(CHINESE_LEVELS.length === 11 && ENGLISH_LEVELS.length === 9,
+    `语文 ${CHINESE_LEVELS.length} 关 / 英语 ${ENGLISH_LEVELS.length} 关`)
+  ok(!!levelById('m1') && !!levelById('c1') && !!levelById('e1'), 'levelById 三科都能找到')
+  ok(bossRequires(CHINESE_LEVELS[5]).length === 5, 'Boss 解锁要求取自本 subject 的关卡列表')
+
+  for (const level of [...CHINESE_LEVELS, ...ENGLISH_LEVELS]) {
+    const qs = buildLevelQuestions(level, [], rules.QUESTIONS_PER_LEVEL)
+    let bad = 0
+    for (const q of qs) {
+      if (q.answerType !== 'choice') bad++
+      else {
+        const opts = q.options ?? []
+        if (opts.length !== 4 || new Set(opts).size !== 4) bad++
+        if (opts[q.answer] === undefined) bad++
+        // spec 重建：答案文本必须仍在重建题的选项里（同 spec 同构）
+        const rebuilt = buildQuestion(q.spec)
+        if (rebuilt.options?.[rebuilt.answer] !== opts[q.answer]) bad++
+      }
+    }
+    ok(bad === 0, `${level.name}：${qs.length} 题，选项/答案/重建 全部合法`, bad)
+  }
+
+  // 题面样例抽查
+  const py = questionOfKind('py_pick_char:single')
+  ok(py.text.includes('读') && (py.options?.length ?? 0) === 4, `看拼音选汉字题面：${py.text}`)
+  const en = questionOfKind('en_word:family')
+  ok(en.speechLang === 'en-US', `英语题朗读语言 en-US：${en.text}`)
+  const poem = questionOfKind('poem_next')
+  ok(poem.text.includes('下一句'), `古诗对句题面：${poem.text}`)
+
+  // choice 判分走本地（不打模型）
+  const q1 = questionOfKind('char_py:char')
+  const right = q1.options?.[q1.answer] ?? ''
+  const wrongOpt = (q1.options ?? []).find((o) => o !== right) ?? ''
+  ok(gradeLocally(q1, right).correct, 'choice 题：选对 → 本地判对')
+  ok(!gradeLocally(q1, wrongOpt).correct, 'choice 题：选错 → 本地判错')
+  ok(!needsModel(q1), 'choice 题不需要模型')
+}
+
 console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
 {
   const lv = MATH_LEVELS[0]
@@ -193,10 +234,10 @@ console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
   const rec = s().levels.find((l) => l.levelId === lv.id)!
   ok(rec && rec.cleared && rec.bestStars === 3, '关卡记录已写入')
 
-  // 二周目不再双倍
+  // 二周目：星星照记，金币封顶 1 枚（2026-09-19 规则）
   const before2 = s().points
   const res2 = s().finishBattle('math', lv.id, 10, 10, [])
-  ok(!res2.firstClear && res2.points === expected - rules.FIRST_CLEAR_BONUS, `二周目积分 ${res2.points}（无首通奖励）`)
+  ok(!res2.firstClear && res2.points === 1, `二周目金币 ${res2.points}（重复闯关封顶 1 枚）`)
 
   // 低于 50% 正确率 = 0 星 = 未通关，不给分不记通关
   const before3 = s().points
@@ -217,8 +258,8 @@ console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
   const before4 = s().points
   const res4 = s().finishBattle('math', lv.id, 10, 10, [], rules.FAST_CLEAR_MS.math)
   ok(res4.stars === 4, `全对快通 → ${res4.stars} 星`)
-  ok(res4.points === 4, `4 星积分 ${res4.points}（4 星 = 4 分，非首通无奖励）`)
-  ok(s().points === before4 + res4.points, '4 星积分已入账')
+  ok(res4.points === 1, `4 星金币 ${res4.points}（非首通封顶 1 枚，bestStars 仍记 4）`)
+  ok(s().points === before4 + res4.points, '4 星金币已入账')
   ok(s().levels.find((l) => l.levelId === lv.id)!.bestStars === 4, 'bestStars 记为 4')
 }
 
@@ -305,6 +346,54 @@ console.log('== 15. 家长任务管理（中途新增 / 主观审批 / foodValue
   s().rejectTask(t2.id, '今天没读')
   ok(s().daily.find((t) => t.id === t2.id)!.status === 'rejected', '家长可驳回')
   s().removeTemplate(id2)
+}
+
+console.log('== 15.5 任务排期（常规按星期 / 今日一次性 / 说明字段）==')
+{
+  const today = nowDay()
+  const todayWd = weekdayOf(today)
+  const otherWd = todayWd === 1 ? 2 : 1
+
+  // 常规任务：只在指定星期出现
+  const wdOnly = s().addTemplate({
+    name: '周末大扫除', icon: '🧹', type: 'subjective', foodValue: 2, enabled: true,
+    kind: 'regular', weekdays: [otherWd],
+  })
+  ok(!s().daily.some((t) => t.templateId === wdOnly), `今天周${todayWd}，排期只有周${otherWd} → 今天不生成实例`)
+  ok(templateAppliesOn(s().templates.find((t) => t.id === wdOnly)!, addDays(today, otherWd - todayWd)), '到排期那天会生成')
+
+  // 每周全选 → 每天
+  const everyDay = s().addTemplate({
+    name: '阅读 20 分钟', icon: '📚', type: 'subjective', foodValue: 1, enabled: true,
+    kind: 'regular', weekdays: [1, 2, 3, 4, 5, 6, 7],
+  })
+  ok(s().daily.some((t) => t.templateId === everyDay), '排期含今天 → 立即出现在今日列表（无需 ensureDay）')
+  const readInst = s().daily.find((t) => t.templateId === everyDay)!
+
+  // 停用 → 今天的 todo 实例立即撤下（家长改完首页马上刷新）
+  s().updateTemplate(everyDay, { enabled: false })
+  ok(!s().daily.some((t) => t.templateId === everyDay && t.status === 'todo'), '停用后今日实例立即移除')
+  s().updateTemplate(everyDay, { enabled: true, note: '读给爸爸妈妈听' })
+  ok(s().daily.some((t) => t.templateId === everyDay && t.note === '读给爸爸妈妈听'), '重新启用 + 说明字段立即生效')
+
+  // 今日任务：完成后从列表消失（驳回的还要重做，保留展示）
+  const onceId = s().addTemplate({
+    name: '给奶奶打电话', icon: '📞', type: 'subjective', foodValue: 1, enabled: true,
+    kind: 'once', onceDay: today,
+  })
+  ok(s().daily.some((t) => t.templateId === onceId), '今日任务当天生成')
+  ok(!templateAppliesOn(s().templates.find((t) => t.id === onceId)!, addDays(today, 1)), '今日任务明天不再出现')
+  const onceInst = s().daily.find((t) => t.templateId === onceId)!
+  s().submitTask(onceInst.id, 'media-9')
+  ok(s().daily.find((t) => t.id === onceInst.id)!.status === 'pending', '已提交待确认')
+  ok(!dailyTaskVisible(s().daily.find((t) => t.id === onceInst.id)!), '今日任务提交后即从孩子列表消失')
+  s().rejectTask(onceInst.id, '再打一次吧')
+  ok(dailyTaskVisible(s().daily.find((t) => t.id === onceInst.id)!), '驳回后重新可见（要重做）')
+
+  // 清理
+  s().removeTemplate(wdOnly)
+  s().removeTemplate(everyDay)
+  s().removeTemplate(onceId)
 }
 
 console.log('== 16. 家长手动调整 / 发积分 ==')

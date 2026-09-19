@@ -1,23 +1,40 @@
 import { useEffect, useState } from 'react'
-import { useStore } from '../store/useStore'
+import { useStore, templateAppliesOn } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { Confirm, Modal, toast } from '../components/ui'
 import { TASK_ICONS } from '../data/content'
 import { MAINTAIN_FOOD } from '../engine/rules'
 import { getMedia } from '../utils/media'
-import { fmtDate } from '../engine/time'
-import type { TaskType } from '../types'
+import { fmtDate, nowDay } from '../engine/time'
+import { speak } from '../utils/speech'
+import type { TaskKind, TaskTemplate, TaskType } from '../types'
 
 const TYPE_LABEL: Record<TaskType, string> = { photo: '拍照', audio: '录音', subjective: '主观' }
+const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
+const WEEK_ALL = [1, 2, 3, 4, 5, 6, 7]
+
+/** 模板的排期摘要：每天 / 毑周一三五 / 仅今天 */
+function scheduleLabel(t: TaskTemplate): string {
+  if (t.kind === 'once') return t.onceDay === nowDay() ? '仅今天' : `仅 ${t.onceDay ?? '今天'}`
+  const wd = t.weekdays && t.weekdays.length > 0 ? t.weekdays : WEEK_ALL
+  if (wd.length === 7) return '每天'
+  return '周' + [...wd].sort().map((d) => WEEKDAY_LABELS[d - 1]).join('')
+}
 
 /** P16 家长 · 任务管理 */
 export default function P16TaskManage() {
   const nav = useNav()
   const s = useStore()
   const [adding, setAdding] = useState(false)
+  /** 正在编辑的模板（null + adding=false = 弹窗关闭） */
+  const [editing, setEditing] = useState<TaskTemplate | null>(null)
+  // 弹窗表单
   const [name, setName] = useState('')
+  const [note, setNote] = useState('')
   const [icon, setIcon] = useState(TASK_ICONS[0])
   const [type, setType] = useState<TaskType>('photo')
+  const [kind, setKind] = useState<TaskKind>('regular')
+  const [weekdays, setWeekdays] = useState<number[]>(WEEK_ALL)
   const [foodValue, setFoodValue] = useState(1)
   const [adjust, setAdjust] = useState<number>(1)
   const [adjustNote, setAdjustNote] = useState('')
@@ -27,7 +44,11 @@ export default function P16TaskManage() {
   const [rejectId, setRejectId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
-  const dailyProduce = s.templates.filter((t) => t.enabled).reduce((a, t) => a + t.foodValue, 0)
+  // 收支提示按「今天真的会出现的任务」算，而不是所有启用模板
+  const today = nowDay()
+  const dailyProduce = s.templates
+    .filter((t) => templateAppliesOn(t, today))
+    .reduce((a, t) => a + t.foodValue, 0)
   const short = dailyProduce < MAINTAIN_FOOD
   const pending = s.daily.filter((t) => t.status === 'pending')
 
@@ -44,6 +65,61 @@ export default function P16TaskManage() {
     setMediaUrl(URL.createObjectURL(blob))
   }
 
+  const openCreate = () => {
+    setEditing(null)
+    setName('')
+    setNote('')
+    setIcon(TASK_ICONS[0])
+    setType('photo')
+    setKind('regular')
+    setWeekdays(WEEK_ALL)
+    setFoodValue(1)
+    setAdding(true)
+  }
+
+  const openEdit = (t: TaskTemplate) => {
+    setEditing(t)
+    setName(t.name)
+    setNote(t.note ?? '')
+    setIcon(t.icon)
+    setType(t.type)
+    setKind(t.kind ?? 'regular')
+    setWeekdays(t.weekdays && t.weekdays.length > 0 ? t.weekdays : WEEK_ALL)
+    setFoodValue(t.foodValue)
+    setAdding(true)
+  }
+
+  const toggleWeekday = (d: number) => {
+    setWeekdays((ws) => {
+      const next = ws.includes(d) ? ws.filter((x) => x !== d) : [...ws, d].sort()
+      // 至少保留一天，否则任务永远不会出现
+      return next.length === 0 ? ws : next
+    })
+  }
+
+  const save = () => {
+    if (!name.trim()) return
+    const patch = {
+      name: name.trim(),
+      icon,
+      type,
+      note: note.trim() || undefined,
+      kind,
+      weekdays: kind === 'regular' ? weekdays : undefined,
+      onceDay: kind === 'once' ? (editing?.onceDay ?? today) : undefined,
+      foodValue,
+    }
+    if (editing) {
+      // 「今日任务」编辑后仍限定在原发布日，不会变成每天出现
+      s.updateTemplate(editing.id, patch)
+      toast('已更新，今天的任务立即生效')
+    } else {
+      s.addTemplate({ ...patch, enabled: true })
+      toast('已发布，孩子首页马上能看到')
+    }
+    setAdding(false)
+  }
+
   return (
     <div className="px-4 pb-10 pt-4">
       <div className="flex items-center gap-3">
@@ -54,16 +130,21 @@ export default function P16TaskManage() {
 
       {/* 收支提示条：核心防坑设计 */}
       <div className={`mt-3 rounded-xl px-3 py-2.5 text-center text-[13px] font-extrabold ${short ? 'bg-danger/12 text-danger' : 'bg-ok/12 text-ok'}`}>
-        每日产出 {dailyProduce} 份 · 宠物维持需 {MAINTAIN_FOOD} 份/天
+        今日产出 {dailyProduce} 份 · 宠物维持需 {MAINTAIN_FOOD} 份/天
         {short ? ' ⚠ 产出不足，建议调高单个任务的食物值' : ' ✅'}
       </div>
 
       <div className="mt-3 rounded-xl3 bg-white p-3 shadow-card">
-        <div className="mb-2 text-[14px] font-extrabold text-ink">每日任务</div>
+        <div className="mb-2 text-[14px] font-extrabold text-ink">任务（点名字可以改）</div>
         {s.templates.map((t) => (
           <div key={t.id} className="mb-2 flex items-center gap-2 rounded-2xl bg-sky-50 px-3 py-2.5">
             <span className="text-[20px]">{t.icon}</span>
-            <span className="flex-1 text-[15px] font-bold text-ink">{t.name}</span>
+            <button className="min-w-0 flex-1 text-left" onClick={() => openEdit(t)}>
+              <span className="block truncate text-[15px] font-bold text-ink">{t.name}</span>
+              <span className="block text-[11px] font-bold text-sky-500">
+                {t.kind === 'once' ? '今日任务 · ' : ''}{scheduleLabel(t)}{t.note ? ' · 有说明' : ''}
+              </span>
+            </button>
             <span className="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-muted">{TYPE_LABEL[t.type]}</span>
             <select
               className="rounded-lg bg-white px-2 py-1 text-[13px] font-bold text-food"
@@ -83,7 +164,7 @@ export default function P16TaskManage() {
             <button className="text-[13px] font-bold text-danger" onClick={() => setRemoveId(t.id)}>✕</button>
           </div>
         ))}
-        <button className="btn-chip w-full" onClick={() => setAdding(true)}>+ 添加任务</button>
+        <button className="btn-chip w-full" onClick={openCreate}>+ 发布任务</button>
       </div>
 
       <div className="mt-3 rounded-xl3 bg-white p-3 shadow-card">
@@ -164,9 +245,20 @@ export default function P16TaskManage() {
         </div>
       </div>
 
-      {/* 添加任务 */}
-      <Modal open={adding} title="添加任务" onClose={() => setAdding(false)}>
+      {/* 发布 / 编辑任务 */}
+      <Modal open={adding} title={editing ? '编辑任务' : '发布任务'} onClose={() => setAdding(false)}>
         <input className="field" placeholder="任务名字，如：练琴 30 分钟" value={name} onChange={(e) => setName(e.target.value.slice(0, 12))} />
+        <textarea
+          className="field mt-2 h-16 resize-none"
+          placeholder="说明（选填）：写给孩子看的要求，任务页可以朗读"
+          value={note}
+          onChange={(e) => setNote(e.target.value.slice(0, 60))}
+        />
+        {note.trim() && (
+          <button className="mt-1 text-[13px] font-bold text-sky-600" onClick={() => speak(note.trim(), true)}>
+            🔊 试听一下
+          </button>
+        )}
         <div className="mt-3 flex flex-wrap gap-2">
           {TASK_ICONS.map((i) => (
             <button
@@ -183,6 +275,41 @@ export default function P16TaskManage() {
             <button key={t} data-on={type === t} onClick={() => setType(t)}>{TYPE_LABEL[t]}</button>
           ))}
         </div>
+
+        {/* 任务种类 */}
+        <div className="mt-3">
+          <div className="mb-1.5 text-[13px] font-bold text-muted">出现方式</div>
+          <div className="seg">
+            <button data-on={kind === 'regular'} onClick={() => setKind('regular')}>常规任务</button>
+            <button data-on={kind === 'once'} onClick={() => setKind('once')}>今日任务</button>
+          </div>
+          <div className="mt-1.5 text-[12px] text-muted">
+            {kind === 'once' ? '只在今天出现，完成后就从列表消失' : '按下面的星期重复出现'}
+          </div>
+        </div>
+
+        {/* 常规任务：每周排期 */}
+        {kind === 'regular' && (
+          <div className="mt-3">
+            <div className="mb-1.5 text-[13px] font-bold text-muted">每周哪几天出现</div>
+            <div className="flex gap-1.5">
+              {WEEKDAY_LABELS.map((label, i) => {
+                const d = i + 1
+                const on = weekdays.includes(d)
+                return (
+                  <button
+                    key={d}
+                    onClick={() => toggleWeekday(d)}
+                    className={`h-10 flex-1 rounded-xl text-[14px] font-extrabold ${on ? 'bg-sky-400 text-white' : 'bg-sky-50 text-sky-500'}`}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 flex items-center gap-2">
           <span className="text-[14px] font-bold text-muted">食物</span>
           <div className="seg flex-1">
@@ -194,14 +321,9 @@ export default function P16TaskManage() {
         <button
           className="btn-main mt-4"
           disabled={!name.trim()}
-          onClick={() => {
-            s.addTemplate({ name: name.trim(), icon, type, foodValue, enabled: true })
-            toast('添加成功')
-            setName('')
-            setAdding(false)
-          }}
+          onClick={save}
         >
-          添 加
+          {editing ? '保 存' : '发 布'}
         </button>
       </Modal>
 

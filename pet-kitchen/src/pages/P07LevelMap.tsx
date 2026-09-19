@@ -1,11 +1,11 @@
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
-import { CoinBar, toast } from '../components/ui'
-import { MATH_LEVELS, bossRequires } from '../engine/questions'
+import { CoinBar } from '../components/ui'
+import { LEVELS_BY_SUBJECT, bossRequires, type LevelDef } from '../engine/questions'
 import { ATTR_LABEL, BATTLE_LIMIT_MIN, SUBJECT_LABEL } from '../engine/rules'
 import { nowDay } from '../engine/time'
 
-/** P07 闯关地图 —— MVP 只开放数学，语文/英语置灰「快来了」 */
+/** P07 闯关地图：三科关卡（数学速算 / 语文拼音识字 / 英语单元词汇） */
 export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | 'chinese' | 'english' }) {
   const nav = useNav()
   const pet = useStore((s) => s.pet)
@@ -17,7 +17,9 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
 
   const dueWrong = wrong.filter((w) => w.subject === subject && !w.mastered && w.nextReviewDay <= nowDay())
 
-  const locked = (l: (typeof MATH_LEVELS)[number]) => {
+  const levelList = LEVELS_BY_SUBJECT[subject]
+
+  const locked = (l: LevelDef) => {
     if (l.boss) {
       const req = bossRequires(l)
       return !req.every((id) => (levels.find((x) => x.levelId === id)?.bestStars ?? 0) >= 2)
@@ -25,7 +27,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
     return attr < l.unlockAttr
   }
 
-  const ordered = MATH_LEVELS
+  const ordered = levelList
 
   return (
     <div className="pb-4">
@@ -35,14 +37,12 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
         {(['math', 'chinese', 'english'] as const).map((k) => (
           <button
             key={k}
-            disabled={k !== 'math'}
             onClick={() => nav.go('level', k)}
             className={`flex-1 rounded-2xl py-2.5 text-[15px] font-extrabold ${
               k === subject ? 'bg-sky-400 text-white shadow-card' : 'bg-white text-muted'
-            } ${k !== 'math' ? 'opacity-60' : ''}`}
+            }`}
           >
             {SUBJECT_LABEL[k]}
-            {k !== 'math' && <span className="ml-1 text-[11px]">快来了</span>}
           </button>
         ))}
         <button
@@ -55,7 +55,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
       </div>
 
       <div className="mx-4 mt-3 rounded-xl3 bg-white p-4 shadow-card">
-        <div className="mb-2 text-[15px] font-extrabold text-ink">数学关卡</div>
+        <div className="mb-2 text-[15px] font-extrabold text-ink">{SUBJECT_LABEL[subject]}关卡</div>
         {ordered.map((l) => {
           const rec = levels.find((x) => x.levelId === l.id)
           const isLocked = locked(l)
@@ -94,7 +94,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
         <div className="mb-2 text-[14px] font-extrabold text-ink">我的属性</div>
         <div className="flex justify-between text-[13px] font-bold">
           {(['math', 'chinese', 'english'] as const).map((k) => (
-            <span key={k} className={k === 'math' ? 'text-sky-600' : 'text-slate-300'}>
+            <span key={k} className={k === subject ? 'text-sky-600' : 'text-slate-300'}>
               {ATTR_LABEL[k]} {pet?.attrs[k] ?? 0}
             </span>
           ))}
@@ -104,14 +104,6 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
         </div>
       </div>
 
-      <div className="mx-4 mt-3 text-center text-[12px] text-muted">
-        <button
-          className="font-bold text-sky-500"
-          onClick={() => toast('语文和英语需要教材目录后才能出题哦', 'warn')}
-        >
-          为什么语文和英语不能玩？
-        </button>
-      </div>
     </div>
   )
 }

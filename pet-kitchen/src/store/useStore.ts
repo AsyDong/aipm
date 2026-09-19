@@ -16,6 +16,45 @@ import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
 import { enqueueOp } from './sync'
 
+// ============ 任务排期（常规 / 今日） ============
+
+const WEEK_ALL = [1, 2, 3, 4, 5, 6, 7]
+
+/** 游戏日 → 星期几（1=周一 … 7=周日）。UTC+8 的游戏日按本地日期解析即可，取的是星期不是时刻 */
+export function weekdayOf(day: string): number {
+  const d = new Date(`${day}T00:00:00`).getDay()
+  return d === 0 ? 7 : d
+}
+
+/** 模板在某游戏日是否生成任务实例 */
+export function templateAppliesOn(t: TaskTemplate, day: string): boolean {
+  if (!t.enabled) return false
+  if (t.kind === 'once') return t.onceDay === day
+  const weekdays = t.weekdays && t.weekdays.length > 0 ? t.weekdays : WEEK_ALL
+  return weekdays.includes(weekdayOf(day))
+}
+
+/** 今日任务已提交/已通过后即从列表消失（驳回的还要重做，所以保留展示） */
+export function dailyTaskVisible(t: DailyTask): boolean {
+  return !(t.kind === 'once' && (t.status === 'done' || t.status === 'pending'))
+}
+
+/** 由模板生成当天的任务实例（快照 name/icon/note/kind，模板后续改动不影响已生成的实例） */
+function mkDaily(t: TaskTemplate, day: string): DailyTask {
+  return {
+    id: uid('d'),
+    day,
+    templateId: t.id,
+    name: t.name,
+    icon: t.icon,
+    type: t.type,
+    note: t.note,
+    kind: t.kind ?? 'regular',
+    foodValue: t.foodValue,
+    status: 'todo',
+  }
+}
+
 const emptyPet = (species: Pet['species']): Pet => ({
   species,
   nickname: '',
@@ -373,32 +412,62 @@ export const useStore = create<Store>()(
         s.daily.forEach((d) => recordDailyTask(d))
       }
 
-      /** 生成当日任务实例；家长中途新增的任务会即时补进来 */
+      /** 生成当日任务实例；按模板的排期（星期几 / 今日限定）过滤 */
       const ensureTasks = () => {
         const s = get()
-        if (s.templates.length === 0) return
-        const mk = (t: TaskTemplate): DailyTask => ({
-          id: uid('d'),
-          day: s.activeDay,
-          templateId: t.id,
-          name: t.name,
-          icon: t.icon,
-          type: t.type,
-          foodValue: t.foodValue,
-          status: 'todo',
-        })
+        const applies = s.templates.filter((t) => templateAppliesOn(t, s.activeDay))
+        if (applies.length === 0 && s.daily.length === 0) return
         if (s.daily.length > 0 && s.daily[0].day === s.activeDay) {
           const have = new Set(s.daily.map((d) => d.templateId))
-          const add = s.templates.filter((t) => t.enabled && !have.has(t.id)).map(mk)
+          const add = applies.filter((t) => !have.has(t.id)).map((t) => mkDaily(t, s.activeDay))
           if (add.length > 0) {
             set({ daily: [...s.daily, ...add] })
             add.forEach((d) => recordDailyTask(d))
           }
           return
         }
-        const todayTasks = s.templates.filter((t) => t.enabled).map(mk)
+        const todayTasks = applies.map((t) => mkDaily(t, s.activeDay))
         set({ daily: todayTasks })
         todayTasks.forEach((d) => recordDailyTask(d))
+      }
+
+      /**
+       * 家长变更模板后，立即把「今天已生成的任务实例」对齐（不等下一次 ensureDay）。
+       * 这是「家长改了任务、首页不刷新」的修复：以前 add/update/remove 只动 templates，
+       * 首页的 s.daily 要等到重新挂载/跨天才会重算。
+       *
+       * 规则：todo/rejected 的实例跟着模板走（停用→移除、改名→改名）；已提交待确认（pending）
+       * 和已完成（done）的保持原样 —— 审批流和历史统计不能被中途改动冲掉。
+       */
+      const reconcileToday = () => {
+        const s = get()
+        const alive = s.daily.filter((d) => d.day === s.activeDay)
+        if (alive.length === 0 && s.daily.length > 0) return // 还没生成今天的实例，交给 ensureTasks
+
+        const mutable = (d: DailyTask) => d.status === 'todo' || d.status === 'rejected'
+        let daily = s.daily.filter((d) => d.day !== s.activeDay)
+
+        for (const t of s.templates) {
+          const applies = templateAppliesOn(t, s.activeDay)
+          const existing = alive.filter((d) => d.templateId === t.id)
+          if (!applies) {
+            // 停用 / 今天不该出现：撤掉还没做的实例；已提交/已完成的保留（审批流不能断）
+            daily.push(...existing.filter((d) => !mutable(d)))
+            continue
+          }
+          if (existing.length === 0) {
+            const inst = mkDaily(t, s.activeDay)
+            daily.push(inst)
+            recordDailyTask(inst)
+            continue
+          }
+          // 已排上的：同步模板的最新内容（名字/图标/说明/食物值）
+          for (const d of existing) {
+            daily.push(mutable(d) ? { ...d, name: t.name, icon: t.icon, note: t.note, foodValue: t.foodValue } : d)
+          }
+        }
+        if (daily.length === s.daily.length && daily.every((d, i) => d === s.daily[i])) return
+        set({ daily })
       }
 
       /** 超时未审批的兑换自动解冻（REDEEM_TIMEOUT_DAYS） */
@@ -596,8 +665,10 @@ export const useStore = create<Store>()(
 
           const rec = s.levels.find((l) => l.levelId === levelId)
           const firstClear = !rec?.cleared
-          // 得几颗星就得几分，首通额外 +1（FIRST_CLEAR_BONUS）
-          const points = stars + (firstClear ? FIRST_CLEAR_BONUS : 0)
+          // 首通：得几颗星就得几分，再额外 +1（FIRST_CLEAR_BONUS）；
+          // 重复挑战：金币最多只给 1 枚 —— 星星照常记录（bestStars 不回退），
+          // 但不给刷分留空间（2026-09-19 需求）。
+          const points = firstClear ? stars + FIRST_CLEAR_BONUS : Math.min(stars, 1)
           const attrGain = Math.min(ATTR_GAIN_CAP, Math.floor(correct / ATTR_PER_CORRECT))
 
           const today = nowDay()
@@ -799,7 +870,16 @@ export const useStore = create<Store>()(
         addTemplate: (t) => {
           const id = uid('t')
           const created: TaskTemplate = { ...t, id, createdAt: Date.now() }
-          set((s) => ({ templates: [...s.templates, created] }))
+          get().ensureDay()
+          const s = get()
+          const daily = [...s.daily]
+          // 今日就该出现的任务，当场生成实例 —— 家长加完孩子立刻能看到
+          if (templateAppliesOn(created, s.activeDay)) {
+            const inst = mkDaily(created, s.activeDay)
+            daily.push(inst)
+            recordDailyTask(inst)
+          }
+          set({ templates: [...s.templates, created], daily })
           recordTemplate(created)
           return id
         },
@@ -810,6 +890,7 @@ export const useStore = create<Store>()(
           set({ templates: next })
           const updated = next.find((t) => t.id === id)
           if (updated) recordTemplate(updated)
+          reconcileToday()
         },
 
         removeTemplate: (id) => {
@@ -818,6 +899,10 @@ export const useStore = create<Store>()(
           set({ templates: s.templates.filter((t) => t.id !== id) })
           // 软删：历史 daily_tasks 的 template_id 还得能 JOIN 回这个模板
           if (removed) recordTemplate(removed, true)
+          // 今天的实例同步撤下（已提交/已完成的保留，审批流不能断）
+          get().ensureDay()
+          const cur = get()
+          set({ daily: cur.daily.filter((d) => !(d.templateId === id && (d.status === 'todo' || d.status === 'rejected'))) })
         },
 
         setPin: (pin) => set((s) => ({ settings: { ...s.settings, parentPin: pin, pinChanged: true } })),
@@ -825,6 +910,24 @@ export const useStore = create<Store>()(
         toggleSetting: (k) => set((s) => ({ settings: { ...s.settings, [k]: !s.settings[k] } })),
       }
     },
-    { name: 'pet-checkin-v1', version: 1 },
+    {
+      name: 'pet-checkin-v1',
+      version: 2,
+      // v2：任务加「说明 / 常规·今日种类 / 每周排期」。历史模板缺省为「常规 · 每天」，行为不变
+      migrate: (persisted) => {
+        const s = persisted as Partial<Pick<AppState, 'templates' | 'daily'>>
+        if (s.templates) {
+          s.templates = s.templates.map((t) => ({
+            ...t,
+            kind: t.kind ?? 'regular',
+            weekdays: t.weekdays && t.weekdays.length > 0 ? t.weekdays : [1, 2, 3, 4, 5, 6, 7],
+          }))
+        }
+        if (s.daily) {
+          s.daily = s.daily.map((d) => ({ ...d, kind: d.kind ?? 'regular' }))
+        }
+        return s as AppState
+      },
+    },
   ),
 )

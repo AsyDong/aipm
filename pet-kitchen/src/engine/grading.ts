@@ -22,16 +22,20 @@ export function normalizeNumeric(raw: string): string | null {
 
 /**
  * 本地判分——「第一道也是最便宜的一道关」。
- * 非数值型题（开放答案）在这里一律返回 false，由 needsModel 决定是否转交模型。
+ * choice 题（语文英语认读题）比对选项文本；open（开放答案）返回 false 交给 needsModel。
  */
 export function gradeLocally(q: Question, input: string): GradeResult {
+  if (q.answerType === 'choice') {
+    const right = q.options?.[q.answer]
+    return { correct: !!right && input === right, by: 'local' }
+  }
   if (needsModel(q)) return { correct: false, by: 'local' }
   const n = normalizeNumeric(input)
   if (n === null) return { correct: false, by: 'local' }
   return { correct: Number(n) === q.answer, by: 'local' }
 }
 
-/** 本地判分器判不了吗？判不了（开放答案）才需要模型介入 */
+/** 本地判分器判不了吗？判不了（开放答案）才需要模型介入；choice 题本地就能判 */
 export function needsModel(q: Question): boolean {
-  return (q.answerType ?? 'numeric') !== 'numeric'
+  return q.answerType === 'open'
 }

@@ -3,8 +3,9 @@ import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { useParent } from '../store/parent'
 import { Modal, toast } from '../components/ui'
+import Coin from '../components/Coin'
 
-function Entry({ icon, title, desc, onClick }: { icon: string; title: string; desc: string; onClick: () => void }) {
+function Entry({ icon, title, desc, onClick }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="mb-3 flex w-full items-center gap-3 rounded-xl3 bg-white p-4 text-left shadow-card active:scale-[0.99]">
       <span className="text-[26px]">{icon}</span>
@@ -49,7 +50,7 @@ export default function ParentHub({ focus }: { focus?: string }) {
         <Entry icon="📝" title="任务管理" desc={`当前 ${s.templates.filter((t) => t.enabled).length} 个任务 · 待确认 ${s.daily.filter((t) => t.status === 'pending').length}`} onClick={() => nav.go('ptasks')} />
         <Entry icon="🎁" title="现实奖品管理" desc={`${s.prizes.length} 个奖品 · 待审批 ${s.redeems.filter((r) => r.state === 'pending').length}`} onClick={() => nav.go('pprizes')} />
         <Entry icon="📈" title="成长报告" desc="任务完成率、闯关正确率、宠物状态" onClick={() => nav.go('report')} />
-        <Entry icon="🪙" title="奖励积分" desc="孩子表现好时手动奖励（积分兜底出口）" onClick={() => setGrant(true)} />
+        <Entry icon={<Coin size={24} />} title="奖励积分" desc="孩子表现好时手动奖励（积分兜底出口）" onClick={() => setGrant(true)} />
         <Entry icon="🔑" title="修改家长密码" desc={s.settings.pinChanged ? '已修改过' : '当前仍是默认密码 1234'} onClick={() => nav.go('pin', 'change')} />
       </div>
 
