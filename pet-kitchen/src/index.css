@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    color: #2f3b4c;
+    background: linear-gradient(180deg, #eaf7ff 0%, #fffbf2 46%, #fff7ea 100%);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-transparent;
+  }
+  .card {
+    @apply rounded-xl2 bg-white/90 p-4 shadow-card;
+  }
+  .btn-main {
+    @apply flex h-[52px] w-full items-center justify-center rounded-2xl bg-sky-400 text-[19px] font-bold text-white shadow-card transition active:scale-[0.97] disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none;
+  }
+  .btn-sub {
+    @apply flex h-[52px] w-full items-center justify-center rounded-2xl bg-white text-[18px] font-bold text-sky-600 shadow-card transition active:scale-[0.97] disabled:bg-slate-100 disabled:text-slate-400;
+  }
+  .btn-chip {
+    @apply flex min-h-[44px] items-center justify-center rounded-xl bg-sky-100 px-4 text-[16px] font-bold text-sky-700 transition active:scale-[0.97] disabled:bg-slate-100 disabled:text-slate-400;
+  }
+  .seg {
+    @apply flex rounded-full bg-sky-100 p-1 text-[15px] font-bold text-sky-700;
+  }
+  .seg > button {
+    @apply flex-1 rounded-full py-2 transition;
+  }
+  .seg > button[data-on='true'] {
+    @apply bg-white text-sky-600 shadow-card;
+  }
+  .field {
+    @apply h-12 w-full rounded-xl border-2 border-sky-100 bg-white px-3 text-[16px] outline-none focus:border-sky-300;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============ 宠物立绘（PetAvatar） ============ */
+.pet-avatar {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+}
+.pet-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* 立绘透明底后无自带影子，用投影补回接地感 */
+  filter: drop-shadow(0 10px 12px rgba(47, 59, 76, 0.16));
+}
+.pet-anim-idle {
+  animation: petIdle 3.6s ease-in-out infinite;
+}
+.pet-anim-happy {
+  animation: petHappy 0.72s ease-in-out infinite;
+}
+.pet-anim-sad {
+  animation: petSad 2.6s ease-in-out infinite;
+  filter: saturate(0.35) brightness(0.94) drop-shadow(0 8px 10px rgba(47, 59, 76, 0.12));
+}
+.pet-anim-eat {
+  animation: petEat 0.5s ease-in-out infinite;
+}
+
+@keyframes petIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3%) scale(1.015); }
+}
+@keyframes petHappy {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  25% { transform: translateY(-8%) scale(0.97, 1.05); }
+  55% { transform: translateY(0) scale(1.04, 0.95); }
+  75% { transform: translateY(-4%) scale(1, 1); }
+}
+@keyframes petSad {
+  0%, 100% { transform: translateY(1%); }
+  50% { transform: translateY(2.5%); }
+}
+@keyframes petEat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-anim-idle,
+  .pet-anim-happy,
+  .pet-anim-sad,
+  .pet-anim-eat {
+    animation: none;
+  }
+}

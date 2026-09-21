@@ -1,0 +1,31 @@
+{
+  "name": "pet-checkin",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "mock-api": "esbuild tools/mock-api.ts --bundle --platform=node --format=cjs --outfile=tools/mock-api.build.cjs --log-level=error && node tools/mock-api.build.cjs",
+    "smoke": "esbuild smoke.ts --bundle --platform=node --format=cjs --outfile=smoke.build.cjs --log-level=error && node -r ./smoke-shim.cjs smoke.build.cjs && node -e \"require('fs').rmSync('smoke.build.cjs',{force:true})\"",
+    "verify": "npm run typecheck && npm run smoke && npm run build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "esbuild": "^0.21.5",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
