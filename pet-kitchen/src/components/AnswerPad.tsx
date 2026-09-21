@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 /** 答案最大 99（100 以内加减 / 连加连减），3 位足够，顺便挡住乱按 */
@@ -72,31 +72,63 @@ export function AnswerPad({
   )
 }
 
+/** 图片选项（看词选图）：图片挂了用中文兜底，题仍可作答 */
+export interface PicOption {
+  word: string
+  src: string
+  zh: string
+}
+
+function PicCell({ o, onPick, disabled }: { o: PicOption; onPick: (choice: string) => void; disabled?: boolean }) {
+  const [err, setErr] = useState(false)
+  return (
+    <button
+      disabled={disabled}
+      onClick={() => onPick(o.word)}
+      className="flex min-h-[110px] flex-col items-center justify-center gap-1 rounded-2xl bg-white p-3 shadow-card transition active:scale-[0.95] disabled:opacity-40"
+    >
+      {err ? (
+        <span className="text-[17px] font-extrabold text-ink">{o.zh}</span>
+      ) : (
+        <img src={o.src} alt={o.zh} className="h-[72px] w-[72px] object-contain" onError={() => setErr(true)} />
+      )}
+    </button>
+  )
+}
+
 /**
  * 四选一选项板：语文 / 英语认读题用（拼音、汉字、单词）。
+ * 传 picOptions 时以图片呈现（options 仍传单词，点选返回单词）。
  * 点了就算作答 —— 低龄孩子没有「选完再确定」的耐心。
  */
 export function ChoicePad({
   options,
+  picOptions,
   onPick,
   disabled,
 }: {
   options: string[]
+  picOptions?: PicOption[]
   onPick: (choice: string) => void
   disabled?: boolean
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {options.map((o, i) => (
-        <button
-          key={`${o}-${i}`}
-          disabled={disabled}
-          onClick={() => onPick(o)}
-          className="flex min-h-[56px] items-center justify-center rounded-2xl bg-white px-2 py-2 text-center text-[17px] font-extrabold leading-snug text-ink shadow-card transition active:scale-[0.95] disabled:opacity-40"
-        >
-          {o}
-        </button>
-      ))}
+      {options.map((o, i) => {
+        const pic = picOptions?.[i]
+        return pic ? (
+          <PicCell key={`pic-${o}-${i}`} o={pic} onPick={onPick} disabled={disabled} />
+        ) : (
+          <button
+            key={`${o}-${i}`}
+            disabled={disabled}
+            onClick={() => onPick(o)}
+            className="flex min-h-[56px] items-center justify-center rounded-2xl bg-white px-2 py-2 text-center text-[17px] font-extrabold leading-snug text-ink shadow-card transition active:scale-[0.95] disabled:opacity-40"
+          >
+            {o}
+          </button>
+        )
+      })}
     </div>
   )
 }

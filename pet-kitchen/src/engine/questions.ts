@@ -1,8 +1,8 @@
 import type { QSpec, Question, Subject } from '../types'
 import { rnd, shuffle } from '../utils/id'
 import {
-  CHAR_BANK, EN_UNITS, PINYIN_BANKS, POEMS,
-  type EnWord, type PinyinBankItem,
+  CHAR_BANK, EN_UNITS, EN_ZH, finalParts, PINYIN_BANKS, PINYIN_UNITS, POEMS,
+  type CharItem, type EnWord, type PinyinBankItem,
 } from '../data/courses'
 
 // ============ 数学题库：学而思一年级速算体系（程序化生成，Q25） ============
@@ -44,32 +44,46 @@ export function bossRequires(level: LevelDef): string[] {
     .map((l) => l.id)
 }
 
-// ============ 语文关卡（一年级上册：拼音 / 识字 / 古诗课文） ============
-// 拼音分阶参考 pinyin-world 的单元排布；素材取自 src/data/courses.ts
+// ============ 语文关卡（一年级上册：拼音 / 识字 错开重排 + 古诗课文） ============
+// 拼音按 PINYIN_UNITS 每 ~5 个一关累积推进；识字关穿插其间，只考「已学音拼得出来」的字。
+// 题型：py_unit 看拼音选字（学音）/ py_rep 认字读音（学音）/ char_py 看字标音（识字）/
+//      py_word 看音识字（识字）/ py_blend 声韵拼读（识字），素材取自 src/data/courses.ts
 
 export const CHINESE_LEVELS: LevelDef[] = [
-  { id: 'c1', subject: 'chinese', index: 1, name: '单韵母', skill: 'a o e i u ü', kinds: ['py_pick_char:single', 'char_py:single'], unlockAttr: 0 },
-  { id: 'c2', subject: 'chinese', index: 2, name: '声母', skill: '23 个声母', kinds: ['py_pick_char:initial', 'char_py:initial'], unlockAttr: 3 },
-  { id: 'c3', subject: 'chinese', index: 3, name: '复韵母', skill: 'ai ei ui …', kinds: ['py_pick_char:compound', 'char_py:compound'], unlockAttr: 6 },
-  { id: 'c4', subject: 'chinese', index: 4, name: '前后鼻韵母', skill: 'an en in ang …', kinds: ['py_pick_char:nasal', 'char_py:nasal'], unlockAttr: 9 },
-  { id: 'c5', subject: 'chinese', index: 5, name: '整体认读音节', skill: 'zhi chi shi …', kinds: ['py_pick_char:zhengti', 'char_py:zhengti'], unlockAttr: 12 },
-  { id: 'cb1', subject: 'chinese', index: 6, name: '拼音小状元', skill: '拼音综合', kinds: ['py_pick_char:mixpy', 'char_py:mixpy'], unlockAttr: 15, boss: true },
-  { id: 'c6', subject: 'chinese', index: 7, name: '看字标音', skill: '识字表·认读', kinds: ['char_py:char'], unlockAttr: 18 },
-  { id: 'c7', subject: 'chinese', index: 8, name: '看拼音识字', skill: '识字表·拼读', kinds: ['py_pick_char:char'], unlockAttr: 21 },
-  { id: 'c8', subject: 'chinese', index: 9, name: '古诗对句', skill: '必背古诗文', kinds: ['poem_next'], unlockAttr: 24 },
-  { id: 'c9', subject: 'chinese', index: 10, name: '拼音识字双修', skill: '综合认读', kinds: ['py_pick_char:mixpy', 'char_py:char'], unlockAttr: 27 },
-  { id: 'cb2', subject: 'chinese', index: 11, name: '语文大挑战', skill: '综合', kinds: ['py_pick_char:char', 'char_py:char', 'poem_next', 'py_pick_char:mixpy'], unlockAttr: 30, boss: true },
+  { id: 'c1', subject: 'chinese', index: 1, name: '单韵母', skill: 'a o e i u ü', kinds: ['py_unit:u1', 'py_rep:u1'], unlockAttr: 0 },
+  { id: 'c2', subject: 'chinese', index: 2, name: '声母一', skill: 'b p m f d', kinds: ['py_unit:u2', 'py_rep:u2'], unlockAttr: 2 },
+  { id: 'c3', subject: 'chinese', index: 3, name: '识字一', skill: '已学音拼读', kinds: ['char_py:u2', 'py_word:u2', 'py_blend:u2'], unlockAttr: 4 },
+  { id: 'c4', subject: 'chinese', index: 4, name: '声母二', skill: 't n l g k', kinds: ['py_unit:u3', 'py_rep:u3'], unlockAttr: 6 },
+  { id: 'c5', subject: 'chinese', index: 5, name: '识字二', skill: '已学音拼读', kinds: ['char_py:u3', 'py_word:u3', 'py_blend:u3'], unlockAttr: 8 },
+  { id: 'c6', subject: 'chinese', index: 6, name: '声母三', skill: 'h j q x', kinds: ['py_unit:u4', 'py_rep:u4'], unlockAttr: 10 },
+  { id: 'c7', subject: 'chinese', index: 7, name: '声母四', skill: 'zh ch sh r z', kinds: ['py_unit:u5', 'py_rep:u5'], unlockAttr: 12 },
+  { id: 'c8', subject: 'chinese', index: 8, name: '识字三', skill: '已学音拼读', kinds: ['char_py:u5', 'py_word:u5', 'py_blend:u5'], unlockAttr: 14 },
+  { id: 'c9', subject: 'chinese', index: 9, name: '声母五', skill: 'c s y w', kinds: ['py_unit:u6', 'py_rep:u6'], unlockAttr: 16 },
+  { id: 'c10', subject: 'chinese', index: 10, name: '拼读练习一', skill: '声母+韵母', kinds: ['py_blend:u6', 'py_word:u6'], unlockAttr: 18 },
+  { id: 'c11', subject: 'chinese', index: 11, name: '复韵母一', skill: 'ai ei ui ao ou', kinds: ['py_unit:u7', 'py_rep:u7'], unlockAttr: 20 },
+  { id: 'c12', subject: 'chinese', index: 12, name: '识字四', skill: '已学音拼读', kinds: ['char_py:u7', 'py_word:u7', 'py_blend:u7'], unlockAttr: 22 },
+  { id: 'c13', subject: 'chinese', index: 13, name: '复韵母二', skill: 'iu ie üe er', kinds: ['py_unit:u8', 'py_rep:u8'], unlockAttr: 24 },
+  { id: 'c14', subject: 'chinese', index: 14, name: '鼻韵母一', skill: 'an en in un ün', kinds: ['py_unit:u9', 'py_rep:u9'], unlockAttr: 26 },
+  { id: 'c15', subject: 'chinese', index: 15, name: '识字五', skill: '已学音拼读', kinds: ['char_py:u9', 'py_word:u9', 'py_blend:u9'], unlockAttr: 28 },
+  { id: 'c16', subject: 'chinese', index: 16, name: '鼻韵母二', skill: 'ang eng ing ong', kinds: ['py_unit:u10', 'py_rep:u10'], unlockAttr: 30 },
+  { id: 'cb1', subject: 'chinese', index: 17, name: '拼音小状元', skill: '拼读综合', kinds: ['py_unit:u10', 'py_rep:u10', 'py_blend:u10', 'py_word:u10'], unlockAttr: 32, boss: true },
+  { id: 'c17', subject: 'chinese', index: 18, name: '整体认读一', skill: 'zhi chi shi ri zi ci', kinds: ['py_unit:u11', 'py_rep:u11'], unlockAttr: 34 },
+  { id: 'c18', subject: 'chinese', index: 19, name: '整体认读二', skill: 'si yi wu yu ye yue', kinds: ['py_unit:u12', 'py_rep:u12'], unlockAttr: 36 },
+  { id: 'c19', subject: 'chinese', index: 20, name: '识字六', skill: '已学音拼读', kinds: ['char_py:u12', 'py_word:u12', 'py_blend:u12'], unlockAttr: 38 },
+  { id: 'c20', subject: 'chinese', index: 21, name: '整体认读三', skill: 'yuan yin yun ying', kinds: ['py_unit:u13', 'py_rep:u13'], unlockAttr: 40 },
+  { id: 'c21', subject: 'chinese', index: 22, name: '古诗对句', skill: '必背古诗文', kinds: ['poem_next'], unlockAttr: 42 },
+  { id: 'cb2', subject: 'chinese', index: 23, name: '语文大挑战', skill: '综合', kinds: ['py_word:u13', 'char_py:u13', 'py_blend:u13', 'poem_next'], unlockAttr: 44, boss: true },
 ]
 
 // ============ 英语关卡（一年级上册 6 个单元 + 句型，docs/courses/1-1-english.md） ============
 
 export const ENGLISH_LEVELS: LevelDef[] = [
-  { id: 'e1', subject: 'english', index: 1, name: 'My Family', skill: '家人词汇', kinds: ['en_word:family', 'en_meaning:family'], unlockAttr: 0 },
-  { id: 'e2', subject: 'english', index: 2, name: 'How Are You?', skill: '感受与情绪', kinds: ['en_word:feeling', 'en_meaning:feeling'], unlockAttr: 3 },
-  { id: 'e3', subject: 'english', index: 3, name: 'School Things', skill: '文具与数字', kinds: ['en_word:school', 'en_meaning:school'], unlockAttr: 6 },
-  { id: 'e4', subject: 'english', index: 4, name: 'I Can…', skill: '能力与动作', kinds: ['en_word:ability', 'en_meaning:ability'], unlockAttr: 9 },
-  { id: 'e5', subject: 'english', index: 5, name: 'Animals', skill: '动物词汇', kinds: ['en_word:animal', 'en_meaning:animal'], unlockAttr: 12 },
-  { id: 'e6', subject: 'english', index: 6, name: 'Colours', skill: '颜色词汇', kinds: ['en_word:colour', 'en_meaning:colour'], unlockAttr: 15 },
+  { id: 'e1', subject: 'english', index: 1, name: 'My Family', skill: '家人词汇', kinds: ['en_pic:family', 'en_wp:family', 'en_meaning:family'], unlockAttr: 0 },
+  { id: 'e2', subject: 'english', index: 2, name: 'How Are You?', skill: '感受与情绪', kinds: ['en_pic:feeling', 'en_wp:feeling', 'en_meaning:feeling'], unlockAttr: 3 },
+  { id: 'e3', subject: 'english', index: 3, name: 'School Things', skill: '文具与数字', kinds: ['en_pic:school', 'en_wp:school', 'en_meaning:school'], unlockAttr: 6 },
+  { id: 'e4', subject: 'english', index: 4, name: 'I Can…', skill: '能力与动作', kinds: ['en_pic:ability', 'en_wp:ability', 'en_meaning:ability'], unlockAttr: 9 },
+  { id: 'e5', subject: 'english', index: 5, name: 'Animals', skill: '动物词汇', kinds: ['en_pic:animal', 'en_wp:animal', 'en_meaning:animal'], unlockAttr: 12 },
+  { id: 'e6', subject: 'english', index: 6, name: 'Colours', skill: '颜色词汇', kinds: ['en_pic:colour', 'en_wp:colour', 'en_meaning:colour'], unlockAttr: 15 },
   { id: 'eb1', subject: 'english', index: 7, name: '期中挑战', skill: 'U1–U3 综合', kinds: ['en_word:family', 'en_meaning:family', 'en_word:feeling', 'en_meaning:feeling', 'en_word:school', 'en_meaning:school'], unlockAttr: 18, boss: true },
   { id: 'e7', subject: 'english', index: 8, name: '句型闯关', skill: '核心句型', kinds: ['en_sentence:family', 'en_sentence:feeling', 'en_sentence:school', 'en_sentence:ability', 'en_sentence:animal', 'en_sentence:colour'], unlockAttr: 21 },
   { id: 'eb2', subject: 'english', index: 9, name: '期末大挑战', skill: '综合', kinds: ['en_word:animal', 'en_meaning:colour', 'en_sentence:family', 'en_sentence:ability', 'en_word:family', 'en_sentence:animal'], unlockAttr: 24, boss: true },
@@ -99,15 +113,22 @@ const ri = (min: number, max: number) => min + rnd(max - min + 1)
 // kind 采用「题型：素材组」的写法（如 py_pick_char:single），genSpec 据此取材。
 
 export type ContentKind =
-  | 'py_pick_char' // 看拼音选汉字
-  | 'char_py' // 看汉字选读音
+  | 'py_pick_char' // 看拼音选汉字（按韵母组取材，老关卡回放用）
+  | 'py_unit' // 看拼音选汉字（按学习单元取材）
+  | 'py_rep' // 认读音节：代表字选读音
+  | 'char_py' // 看汉字选读音（unit 组 = 已学字池，char 组 = 全字库）
+  | 'py_word' // 看音节选汉字（识字）
+  | 'py_blend' // 声母+韵母拼一拼选汉字
   | 'poem_next' // 古诗课文对句
   | 'en_word' // 看英文选中文
   | 'en_meaning' // 看中文选英文
+  | 'en_pic' // 看词选图
+  | 'en_wp' // 看图选词
   | 'en_sentence' // 句型填空
 
 const CONTENT_KINDS = new Set<string>([
-  'py_pick_char', 'char_py', 'poem_next', 'en_word', 'en_meaning', 'en_sentence',
+  'py_pick_char', 'py_unit', 'py_rep', 'char_py', 'py_word', 'py_blend',
+  'poem_next', 'en_word', 'en_meaning', 'en_pic', 'en_wp', 'en_sentence',
 ])
 
 const MIX_PY: PinyinBankItem[] = [
@@ -117,6 +138,25 @@ const MIX_PY: PinyinBankItem[] = [
 
 function bankOf(group: string): PinyinBankItem[] {
   return group === 'mixpy' ? MIX_PY : PINYIN_BANKS[group as keyof typeof PINYIN_BANKS] ?? MIX_PY
+}
+
+// ---------- 拼音单元 / 已学音把关 ----------
+
+const UNIT_BY_ID = new Map(PINYIN_UNITS.map((u) => [u.id, u]))
+
+/** 学到 unitId 为止（含）累计出现的所有拼音 */
+function learnedOf(unitId: string): Set<string> {
+  const upto = PINYIN_UNITS.findIndex((u) => u.id === unitId)
+  const units = upto < 0 ? PINYIN_UNITS : PINYIN_UNITS.slice(0, upto + 1)
+  return new Set(units.flatMap((u) => u.items.map((i) => i.py)))
+}
+
+/** 已学音能拼出来的字：声母已学、韵母各部分已学（零声母/整体认读只看韵母部分） */
+export function charPool(unitId: string): CharItem[] {
+  const learned = learnedOf(unitId)
+  return CHAR_BANK.filter(
+    (c) => (c.initial === '' || learned.has(c.initial)) && finalParts(c.final).every((p) => learned.has(p)),
+  )
 }
 
 /** 从池子里挑 n 个不等于答案、互不重复的干扰项 */
@@ -130,12 +170,42 @@ function genContentSpec(kind: string): QSpec {
     case 'py_pick_char': {
       const bank = group === 'char' ? CHAR_BANK : bankOf(group)
       const item = bank[rnd(bank.length)]
-      const opts = pickDistractors(bank, item, (s) => s.zh)
+      // 按音节排除干扰项：石和十同音，问「shí」时不能同时出现两个正确答案
+      const opts = pickDistractors(bank, item, (s) => s.py)
       return { kind: base, a: 0, b: 0, prompt: item.py, ans: item.zh, opts: opts.map((o) => o.zh) }
     }
+    case 'py_unit': {
+      const unit = UNIT_BY_ID.get(group) ?? PINYIN_UNITS[0]
+      const item = unit.items[rnd(unit.items.length)]
+      const opts = pickDistractors(unit.items, item, (s) => s.zh)
+      return { kind: base, a: 0, b: 0, prompt: item.py, ans: item.zh, opts: opts.map((o) => o.zh) }
+    }
+    case 'py_rep': {
+      const unit = UNIT_BY_ID.get(group) ?? PINYIN_UNITS[0]
+      const item = unit.items[rnd(unit.items.length)]
+      const opts = pickDistractors(unit.items, item, (s) => s.py)
+      return { kind: base, a: 0, b: 0, prompt: item.zh, ans: item.py, opts: opts.map((o) => o.py) }
+    }
+    case 'py_word': {
+      const pool = charPool(group)
+      const item = pool[rnd(pool.length)]
+      const opts = pickDistractors(pool, item, (s) => s.py)
+      return { kind: base, a: 0, b: 0, prompt: item.py, ans: item.zh, opts: opts.map((o) => o.zh) }
+    }
+    case 'py_blend': {
+      const pool = charPool(group).filter((c) => c.initial !== '')
+      const item = pool[rnd(pool.length)]
+      const opts = pickDistractors(pool, item, (s) => s.py)
+      return {
+        kind: base, a: 0, b: 0,
+        prompt: `${item.initial}|${item.py.slice(item.initial.length)}`,
+        ans: item.zh, opts: opts.map((o) => o.zh),
+      }
+    }
     case 'char_py': {
-      const item = CHAR_BANK[rnd(CHAR_BANK.length)]
-      const opts = pickDistractors(CHAR_BANK, item, (s) => s.zh)
+      const pool = group.startsWith('u') ? charPool(group) : CHAR_BANK
+      const item = pool[rnd(pool.length)]
+      const opts = pickDistractors(pool, item, (s) => s.py)
       return { kind: base, a: 0, b: 0, prompt: item.zh, ans: item.py, opts: opts.map((o) => o.py) }
     }
     case 'poem_next': {
@@ -153,6 +223,14 @@ function genContentSpec(kind: string): QSpec {
       const w: EnWord = unit.words[rnd(unit.words.length)]
       const opts = pickDistractors(unit.words, w, (x) => x.en)
       return { kind: base, a: 0, b: 0, prompt: w.en, ans: w.zh, opts: opts.map((o) => o.zh) }
+    }
+    // 图词题：答案与干扰项都是单词（渲染层映射成图片），spec 回放链路与文字题一致
+    case 'en_pic':
+    case 'en_wp': {
+      const unit = EN_UNITS[group] ?? EN_UNITS.family
+      const w: EnWord = unit.words[rnd(unit.words.length)]
+      const opts = pickDistractors(unit.words, w, (x) => x.en)
+      return { kind: base, a: 0, b: 0, prompt: w.en, ans: w.en, opts: opts.map((o) => o.en) }
     }
     case 'en_meaning': {
       const unit = EN_UNITS[group] ?? EN_UNITS.family
@@ -184,10 +262,16 @@ function plainPy(py: string): string {
 
 const CONTENT_SKILL: Record<string, string> = {
   py_pick_char: '拼音认读',
+  py_unit: '拼音认读',
+  py_rep: '拼音认读',
+  py_word: '拼音识字',
+  py_blend: '声韵拼读',
   char_py: '识字标音',
   poem_next: '古诗课文',
   en_word: '英语词汇',
   en_meaning: '英语词汇',
+  en_pic: '英语词汇',
+  en_wp: '英语词汇',
   en_sentence: '英语句型',
 }
 
@@ -204,7 +288,9 @@ function buildContentQuestion(spec: QSpec): Question {
   }
   const zhHint = '先想一想再选，选错了没关系'
   switch (spec.kind) {
-    case 'py_pick_char': {
+    case 'py_pick_char':
+    case 'py_unit':
+    case 'py_word': {
       const py = spec.prompt ?? ''
       return {
         ...base,
@@ -214,6 +300,7 @@ function buildContentQuestion(spec: QSpec): Question {
         explain: `「${py}」对应的字是「${ans}」`,
       }
     }
+    case 'py_rep':
     case 'char_py': {
       const zh = spec.prompt ?? ''
       return {
@@ -222,6 +309,16 @@ function buildContentQuestion(spec: QSpec): Question {
         speech: zh,
         hint: zhHint,
         explain: `「${zh}」读作「${ans}」`,
+      }
+    }
+    case 'py_blend': {
+      const [ini, fin] = (spec.prompt ?? '|').split('|')
+      return {
+        ...base,
+        text: `把 ${ini} 和 ${fin} 拼起来，是哪个字？`,
+        speech: `声母${ini}，韵母${plainPy(fin ?? '')}，拼一拼，是哪个字`,
+        hint: `前音轻短后音重，两音相连猛一碰：${ini}——${plainPy(fin ?? '')}`,
+        explain: `${ini} + ${fin} 拼出「${ans}」`,
       }
     }
     case 'poem_next': {
@@ -243,6 +340,29 @@ function buildContentQuestion(spec: QSpec): Question {
         speech: en,
         hint: '听听发音，再想想意思',
         explain: `${en} = ${ans}`,
+      }
+    }
+    case 'en_pic': {
+      const en = spec.prompt ?? ''
+      return {
+        ...base,
+        speechLang: 'en-US',
+        pictureOptions: true,
+        text: `${en} 是哪幅图？`,
+        speech: en,
+        hint: '听听发音，想想它的意思，找到那张图',
+        explain: `${en} = ${EN_ZH[en] ?? ans}`,
+      }
+    }
+    case 'en_wp': {
+      const en = spec.prompt ?? ''
+      return {
+        ...base,
+        promptImg: en,
+        text: '这幅图是哪个单词？',
+        speech: '看图想一想，选出对应的单词',
+        hint: '看图回想：这个用英语怎么说？',
+        explain: `图里是${EN_ZH[en] ?? ''}，英语说 ${ans}`,
       }
     }
     case 'en_meaning': {
@@ -489,10 +609,16 @@ export function questionOfKind(kind: string): Question {
 /** 内容题变式用的默认素材组 */
 const CONTENT_VARIANT_KIND: Record<string, string> = {
   py_pick_char: 'py_pick_char:mixpy',
+  py_unit: 'py_unit:u6',
+  py_rep: 'py_rep:u6',
   char_py: 'char_py:char',
+  py_word: 'py_word:u6',
+  py_blend: 'py_blend:u6',
   poem_next: 'poem_next',
   en_word: 'en_word:family',
   en_meaning: 'en_meaning:family',
+  en_pic: 'en_pic:family',
+  en_wp: 'en_wp:family',
   en_sentence: 'en_sentence:family',
 }
 

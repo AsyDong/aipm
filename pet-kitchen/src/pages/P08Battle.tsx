@@ -13,6 +13,7 @@ import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
 import { gradeAnswer, isThenable } from '../engine/provider'
 import type { GradeResult } from '../engine/provider'
 import { useGeneratedQuestions } from '../hooks/useGeneratedQuestions'
+import { EN_UNITS, EN_ZH, enImgSrc, enUnitOf } from '../data/courses'
 import { speak } from '../utils/speech'
 import { coinDrops } from '../utils/sfx'
 import Coin from '../components/Coin'
@@ -90,6 +91,17 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const settled = useRef(false)
   const tick = useRef<number | null>(null)
 
+  /** 英语词汇关：答题前先过一遍单词闪卡（图 + 音 + 义）；boss / 句型关没有 */
+  const cardUnit = !level.boss && level.subject === 'english' ? enUnitOf(level.kinds) : undefined
+  const flashcards = cardUnit ? EN_UNITS[cardUnit].words : []
+  const [phase, setPhase] = useState<'cards' | 'quiz'>(cardUnit ? 'cards' : 'quiz')
+  const [card, setCard] = useState(0)
+  const startQuiz = () => {
+    setPhase('quiz')
+    // 计时和快通星都从答题才开始算，翻卡片不算闯关用时
+    battleStart.current = Date.now()
+  }
+
   const q = queue[0]
   const solved = total - queue.length
   /** 第一次就答对的题数 = 总数 − 曾做错的题数（做错的最终都会被重做到对） */
@@ -99,9 +111,15 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const isRetry = !!q && missed.some((m) => m.text === q.text)
 
   useEffect(() => {
-    if (q) speak(q.speech, readAloud, q.speechLang)
+    if (q && phase === 'quiz') speak(q.speech, readAloud, q.speechLang)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q?.text])
+  }, [q?.text, phase])
+
+  useEffect(() => {
+    const w = flashcards[card]
+    if (phase === 'cards' && w) speak(w.en, readAloud, 'en-US')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, card])
 
   /** 换一道题就重置计时，用来记「这题实际想了多久」 */
   const qStart = useRef(Date.now())
@@ -113,10 +131,10 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const battleStart = useRef(Date.now())
 
   useEffect(() => {
-    if (result) return
+    if (result || phase !== 'quiz') return
     const t = setInterval(() => setLeft((v) => Math.max(0, v - 1)), 1000)
     return () => clearInterval(t)
-  }, [result])
+  }, [result, phase])
 
   useEffect(() => {
     if (left === 0 && !result) finish(false)
@@ -252,6 +270,18 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     setLeft(BATTLE_LIMIT_MIN * 60)
   }
 
+  const quitDialog = confirmQuit && (
+    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-ink/45 px-6">
+      <div className="w-full max-w-[340px] animate-popin rounded-xl3 bg-white p-5 shadow-pop">
+        <div className="text-center text-[18px] font-extrabold text-ink">现在退出，这关要重来哦</div>
+        <div className="mt-4 flex gap-3">
+          <button className="btn-sub" onClick={() => setConfirmQuit(false)}>继续闯关</button>
+          <button className="btn-main bg-danger" onClick={() => nav.back()}>退出</button>
+        </div>
+      </div>
+    </div>
+  )
+
   if (result) {
     const nextLevel = LEVELS_BY_SUBJECT[level.subject].find((l) => l.index === level.index + 1)
     return (
@@ -347,6 +377,38 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     )
   }
 
+  if (cardUnit && phase === 'cards') {
+    const w = flashcards[Math.min(card, flashcards.length - 1)]
+    const last = card >= flashcards.length - 1
+    return (
+      <div className="flex min-h-screen flex-col px-6 pb-8 pt-3">
+        <div className="flex items-center justify-between">
+          <button className="text-[14px] font-bold text-muted" onClick={() => setConfirmQuit(true)}>← 退出</button>
+          <div className="text-[16px] font-extrabold text-ink">{level.name} · 单词卡</div>
+          <div className="text-[14px] font-extrabold text-muted">{Math.min(card + 1, flashcards.length)} / {flashcards.length}</div>
+        </div>
+
+        <div className="flex flex-1 flex-col items-center justify-center py-4">
+          <button
+            className="flex w-full max-w-[300px] flex-col items-center gap-3 rounded-xl3 bg-white px-6 py-8 shadow-card active:scale-[0.98]"
+            onClick={() => speak(w.en, true, 'en-US')}
+          >
+            <WordImg word={w.en} className="h-[140px] w-[140px] object-contain" />
+            <div className="text-[34px] font-extrabold tracking-wide text-sky-600">{w.en}</div>
+            <div className="text-[15px] font-bold text-muted">{w.zh}</div>
+            <div className="text-[13px] font-bold text-sky-400">🔊 点卡片再听一遍</div>
+          </button>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-[340px] gap-3">
+          {!last && <button className="btn-sub flex-1" onClick={() => setCard((c) => c + 1)}>下一个 →</button>}
+          <button className="btn-main flex-1" onClick={startQuiz}>{last ? '开始答题！' : '跳过，直接答题'}</button>
+        </div>
+        {quitDialog}
+      </div>
+    )
+  }
+
   if (!q || !pet) return null
 
   const mm = Math.floor(left / 60)
@@ -401,7 +463,10 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
       <div className={`mt-3 flex items-center justify-center gap-2 rounded-xl3 bg-white py-5 shadow-card ${passing ? 'opacity-40' : ''}`}>
         <button className="text-[22px]" onClick={() => speak(q.speech, true)}>🔊</button>
-        <div className={`font-extrabold text-ink ${q.text.length > 14 ? "text-[24px] leading-snug" : "text-[42px]"}`}>{q.text}</div>
+        <div className={`font-extrabold text-ink ${q.promptImg ? 'text-[20px]' : q.text.length > 14 ? 'text-[24px] leading-snug' : 'text-[42px]'}`}>
+          {q.promptImg && <WordImg word={q.promptImg} className="mx-auto mb-2 block h-[130px] w-[130px] object-contain" />}
+          {q.text}
+        </div>
       </div>
 
       <div className="mt-3 flex gap-3">
@@ -435,7 +500,12 @@ export default function P08Battle({ levelId }: { levelId: string }) {
 
       {q.answerType === 'choice' && q.options ? (
         <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
-          <ChoicePad options={q.options} onPick={pickChoice} disabled={passing} />
+          <ChoicePad
+            options={q.options}
+            picOptions={q.pictureOptions ? q.options.map((w) => ({ word: w, src: enImgSrc(w), zh: EN_ZH[w] ?? w })) : undefined}
+            onPick={pickChoice}
+            disabled={passing}
+          />
         </div>
       ) : (
         <>
@@ -449,19 +519,16 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </>
       )}
 
-      {confirmQuit && (
-        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-ink/45 px-6">
-          <div className="w-full max-w-[340px] animate-popin rounded-xl3 bg-white p-5 shadow-pop">
-            <div className="text-center text-[18px] font-extrabold text-ink">现在退出，这关要重来哦</div>
-            <div className="mt-4 flex gap-3">
-              <button className="btn-sub" onClick={() => setConfirmQuit(false)}>继续闯关</button>
-              <button className="btn-main bg-danger" onClick={() => nav.back()}>退出</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {quitDialog}
     </div>
   )
+}
+
+/** 单词配图：挂了退回中文文字，题仍可作答 */
+function WordImg({ word, className }: { word: string; className?: string }) {
+  const [err, setErr] = useState(false)
+  if (err) return <span className="text-[34px] font-extrabold text-ink">{EN_ZH[word] ?? word}</span>
+  return <img src={enImgSrc(word)} alt={word} className={className} onError={() => setErr(true)} />
 }
 
 function Row({ label, value, tone }: { label: string; value: string; tone: 'point' | 'attr' | 'muted' }) {

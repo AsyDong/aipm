@@ -1,7 +1,8 @@
 /* 冒烟脚本：在 Node 里跑一遍核心状态机，验证 PRD 规则是否被正确执行 */
 import { useStore, dailyTaskVisible, templateAppliesOn, weekdayOf } from './src/store/useStore'
 import * as rules from './src/engine/rules'
-import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion } from './src/engine/questions'
+import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion, charPool } from './src/engine/questions'
+import { CHAR_BANK } from './src/data/courses'
 import { advanceQueue, firstCorrectCount } from './src/engine/queue'
 import { toDay, addDays, nowDay, DAY_START_HOUR } from './src/engine/time'
 import { gradeLocally, needsModel, normalizeNumeric } from './src/engine/grading'
@@ -182,10 +183,10 @@ console.log('== 10. 出题引擎（12 关 × 10 题）==')
 
 console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / 英语单元）==')
 {
-  ok(CHINESE_LEVELS.length === 11 && ENGLISH_LEVELS.length === 9,
+  ok(CHINESE_LEVELS.length === 23 && ENGLISH_LEVELS.length === 9,
     `语文 ${CHINESE_LEVELS.length} 关 / 英语 ${ENGLISH_LEVELS.length} 关`)
   ok(!!levelById('m1') && !!levelById('c1') && !!levelById('e1'), 'levelById 三科都能找到')
-  ok(bossRequires(CHINESE_LEVELS[5]).length === 5, 'Boss 解锁要求取自本 subject 的关卡列表')
+  ok(bossRequires(CHINESE_LEVELS.find((l) => l.boss)!).length === 5, 'Boss 解锁要求取自本 subject 的关卡列表')
 
   for (const level of [...CHINESE_LEVELS, ...ENGLISH_LEVELS]) {
     const qs = buildLevelQuestions(level, [], rules.QUESTIONS_PER_LEVEL)
@@ -219,6 +220,21 @@ console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / �
   ok(gradeLocally(q1, right).correct, 'choice 题：选对 → 本地判对')
   ok(!gradeLocally(q1, wrongOpt).correct, 'choice 题：选错 → 本地判错')
   ok(!needsModel(q1), 'choice 题不需要模型')
+
+  // 拼音重排 + 图词题新题型抽查
+  const blend = questionOfKind('py_blend:u6')
+  ok((blend.spec.prompt ?? '').includes('|') && (blend.options?.length ?? 0) === 4, `声韵拼读题面：${blend.text}`)
+  const rep = questionOfKind('py_rep:u11')
+  ok(rep.text.includes('的读音'), `认读音节题面：${rep.text}`)
+  const pic = questionOfKind('en_pic:family')
+  ok(pic.pictureOptions === true && pic.speechLang === 'en-US' && (pic.options ?? []).every((o) => o === pic.spec.ans || (pic.spec.opts ?? []).includes(o)), `看词选图：${pic.text}`)
+  const wp = questionOfKind('en_wp:animal')
+  ok(!!wp.promptImg && wp.pictureOptions !== true, `看图选词：${wp.text}`)
+
+  // 已学音把关：识字关只会出「声母韵母都学过」的字（马 b+a 在 u2 后；猫 m+ao 要等 u7）
+  ok(charPool('u2').some((c) => c.zh === '马') && !charPool('u2').some((c) => c.zh === '猫'), 'u2 后会拼「马」还不会拼「猫」')
+  ok(charPool('u7').some((c) => c.zh === '猫') && !charPool('u7').some((c) => c.zh === '三'), 'u7 后会拼「猫」，「三」要等鼻韵母')
+  ok(charPool('u13').length === CHAR_BANK.length, '全部拼音学完后字库全解锁')
 }
 
 console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')

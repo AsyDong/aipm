@@ -151,6 +151,10 @@ export interface Question {
   options?: string[]
   /** 朗读语言（英语题用 en-US），缺省 zh-CN */
   speechLang?: 'zh-CN' | 'en-US'
+  /** 选项以图片呈现（看词选图）：options 存单词，渲染映射 public/img/en/ */
+  pictureOptions?: boolean
+  /** 题干配图（看图选词）：存单词 key，渲染映射 public/img/en/ */
+  promptImg?: string
 }
 
 export type PrizeState = 'available' | 'pending' | 'approved' | 'delivered' | 'rejected'

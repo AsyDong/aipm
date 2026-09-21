@@ -63,22 +63,87 @@ export const PINYIN_BANKS: Record<'initial' | 'single' | 'compound' | 'nasal' | 
   zhengti: ZHENGTI.map((s) => ({ ...s, group: 'zhengti' })),
 }
 
-// ---------- 看字选音 / 听音选字 字库（一年级常见字，音形兼具） ----------
-export const CHAR_BANK: SoundItem[] = [
-  { py: 'yī', zh: '一' }, { py: 'èr', zh: '二' }, { py: 'sān', zh: '三' }, { py: 'sì', zh: '四' },
-  { py: 'wǔ', zh: '五' }, { py: 'liù', zh: '六' }, { py: 'qī', zh: '七' }, { py: 'bā', zh: '八' },
-  { py: 'jiǔ', zh: '九' }, { py: 'shí', zh: '十' },
-  { py: 'tiān', zh: '天' }, { py: 'dì', zh: '地' }, { py: 'rén', zh: '人' }, { py: 'nǐ', zh: '你' },
-  { py: 'wǒ', zh: '我' }, { py: 'tā', zh: '他' }, { py: 'dà', zh: '大' }, { py: 'xiǎo', zh: '小' },
-  { py: 'shàng', zh: '上' }, { py: 'xià', zh: '下' },
-  { py: 'rì', zh: '日' }, { py: 'yuè', zh: '月' }, { py: 'shuǐ', zh: '水' }, { py: 'huǒ', zh: '火' },
-  { py: 'shān', zh: '山' }, { py: 'shí', zh: '石' }, { py: 'tián', zh: '田' }, { py: 'hé', zh: '禾' },
-  { py: 'mǎ', zh: '马' }, { py: 'niǎo', zh: '鸟' }, { py: 'chóng', zh: '虫' },
-  { py: 'bái', zh: '白' }, { py: 'hēi', zh: '黑' }, { py: 'yún', zh: '云' }, { py: 'yǔ', zh: '雨' },
-  { py: 'fēng', zh: '风' }, { py: 'fēi', zh: '飞' }, { py: 'mén', zh: '门' }, { py: 'mù', zh: '目' },
-  { py: 'kǒu', zh: '口' }, { py: 'ěr', zh: '耳' }, { py: 'shǒu', zh: '手' }, { py: 'zú', zh: '足' },
-  { py: 'māo', zh: '猫' }, { py: 'gǒu', zh: '狗' }, { py: 'niú', zh: '牛' }, { py: 'yáng', zh: '羊' },
+// ---------- 拼音学习单元（每关 ~5 个，按人教一上教学顺序累积） ----------
+// 关卡按单元排布：先单个认音，学到的音立刻拿去拼字（识字关只出「已学音拼得出来」的字）。
+
+export interface PinyinUnit {
+  id: string
+  label: string
+  items: PinyinBankItem[]
+}
+
+const UNIT_DEFS: Array<{ id: string; label: string; pys: string[] }> = [
+  { id: 'u1', label: '单韵母', pys: ['a', 'o', 'e', 'i', 'u', 'ü'] },
+  { id: 'u2', label: '声母一', pys: ['b', 'p', 'm', 'f', 'd'] },
+  { id: 'u3', label: '声母二', pys: ['t', 'n', 'l', 'g', 'k'] },
+  { id: 'u4', label: '声母三', pys: ['h', 'j', 'q', 'x'] },
+  { id: 'u5', label: '声母四', pys: ['zh', 'ch', 'sh', 'r', 'z'] },
+  { id: 'u6', label: '声母五', pys: ['c', 's', 'y', 'w'] },
+  { id: 'u7', label: '复韵母一', pys: ['ai', 'ei', 'ui', 'ao', 'ou'] },
+  { id: 'u8', label: '复韵母二', pys: ['iu', 'ie', 'üe', 'er'] },
+  { id: 'u9', label: '鼻韵母一', pys: ['an', 'en', 'in', 'un', 'ün'] },
+  { id: 'u10', label: '鼻韵母二', pys: ['ang', 'eng', 'ing', 'ong'] },
+  { id: 'u11', label: '整体认读一', pys: ['zhi', 'chi', 'shi', 'ri', 'zi', 'ci'] },
+  { id: 'u12', label: '整体认读二', pys: ['si', 'yi', 'wu', 'yu', 'ye', 'yue'] },
+  { id: 'u13', label: '整体认读三', pys: ['yuan', 'yin', 'yun', 'ying'] },
 ]
+
+const SOUND_BY_PY = new Map(Object.values(PINYIN_BANKS).flat().map((i) => [i.py, i]))
+
+export const PINYIN_UNITS: PinyinUnit[] = UNIT_DEFS.map((u) => ({
+  id: u.id,
+  label: u.label,
+  items: u.pys.map((p) => SOUND_BY_PY.get(p)).filter((i): i is PinyinBankItem => !!i),
+}))
+
+// ---------- 看字选音 / 听音选音 字库（一年级常见字，音形兼具） ----------
+// initial/final 是该字读音的声韵分解：initial '' = 零声母或整体认读。
+// 识字关用它们做「已学音把关」：一个字只有当声母和韵母各部分都学过才会出。
+
+export interface CharItem extends SoundItem {
+  /** 声母（'' = 零声母 / 整体认读） */
+  initial: string
+  /** 韵母（可含 i/u/ü 介音，如 iao；整体认读字存整个音节，如 yi） */
+  final: string
+}
+
+export const CHAR_BANK: CharItem[] = [
+  { py: 'yī', zh: '一', initial: '', final: 'yi' }, { py: 'èr', zh: '二', initial: '', final: 'er' },
+  { py: 'sān', zh: '三', initial: 's', final: 'an' }, { py: 'sì', zh: '四', initial: '', final: 'si' },
+  { py: 'wǔ', zh: '五', initial: '', final: 'wu' }, { py: 'liù', zh: '六', initial: 'l', final: 'iu' },
+  { py: 'qī', zh: '七', initial: 'q', final: 'i' }, { py: 'bā', zh: '八', initial: 'b', final: 'a' },
+  { py: 'jiǔ', zh: '九', initial: 'j', final: 'iu' }, { py: 'shí', zh: '十', initial: '', final: 'shi' },
+  { py: 'tiān', zh: '天', initial: 't', final: 'ian' }, { py: 'dì', zh: '地', initial: 'd', final: 'i' },
+  { py: 'rén', zh: '人', initial: 'r', final: 'en' }, { py: 'nǐ', zh: '你', initial: 'n', final: 'i' },
+  { py: 'wǒ', zh: '我', initial: 'w', final: 'o' }, { py: 'tā', zh: '他', initial: 't', final: 'a' },
+  { py: 'dà', zh: '大', initial: 'd', final: 'a' }, { py: 'xiǎo', zh: '小', initial: 'x', final: 'iao' },
+  { py: 'shàng', zh: '上', initial: 'sh', final: 'ang' }, { py: 'xià', zh: '下', initial: 'x', final: 'ia' },
+  { py: 'rì', zh: '日', initial: '', final: 'ri' }, { py: 'yuè', zh: '月', initial: '', final: 'yue' },
+  { py: 'shuǐ', zh: '水', initial: 'sh', final: 'ui' }, { py: 'huǒ', zh: '火', initial: 'h', final: 'uo' },
+  { py: 'shān', zh: '山', initial: 'sh', final: 'an' }, { py: 'shí', zh: '石', initial: '', final: 'shi' },
+  { py: 'tián', zh: '田', initial: 't', final: 'ian' }, { py: 'hé', zh: '禾', initial: 'h', final: 'e' },
+  { py: 'mǎ', zh: '马', initial: 'm', final: 'a' }, { py: 'niǎo', zh: '鸟', initial: 'n', final: 'iao' },
+  { py: 'chóng', zh: '虫', initial: 'ch', final: 'ong' },
+  { py: 'bái', zh: '白', initial: 'b', final: 'ai' }, { py: 'hēi', zh: '黑', initial: 'h', final: 'ei' },
+  { py: 'yún', zh: '云', initial: '', final: 'yun' }, { py: 'yǔ', zh: '雨', initial: '', final: 'yu' },
+  { py: 'fēng', zh: '风', initial: 'f', final: 'eng' }, { py: 'fēi', zh: '飞', initial: 'f', final: 'ei' },
+  { py: 'mén', zh: '门', initial: 'm', final: 'en' }, { py: 'mù', zh: '目', initial: 'm', final: 'u' },
+  { py: 'kǒu', zh: '口', initial: 'k', final: 'ou' }, { py: 'ěr', zh: '耳', initial: '', final: 'er' },
+  { py: 'shǒu', zh: '手', initial: 'sh', final: 'ou' }, { py: 'zú', zh: '足', initial: 'z', final: 'u' },
+  { py: 'māo', zh: '猫', initial: 'm', final: 'ao' }, { py: 'gǒu', zh: '狗', initial: 'g', final: 'ou' },
+  { py: 'niú', zh: '牛', initial: 'n', final: 'iu' }, { py: 'yáng', zh: '羊', initial: 'y', final: 'ang' },
+]
+
+/** 韵母拆成「已学音」集合：iao → [i, ao]；已在韵母表里的（如 iu / üe / er）整串算一个 */
+export function finalParts(f: string): string[] {
+  if (FINALS.some((x) => x.py === f)) return [f]
+  const head = f[0]
+  const rest = f.slice(1)
+  if ((head === 'i' || head === 'u' || head === 'ü') && FINALS.some((x) => x.py === rest)) {
+    return [head, rest]
+  }
+  return [f] // 整体认读音节等：整串当一个音看待
+}
 
 // ---------- 必背古诗文 & 课文（docs/courses/1-1-yuwen.md）----------
 export interface PoemDef {
@@ -186,4 +251,20 @@ export const EN_UNITS: Record<string, EnUnitDef> = {
       { before: 'This is a fish. It\'s', after: '.', answer: 'red', distractors: ['blue', 'black', 'hot'] },
     ],
   },
+}
+
+/** 单词 → 中文（图片加载失败时的文字兜底，也用于题面解释） */
+export const EN_ZH: Record<string, string> = {}
+for (const u of Object.values(EN_UNITS)) for (const w of u.words) EN_ZH[w.en] = w.zh
+
+/** 单词配图路径（public/img/en/<word>.png，AI 批量生成；缺失时 UI 有文字兜底） */
+export function enImgSrc(word: string): string {
+  const base = import.meta.env?.BASE_URL ?? '/'
+  return `${base}img/en/${word.replace(/ /g, '-')}.png`
+}
+
+/** 英语关卡的学习单元：关卡所有题型同组时才有（用于闯关前的闪卡预习），boss / 句型关没有 */
+export function enUnitOf(kinds: string[]): string | undefined {
+  const gs = kinds.map((k) => k.split(':')[1] ?? '')
+  return gs.length > 0 && gs.every((g) => g === gs[0]) && EN_UNITS[gs[0]] ? gs[0] : undefined
 }
