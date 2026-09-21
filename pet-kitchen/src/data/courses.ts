@@ -257,10 +257,10 @@ export const EN_UNITS: Record<string, EnUnitDef> = {
 export const EN_ZH: Record<string, string> = {}
 for (const u of Object.values(EN_UNITS)) for (const w of u.words) EN_ZH[w.en] = w.zh
 
-/** 单词配图路径（public/img/en/<word>.png，AI 批量生成；缺失时 UI 有文字兜底） */
+/** 单词配图路径（public/img/en/<word>.jpg，AI 批量生成；缺失时 UI 有文字兜底） */
 export function enImgSrc(word: string): string {
   const base = import.meta.env?.BASE_URL ?? '/'
-  return `${base}img/en/${word.replace(/ /g, '-')}.png`
+  return `${base}img/en/${word.replace(/ /g, '-')}.jpg`
 }
 
 /** 英语关卡的学习单元：关卡所有题型同组时才有（用于闯关前的闪卡预习），boss / 句型关没有 */

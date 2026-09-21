@@ -7,6 +7,10 @@
 // 图保存到 public/img/en/<word>.png（空格转 -，如 pencil-case.png）。
 // 已存在的文件跳过，可随时重跑补漏。
 //
+// 生成后必须再跑一步压缩（UI 引用的是 .jpg）：
+//   powershell -NoProfile -File tools/compress-en-images.ps1
+// （png → 288px 白底 JPEG，原 png 删除，1024px 底档在 _scratch/en-img-1024/）
+//
 // 生图通道按序探测（找到第一个可用的就用）：
 //   1. 火山方舟 Seedream   —— env ARK_API_KEY（注意：agent plan 通道的令牌不支持生图模型）
 //   2. 智谱 CogView-3-Flash —— env ZHIPU_API_KEY / BIGMODEL_API_KEY（免费）
