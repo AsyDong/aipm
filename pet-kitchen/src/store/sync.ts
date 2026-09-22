@@ -10,8 +10,8 @@
 //    重复推送不会写重。所以「网络超时」这种情况可以放心重试，不用怕写两份。
 //
 // 3) **队列独立于主存档。** 不进 zustand persist —— 同步是「传输层」的事，
-//    混进主状态会污染存档、还要连带做版本迁移。childId 也由本模块自管，
-//    将来服务端 children 表用同一个值即可对上。
+//    混进主状态会污染存档、还要连带做版本迁移。孩子身份（childId + 登录码）也由本模块自管，
+//    登录成功后可整体换绑到另一个孩子（见 setCredentials）。
 //
 // 与出题/判分的 provider 层是**两个独立的关注点**，刻意不合并：
 // provider 决定「题从哪儿来」，sync 决定「成绩去哪儿」。
@@ -58,6 +58,10 @@ export interface SyncConfig {
 export interface SyncStats {
   enabled: boolean
   childId: string
+  /** 是否已设置登录码（没设置 = 服务端会拒收，去家长区绑定） */
+  hasPin: boolean
+  /** 服务端返回 401（登录码不对/未设置），同步已暂停，去家长区重新登录 */
+  unauthorized: boolean
   /** 还在本地排队、没推上去的条数 */
   queued: number
   /** 本次会话成功推送的条数 */
@@ -91,9 +95,11 @@ const DEFAULTS: SyncConfig = {
   batchSize: 200,
 }
 
-/** 落盘的部分：只有 childId 和队列，计数器属于会话级遥测，不持久化 */
+/** 落盘的部分：孩子身份（编号+登录码）和队列，计数器属于会话级遥测，不持久化 */
 interface Persisted {
   childId: string
+  /** 6 位数字登录码（家长区设置），sync/state 每次请求都带（x-child-pin） */
+  pin: string
   queue: SyncOp[]
 }
 
@@ -106,7 +112,7 @@ function storage(): Storage | null {
 }
 
 function load(): Persisted {
-  const empty: Persisted = { childId: uid('c'), queue: [] }
+  const empty: Persisted = { childId: uid('c'), pin: '', queue: [] }
   const s = storage()
   if (!s) return empty
   try {
@@ -115,6 +121,7 @@ function load(): Persisted {
     const parsed = JSON.parse(raw) as Partial<Persisted>
     return {
       childId: typeof parsed.childId === 'string' && parsed.childId ? parsed.childId : empty.childId,
+      pin: typeof parsed.pin === 'string' ? parsed.pin : '',
       queue: Array.isArray(parsed.queue) ? parsed.queue.filter(isValidOp) : [],
     }
   } catch {
@@ -138,6 +145,7 @@ const counters = {
   dropped: 0,
   rejected: 0,
   forbidden: false,
+  unauthorized: false,
   lastError: '',
   lastSyncAt: 0,
   serverVersion: 0,
@@ -174,6 +182,7 @@ export function syncStats(): SyncStats {
   return {
     enabled: enabled(),
     childId: state.childId,
+    hasPin: !!state.pin,
     queued: state.queue.length,
     ...counters,
   }
@@ -190,6 +199,53 @@ export function pendingCount(): number {
 
 export function childId(): string {
   return state.childId
+}
+
+/**
+ * 设备绑定/登录成功后调用：写入孩子身份（可能换 childId），同步重新起步。
+ * 换了 childId 意味着本地队列里的 op 全是旧身份的 —— 直接丢弃。
+ */
+export function setCredentials(nextChildId: string, pin: string): void {
+  const changed = nextChildId !== state.childId
+  state.childId = nextChildId
+  state.pin = pin
+  if (changed) state.queue = []
+  counters.forbidden = false
+  counters.unauthorized = false
+  counters.lastError = ''
+  save()
+}
+
+/** 登录结果：conflict = 已被绑定过（要走登录而不是设置） */
+export interface AuthResult {
+  ok: boolean
+  conflict?: boolean
+  error?: string
+}
+
+async function authRequest(path: string, childId: string, pin: string): Promise<AuthResult> {
+  try {
+    const res = await fetch(`${config.apiBaseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-sync-token': config.token },
+      body: JSON.stringify({ childId, pin }),
+    })
+    if (res.ok) return { ok: true }
+    const body = (await res.json().catch(() => ({}))) as { error?: string }
+    return { ok: false, conflict: res.status === 409, error: body.error ?? `HTTP ${res.status}` }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+/** 首次设置登录码（本机孩子）。409 = 服务端已有码，改走 loginChild。 */
+export function claimPin(pin: string): Promise<AuthResult> {
+  return authRequest('/api/claim', state.childId, pin)
+}
+
+/** 新设备登录已有孩子：验证通过后调 setCredentials 收编身份 */
+export function loginChild(childId: string, pin: string): Promise<AuthResult> {
+  return authRequest('/api/login', childId, pin)
 }
 
 /**
@@ -267,13 +323,23 @@ async function pushOnce(): Promise<FlushResult> {
   try {
     const res = await fetch(`${config.apiBaseUrl}/api/sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-sync-token': config.token },
+      headers: { 'Content-Type': 'application/json', 'x-sync-token': config.token, 'x-child-pin': state.pin },
       body: JSON.stringify({
         childId: state.childId,
         ops: batch.map(({ opId, kind, data }) => ({ opId, kind, data })),
       }),
       signal: ctrl.signal,
     })
+
+    if (res.status === 401) {
+      // 登录码不对/没设置：去家长区绑定。孩子照玩，数据继续攒着。
+      counters.unauthorized = true
+      counters.lastError = '需要登录（家长区 → 设备绑定）'
+      return {
+        ok: false, pushed: 0, remaining: state.queue.length,
+        serverVersion: counters.serverVersion, error: counters.lastError,
+      }
+    }
 
     if (res.status === 403) {
       // 令牌不对：再推一万次也是 403，停下来等人修，别把队列刷爆
@@ -315,6 +381,7 @@ async function pushOnce(): Promise<FlushResult> {
     counters.pushed += Math.max(0, batch.length - failed)
     counters.rejected += failed
     counters.forbidden = false
+    counters.unauthorized = false
     counters.lastError = failed > 0
       ? `服务端拒绝了 ${failed} 条：${(body.errors ?? []).join(' ｜ ') || '原因未记录'}`
       : ''
@@ -389,7 +456,7 @@ export async function pullState(id: string): Promise<RemoteState | null> {
   try {
     const res = await fetch(
       `${config.apiBaseUrl}/api/state?childId=${encodeURIComponent(id)}`,
-      { headers: { 'x-sync-token': config.token }, signal: ctrl.signal },
+      { headers: { 'x-sync-token': config.token, 'x-child-pin': state.pin }, signal: ctrl.signal },
     )
     if (!res.ok) return null
     return (await res.json()) as RemoteState
