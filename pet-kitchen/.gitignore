@@ -25,6 +25,9 @@ vite.config.ts.timestamp-*
 *-out.txt
 *.log
 
+# Playwright MCP 测试产物
+.playwright-mcp/
+
 # 系统 / 编辑器
 .DS_Store
 Thumbs.db

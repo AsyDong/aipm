@@ -151,6 +151,7 @@ function QImg({ src, alt }: { src: string; alt: string }) {
 }
 
 /** P10 错题集：今天要复习 / 已掌握；每道错题 3 道举一反三变式 */
+const SUBJECT_ZH = { math: '数学', chinese: '语文', english: '英语' } as const
 export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 'chinese' | 'english' }) {
   const nav = useNav()
   const wrong = useStore((s) => s.wrong)
@@ -200,7 +201,7 @@ export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 
       <div className="flex items-center gap-3">
         <button className="text-[15px] font-bold text-muted" onClick={() => nav.back()}>← 返回</button>
         <div className="flex-1 text-center text-[18px] font-extrabold text-ink">错题集</div>
-        <div className="w-[60px] text-right text-[13px] font-bold text-sky-600">数学 ({wrong.filter((w) => w.subject === subject).length})</div>
+        <div className="w-[60px] text-right text-[13px] font-bold text-sky-600">{SUBJECT_ZH[subject]} ({wrong.filter((w) => w.subject === subject).length})</div>
       </div>
 
       <div className="mt-3 flex gap-3">
