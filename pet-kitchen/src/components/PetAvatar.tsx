@@ -12,7 +12,7 @@ interface Props {
 /**
  * 宠物立绘 —— 2026-09-17 接入「糖果祥瑞」AI 立绘。
  *
- * 资产：public/pets/pet_{species}_s0{1-6}.png（3 宠 × 6 阶 = 18 张，512×512 透明底 PNG-24），
+ * 资产：public/pets/pet_{species}_s0{1-6}.webp（3 宠 × 6 阶 = 18 张，512×512 透明底 WebP），
  * 风格基准见「糖果祥瑞」设计哲学与《山海经宠物_立绘风格基准板 v1.0》。
  *
  * 行为：
@@ -25,7 +25,7 @@ interface Props {
 export default function PetAvatar({ species, stage, size = 180, mood = 'idle' }: Props) {
   const def = SPECIES.find((s) => s.id === species) ?? SPECIES[0]
   const s = Math.min(6, Math.max(1, stage))
-  const src = `/pets/pet_${species}_s0${s}.png`
+  const src = `/pets/pet_${species}_s0${s}.webp`
   const [artOk, setArtOk] = useState(true)
 
   // 换阶段 / 换物种时重置加载态
