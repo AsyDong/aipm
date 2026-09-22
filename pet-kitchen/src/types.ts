@@ -243,6 +243,8 @@ export interface AppState {
   child: ChildProfile
   templates: TaskTemplate[]
   daily: DailyTask[]
+  /** 「闪卡速记」模板补种标记（v0.5 一次性迁移，防止孩子删了又被补回来） */
+  fcSeeded: boolean
   food: number
   points: number
   /** 冻结中的积分（兑换待审批，Q22 审批流：先冻结不扣） */

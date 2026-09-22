@@ -12,7 +12,7 @@ import {
   STREAK_7_FOOD, stageOf, starsOf,
 } from '../engine/rules'
 import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
-import { levelById } from '../engine/questions'
+import { levelById, specKey } from '../engine/questions'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
 import {
@@ -23,6 +23,9 @@ import {
 // ============ 任务排期（常规 / 今日） ============
 
 const WEEK_ALL = [1, 2, 3, 4, 5, 6, 7]
+
+/** 「闪卡速记」模板的固定 id：老档案补种用，多设备各自补种也收敛为同一条 */
+export const FC_TPL_ID = 't-fc-shansu'
 
 /** 游戏日 → 星期几（1=周一 … 7=周日）。UTC+8 的游戏日按本地日期解析即可，取的是星期不是时刻 */
 export function weekdayOf(day: string): number {
@@ -88,6 +91,7 @@ const initialState: AppState = {
   child: { ...defaultChild },
   templates: [],
   daily: [],
+  fcSeeded: false,
   food: 0,
   points: 0,
   frozenPoints: 0,
@@ -546,6 +550,33 @@ export const useStore = create<Store>()(
           const kept = get().daily.filter((d) => !(d.day === today && !tpls.has(d.templateId)))
           if (kept.length !== get().daily.length) set({ daily: kept })
           ensureTasks()
+          // v0.5 「闪卡速记」模板：所有档案一次性补种（defaultTemplates 不含它，靠这里补；
+          // 固定 id 让多设备各自补种也收敛为同一条）。孩子/家长删掉后不再补回。
+          // 放在 ensureTasks 之后：今日实例排在常规任务后面，不打乱既有顺序。
+          if (!get().fcSeeded) {
+            set({ fcSeeded: true })
+            const s0 = get()
+            if (!s0.templates.some((t) => t.id === FC_TPL_ID || t.name === '闪卡速记')) {
+              const created: TaskTemplate = {
+                id: FC_TPL_ID,
+                name: '闪卡速记',
+                icon: '🃏',
+                type: 'subjective',
+                kind: 'regular',
+                weekdays: [...WEEK_ALL],
+                foodValue: 1,
+                enabled: true,
+                createdAt: Date.now(),
+              }
+              const daily = templateAppliesOn(created, s0.activeDay)
+                // 每日实例也用确定性 id：两台设备同天各自补种时收敛为同一行，不会出现两个「闪卡速记」
+                ? [...s0.daily, { ...mkDaily(created, s0.activeDay), id: `d-fc-${s0.activeDay}` }]
+                : s0.daily
+              set({ templates: [...s0.templates, created], daily })
+              recordTemplate(created)
+              if (daily !== s0.daily) recordDailyTask(daily[daily.length - 1])
+            }
+          }
           autoUnfreeze()
           seedEntities()
           void pruneMedia()
@@ -870,7 +901,6 @@ export const useStore = create<Store>()(
           const pet = s.pet
           const stars = starsOf(correct, total, durationMs, subject)
           const zero: BattleResult = { points: 0, stars: 0, attr: 0, firstClear: false }
-          if (stars === 0) return zero
 
           const rec = s.levels.find((l) => l.levelId === levelId)
           const firstClear = !rec?.cleared
@@ -883,7 +913,7 @@ export const useStore = create<Store>()(
           const today = nowDay()
           const wrong = s.wrong.slice()
           for (const q of wrongQs) {
-            const exist = wrong.find((w) => !w.mastered && w.text === q.text)
+            const exist = wrong.find((w) => !w.mastered && specKey(w.spec) === specKey(q.spec))
             if (exist) {
               exist.wrongCount += 1
               exist.rightStreak = 0
@@ -904,6 +934,17 @@ export const useStore = create<Store>()(
                 createdAt: Date.now(),
               })
             }
+          }
+          // 错题同步 op：两条结算路径共用（注意 find 带 !mastered，别把已掌握的旧行覆盖上去）
+          for (const q of wrongQs) {
+            const item = wrong.find((w) => !w.mastered && specKey(w.spec) === specKey(q.spec))
+            if (item) recordWrong(item)
+          }
+
+          // 0 星也没关系：答错的题照样进错题本走遗忘曲线（打得越差越要复习）
+          if (stars === 0) {
+            set({ wrong })
+            return zero
           }
 
           const record: LevelRecord = {
@@ -938,10 +979,6 @@ export const useStore = create<Store>()(
           recordLevel(record)
           // 三科属性变了，宠物档案跟着更新
           if (nextPet) recordPet(nextPet)
-          for (const q of wrongQs) {
-            const item = wrong.find((w) => w.text === q.text)
-            if (item) recordWrong(item)
-          }
           return { points, stars, attr: attrGain, firstClear }
         },
 

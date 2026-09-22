@@ -5,7 +5,7 @@
 // 它是默认实现，也是远端不可用时的兜底。
 
 import type { Question } from '../../types'
-import { MATH_LEVELS, buildLevelQuestions, variantsOf } from '../questions'
+import { MATH_LEVELS, buildLevelQuestions, levelById, variantsOf } from '../questions'
 import { gradeLocally, needsModel } from '../grading'
 import type {
   GenRequest, GenResult, GradeRequest, GradeResult, SyncQuestionProvider,
@@ -15,7 +15,8 @@ export const localProvider: SyncQuestionProvider = {
   name: 'local',
 
   generate(req: GenRequest): GenResult {
-    const level = MATH_LEVELS.find((l) => l.id === req.levelId) ?? MATH_LEVELS[0]
+    // levelById 覆盖三科 + 闪卡速记：本地 provider 不能只会出数学题
+    const level = levelById(req.levelId) ?? MATH_LEVELS[0]
     const inject = (req.inject ?? []).slice(0, req.count)
     return { questions: buildLevelQuestions(level, inject, req.count), source: 'local' }
   },

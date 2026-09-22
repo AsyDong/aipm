@@ -1,7 +1,7 @@
 import type { QSpec, Question, Subject } from '../types'
 import { rnd, shuffle } from '../utils/id'
 import {
-  CHAR_BANK, EN_UNITS, EN_ZH, finalParts, PINYIN_BANKS, PINYIN_UNITS, POEMS,
+  CHAR_BANK, EN_UNITS, EN_ZH, FC_BY_NO, FC_NO_BY_WORD, FC_UNITS, finalParts, PINYIN_BANKS, PINYIN_UNITS, POEMS,
   type CharItem, type EnWord, type PinyinBankItem,
 } from '../data/courses'
 
@@ -89,6 +89,19 @@ export const ENGLISH_LEVELS: LevelDef[] = [
   { id: 'eb2', subject: 'english', index: 9, name: '期末大挑战', skill: '综合', kinds: ['en_word:animal', 'en_meaning:colour', 'en_sentence:family', 'en_sentence:ability', 'en_word:family', 'en_sentence:animal'], unlockAttr: 24, boss: true },
 ]
 
+// ============ 闪卡速记关卡（任务「闪卡速记」专用，不进闯关地图） ============
+// 预备级电子闪卡 PDF 切的 115 张卡，按 FC_UNITS 一单元一关；进度记在 levels（fc-uN）。
+
+export const FC_LEVELS: LevelDef[] = FC_UNITS.map((u, i) => ({
+  id: `fc-${u.id}`,
+  subject: 'english',
+  index: i + 1,
+  name: `闪卡速记·${u.name}`,
+  skill: '看图认词',
+  kinds: [`fc_pic:${u.id}`, `fc_wp:${u.id}`],
+  unlockAttr: 0,
+}))
+
 /** 全科目关卡注册表 */
 export const LEVELS_BY_SUBJECT: Record<Subject, LevelDef[]> = {
   math: MATH_LEVELS,
@@ -97,7 +110,7 @@ export const LEVELS_BY_SUBJECT: Record<Subject, LevelDef[]> = {
 }
 
 export function levelById(id: string): LevelDef | undefined {
-  for (const list of Object.values(LEVELS_BY_SUBJECT)) {
+  for (const list of [...Object.values(LEVELS_BY_SUBJECT), FC_LEVELS]) {
     const hit = list.find((l) => l.id === id)
     if (hit) return hit
   }
@@ -125,10 +138,13 @@ export type ContentKind =
   | 'en_pic' // 看词选图
   | 'en_wp' // 看图选词
   | 'en_sentence' // 句型填空
+  | 'fc_pic' // 闪卡速记：看图选词（spec.a = 卡片编号）
+  | 'fc_wp' // 闪卡速记：看词选图
 
 const CONTENT_KINDS = new Set<string>([
   'py_pick_char', 'py_unit', 'py_rep', 'char_py', 'py_word', 'py_blend',
   'poem_next', 'en_word', 'en_meaning', 'en_pic', 'en_wp', 'en_sentence',
+  'fc_pic', 'fc_wp',
 ])
 
 const MIX_PY: PinyinBankItem[] = [
@@ -238,6 +254,14 @@ function genContentSpec(kind: string): QSpec {
       const opts = pickDistractors(unit.words, w, (x) => x.en)
       return { kind: base, a: 0, b: 0, prompt: w.zh, ans: w.en, opts: opts.map((o) => o.en) }
     }
+    // 闪卡速记：spec.a 存卡片编号（图按编号取），prompt/ans/opts 存单词文本
+    case 'fc_pic':
+    case 'fc_wp': {
+      const unit = FC_UNITS.find((u) => u.id === group) ?? FC_UNITS[0]
+      const w = unit.words[rnd(unit.words.length)]
+      const opts = pickDistractors(unit.words, w, (x) => x.en)
+      return { kind: base, a: w.no, b: 0, prompt: w.en, ans: w.en, opts: opts.map((o) => o.en) }
+    }
     default: {
       // en_sentence
       const unit = EN_UNITS[group] ?? EN_UNITS.family
@@ -273,6 +297,8 @@ const CONTENT_SKILL: Record<string, string> = {
   en_pic: '英语词汇',
   en_wp: '英语词汇',
   en_sentence: '英语句型',
+  fc_pic: '闪卡速记',
+  fc_wp: '闪卡速记',
 }
 
 /** 由 spec 重建内容题（顺序重新洗牌没关系，正确性由 ans 决定） */
@@ -373,6 +399,30 @@ function buildContentQuestion(spec: QSpec): Question {
         speech: `选出${zh}的英文`,
         hint: zhHint,
         explain: `${zh} = ${ans}`,
+      }
+    }
+    case 'fc_pic': {
+      const w = FC_BY_NO.get(spec.a)
+      return {
+        ...base,
+        promptImg: String(spec.a),
+        text: '这幅图用英语怎么说？',
+        speech: `看图想一想，${w?.zh ?? ''}用英语怎么说`,
+        hint: '看图回想：这个用英语怎么说？',
+        explain: `图里是${w?.zh ?? ''}，英语说 ${ans}`,
+      }
+    }
+    case 'fc_wp': {
+      const en = spec.prompt ?? ''
+      const zh = FC_BY_NO.get(FC_NO_BY_WORD[en] ?? -1)?.zh
+      return {
+        ...base,
+        speechLang: 'en-US',
+        pictureOptions: true,
+        text: `${en} 是哪幅图？`,
+        speech: en,
+        hint: '听听发音，想想它的意思，找到那张图',
+        explain: `${en} = ${zh ?? ans}`,
       }
     }
     default: {
@@ -587,6 +637,11 @@ const SKILL_LABEL: Record<string, string> = {
   mix: '综合速算',
 }
 
+/** 题目唯一键：错题本 / 重做追踪都用它判等（fc_pic 等内容题 text 恒定，不能拿 text 当身份） */
+export function specKey(s: QSpec): string {
+  return `${s.kind}|${s.a}|${s.b}|${s.c ?? ''}|${s.op ?? ''}|${s.prompt ?? ''}`
+}
+
 export function buildQuestion(spec: QSpec): Question {
   if (CONTENT_KINDS.has(spec.kind)) return buildContentQuestion(spec)
   const ans = calc(spec)
@@ -620,6 +675,7 @@ const CONTENT_VARIANT_KIND: Record<string, string> = {
   en_pic: 'en_pic:family',
   en_wp: 'en_wp:family',
   en_sentence: 'en_sentence:family',
+  // fc_pic / fc_wp 不配默认组：spec.kind 自带 ：uN，举一反三就该在原单元出（回表反而错单元）
 }
 
 /** 举一反三：3 道变式题（数学换数字/逆运算，内容题换素材再出一道） */

@@ -1,8 +1,8 @@
 /* 冒烟脚本：在 Node 里跑一遍核心状态机，验证 PRD 规则是否被正确执行 */
 import { useStore, dailyTaskVisible, templateAppliesOn, weekdayOf } from './src/store/useStore'
 import * as rules from './src/engine/rules'
-import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion, charPool } from './src/engine/questions'
-import { CHAR_BANK } from './src/data/courses'
+import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion, charPool, specKey } from './src/engine/questions'
+import { CHAR_BANK, FC_UNITS } from './src/data/courses'
 import { advanceQueue, firstCorrectCount } from './src/engine/queue'
 import { toDay, addDays, nowDay, DAY_START_HOUR } from './src/engine/time'
 import { gradeLocally, needsModel, normalizeNumeric } from './src/engine/grading'
@@ -37,7 +37,7 @@ function nextDay() {
 console.log('== 1. 初始化 ==')
 s().bootstrap()
 ok(!s().pet, '初始没有宠物')
-ok(s().templates.length === 5, `默认任务模板 ${s().templates.length} 条`)
+ok(s().templates.length === 6, `默认任务模板 ${s().templates.length} 条（5 默认 + 闪卡速记补种）`)
 ok(s().prizes.length > 0, `默认现实奖品 ${s().prizes.length} 个`)
 
 console.log('== 2. 领养 / 破壳 / 取名 ==')
@@ -52,7 +52,7 @@ ok(s().pet!.nickname === '小闪电' && s().pet!.locked, '取名成功并锁定�
 ok(s().phase === 'home', '进入家园')
 
 console.log('== 3. 每日任务生成 ==')
-ok(s().daily.length === 5, `今日任务 ${s().daily.length} 条`)
+ok(s().daily.length === 6, `今日任务 ${s().daily.length} 条`)
 ok(s().daily.every((t) => t.day === s().activeDay), '任务 day 与 activeDay 一致')
 
 console.log('== 4. 打卡 → 发食物 ==')
@@ -63,17 +63,17 @@ ok(s().food === 1, `食物 = ${s().food}（期望 1）`, s().food)
 ok(s().streak === 1, `连续天数 = ${s().streak}`)
 
 for (const t of s().daily.filter((x) => x.status !== 'done')) s().submitTask(t.id)
-ok(s().daily.filter((t) => t.status === 'pending').length === 2, '2 个主观任务进入待家长确认')
+ok(s().daily.filter((t) => t.status === 'pending').length === 3, '3 个主观任务进入待家长确认')
 for (const t of s().daily.filter((x) => x.status === 'pending')) s().approveTask(t.id)
-ok(s().food === 5, `5 个任务共得 ${s().food} 份食物（无全勤奖）`, s().food)
-ok(s().todayTasksDone === 5, `todayTasksDone = ${s().todayTasksDone}`)
+ok(s().food === 6, `6 个任务共得 ${s().food} 份食物（无全勤奖）`, s().food)
+ok(s().todayTasksDone === 6, `todayTasksDone = ${s().todayTasksDone}`)
 
 console.log('== 5. 喂养规则（1份=20，日上限5，硬上限120）==')
 useStore.setState({ pet: { ...s().pet!, satiety: 0, fedToday: 0 } })
 s().parentAdjustFood(10, '测试补发')
 s().feed(3)
 ok(s().pet!.satiety === 60, `喂 3 份 → 饱食度 ${s().pet!.satiety}（期望 60）`, s().pet?.satiety)
-ok(s().food === 12, `食物剩余 ${s().food}（5+10-3）`, s().food)
+ok(s().food === 13, `食物剩余 ${s().food}（6+10-3）`, s().food)
 ok(s().pet!.exp === 30, `经验 ${s().pet!.exp}（3×10）`, s().pet?.exp)
 s().feed(2)
 ok(s().pet!.satiety === 100, `再喂 2 份 → ${s().pet!.satiety}（期望 100，恰好顶格）`, s().pet?.satiety)
@@ -94,7 +94,7 @@ nextDay()
 ok(s().pet!.satiety === 60, `120 - 60 = ${s().pet!.satiety}（期望 60）`, s().pet?.satiety)
 ok(s().pet!.fedToday === 0, 'fedToday 已重置')
 ok(s().todayTasksDone === 0, 'todayTasksDone 已重置')
-ok(s().daily.length === 5, '新一天任务已重建')
+ok(s().daily.length === 6, '新一天任务已重建')
 ok(s().snapshots.length >= 1, `快照已写入 ${s().snapshots.length} 条`)
 
 console.log('== 7. 连续 7 天额外 +1 / 30 天 +5 ==')
@@ -828,6 +828,36 @@ void (async () => {
       const err = e as { name?: string; transient?: boolean }
       ok(err.name === 'PgError' && err.transient === false, '流水 op 缺 opId → 判为坏数据（非 transient）')
     }
+  }
+
+  // == 26. 闪卡速记（预备级 115 词：unit 定义 / 出题 / 关卡解析） ==
+  {
+    console.log('\n== 26. 闪卡速记 ==')
+    const totalWords = FC_UNITS.reduce((n, u) => n + u.words.length, 0)
+    ok(totalWords === 115, `FC_UNITS 共 ${totalWords} 词（应为 115）`)
+    const nos = new Set(FC_UNITS.flatMap((u) => u.words.map((w) => w.no)))
+    ok(nos.size === 115, `卡片编号无重复（${nos.size} 个唯一 no）`)
+
+    const fcq = questionOfKind('fc_pic:u3')
+    ok(!!fcq && fcq.answerType === 'choice' && (fcq.options?.length ?? 0) === 4, 'fc_pic 出 4 选 1 看图选词')
+    ok(!!fcq && /^\d+$/.test(String(fcq.spec.a)), `fc_pic 题干图是卡号（${fcq?.spec.a}）`)
+    const rebuilt = fcq ? buildQuestion(fcq.spec) : null
+    // 重建时选项会重新洗牌，正确性由答案文本定位（与 10.5 节同款校验）
+    ok(!!rebuilt && rebuilt.options?.[rebuilt.answer] === fcq!.options?.[fcq!.answer], 'fc_pic spec 无损重建（答案文本不变）')
+
+    const fcwp = questionOfKind('fc_wp:u0')
+    ok(!!fcwp && fcwp.pictureOptions === true && (fcwp.options?.length ?? 0) === 4, 'fc_wp 出 4 选 1 看词选图')
+    ok(!!fcwp && fcwp.speechLang === 'en-US', 'fc_wp 朗读用 en-US')
+
+    // 错题本/重做追踪靠 specKey 判等：同题重建键一致，不同词键不同（fc_pic 的 text 恒定）
+    ok(specKey(fcq!.spec) === specKey(buildQuestion(fcq!.spec).spec), '重建题 specKey 一致（错题判等依据）')
+    const fcq2 = questionOfKind('fc_pic:u3')
+    ok(specKey(fcq!.spec) !== specKey(fcq2.spec) || fcq!.spec.a === fcq2.spec.a, '不同 fc 题不撞键')
+
+    const fcLevel = levelById('fc-u4')
+    ok(!!fcLevel && fcLevel.subject === 'english' && fcLevel.kinds.length === 2, 'levelById 解析 fc-u4（english, 2 kinds）')
+    const batch = buildLevelQuestions(fcLevel!, [], 10)
+    ok(batch.length === 10 && batch.every((x) => x.spec.kind.startsWith('fc_')), '按 fc 关卡出 10 题，全是闪卡题')
   }
 
   console.log(`\n结果：${fail === 0 ? '全部通过 ✅' : fail + ' 项失败 ❌'}`)

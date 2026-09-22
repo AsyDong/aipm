@@ -4,16 +4,17 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
-import { MATH_LEVELS, LEVELS_BY_SUBJECT, levelById } from '../engine/questions'
+import { MATH_LEVELS, LEVELS_BY_SUBJECT, levelById, specKey } from '../engine/questions'
+
 import {
-  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, baseHp, hintCount, starsOf, FIRST_CLEAR_BONUS,
+  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, baseHp, hintCount, FIRST_CLEAR_BONUS,
 } from '../engine/rules'
 import { nowDay } from '../engine/time'
 import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
 import { gradeAnswer, isThenable } from '../engine/provider'
 import type { GradeResult } from '../engine/provider'
 import { useGeneratedQuestions } from '../hooks/useGeneratedQuestions'
-import { EN_UNITS, EN_ZH, enImgSrc, enUnitOf } from '../data/courses'
+import { EN_UNITS, EN_ZH, enUnitOf, FC_BY_NO, fcImgSrc, wordImgSrc } from '../data/courses'
 import { speak } from '../utils/speech'
 import { coinDrops } from '../utils/sfx'
 import Coin from '../components/Coin'
@@ -106,14 +107,16 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const solved = total - queue.length
   /** 第一次就答对的题数 = 总数 − 曾做错的题数（做错的最终都会被重做到对） */
   const firstCorrect = firstCorrectCount(total, missed.length)
-  const retryPending = queue.filter((x) => missed.some((m) => m.text === x.text)).length
+  const retryPending = queue.filter((x) => missed.some((m) => specKey(m.spec) === specKey(x.spec))).length
   /** 回炉重做的题：自动给思路当脚手架，但仍不公布答案 */
-  const isRetry = !!q && missed.some((m) => m.text === q.text)
+  const isRetry = !!q && missed.some((m) => specKey(m.spec) === specKey(q.spec))
 
+  // fc_pic 的 text 恒定，换题判定得用 spec（不然连着两道看图题不重读）
+  const qKey = q ? `${q.spec.kind}:${q.spec.a}` : ''
   useEffect(() => {
     if (q && phase === 'quiz') speak(q.speech, readAloud, q.speechLang)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q?.text, phase])
+  }, [qKey, phase])
 
   useEffect(() => {
     const w = flashcards[card]
@@ -125,7 +128,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const qStart = useRef(Date.now())
   useEffect(() => {
     qStart.current = Date.now()
-  }, [q?.text])
+  }, [qKey])
 
   /** 整关用时（快速通关 +1 星的判定依据） */
   const battleStart = useRef(Date.now())
@@ -158,13 +161,14 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     if (settled.current) return
     settled.current = true
     const durationMs = Date.now() - battleStart.current
-    const stars = starsOf(firstCorrect, total, durationMs, level.subject)
-    if (!win || stars === 0) {
+    // 超时没做完：不结算（题都没做完，不写通关也不发奖）
+    if (!win) {
       setResult({ win: false, correct: firstCorrect, total, points: 0, stars: 0, attr: 0, firstClear: false })
       return
     }
+    // 做完了就交给 store 统一结算：0 星也记错题进错题本，只是 0 分 0 星（r.stars===0 → 负局界面）
     const r = finishBattle(level.subject, level.id, firstCorrect, total, missed, durationMs)
-    setResult({ win: true, correct: firstCorrect, total, ...r })
+    setResult({ win: r.stars > 0, correct: firstCorrect, total, ...r })
   }
 
   /**
@@ -183,7 +187,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
       input: answer,
       correct,
       // 此前没错过 = 这道题第一次作答
-      firstTry: !missed.some((x) => x.text === question.text),
+      firstTry: !missed.some((x) => specKey(x.spec) === specKey(question.spec)),
       durationMs: Math.max(0, Date.now() - qStart.current),
       // 点过提示，或这是回炉重做的题（回炉会自动给思路，等于用过脚手架）
       hintsUsed: hinted || isRetry ? 1 : 0,
@@ -197,7 +201,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     setInput('')
     setHinted(false)
     setPassing(true)
-    setMissed((m) => (m.some((x) => x.text === cur.text) ? m : [...m, cur]))
+    setMissed((m) => (m.some((x) => specKey(x.spec) === specKey(cur.spec)) ? m : [...m, cur]))
     setPetHp((h) => Math.max(0, h - 1))
     setQueue((qs) => advanceQueue(qs, false))
     toast(bySkip ? '先放一放，最后再回来做它' : '先记下，最后再回来做它')
@@ -502,7 +506,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
           <ChoicePad
             options={q.options}
-            picOptions={q.pictureOptions ? q.options.map((w) => ({ word: w, src: enImgSrc(w), zh: EN_ZH[w] ?? w })) : undefined}
+            picOptions={q.pictureOptions ? q.options.map((w) => ({ word: w, src: wordImgSrc(w), zh: EN_ZH[w] ?? w })) : undefined}
             onPick={pickChoice}
             disabled={passing}
           />
@@ -524,11 +528,14 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   )
 }
 
-/** 单词配图：挂了退回中文文字，题仍可作答 */
+/** 单词配图：纯数字 = 闪卡卡号（public/img/fc/），否则按单词找 en/ 图；挂了退回中文文字，题仍可作答 */
 function WordImg({ word, className }: { word: string; className?: string }) {
   const [err, setErr] = useState(false)
-  if (err) return <span className="text-[34px] font-extrabold text-ink">{EN_ZH[word] ?? word}</span>
-  return <img src={enImgSrc(word)} alt={word} className={className} onError={() => setErr(true)} />
+  // 换词重置加载失败标记：否则一张图挂了，后面所有卡都退化成文字
+  useEffect(() => setErr(false), [word])
+  const zh = EN_ZH[word] ?? FC_BY_NO.get(Number(word))?.zh ?? word
+  if (err) return <span className="text-[34px] font-extrabold text-ink">{zh}</span>
+  return <img src={/^\d+$/.test(word) ? fcImgSrc(word) : wordImgSrc(word)} alt={word} className={className} onError={() => setErr(true)} />
 }
 
 function Row({ label, value, tone }: { label: string; value: string; tone: 'point' | 'attr' | 'muted' }) {

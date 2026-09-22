@@ -253,7 +253,7 @@ export const EN_UNITS: Record<string, EnUnitDef> = {
   },
 }
 
-/** 单词 → 中文（图片加载失败时的文字兜底，也用于题面解释） */
+/** 单词 → 中文（图片加载失败时的文字兜底，也用于题面解释）；闪卡词表在下方并入 */
 export const EN_ZH: Record<string, string> = {}
 for (const u of Object.values(EN_UNITS)) for (const w of u.words) EN_ZH[w.en] = w.zh
 
@@ -267,4 +267,156 @@ export function enImgSrc(word: string): string {
 export function enUnitOf(kinds: string[]): string | undefined {
   const gs = kinds.map((k) => k.split(':')[1] ?? '')
   return gs.length > 0 && gs.every((g) => g === gs[0]) && EN_UNITS[gs[0]] ? gs[0] : undefined
+}
+
+// ---------- 闪卡速记（任务「闪卡速记」专用词库） ----------
+// 来源：《Power Up Start Smart》预备级电子闪卡（剑桥 2019），家长课件 PDF 115 张卡
+// （tools/cut-fc-pdf.py 切图）。卡片编号 = PDF 卡片序号，图按编号存 public/img/fc/<no>.jpg，
+// 避免同名词冲突（orange 颜色 / 水果、人物照片两张版本）。
+
+export interface FcWord {
+  /** 卡片编号 = 图片文件名 */
+  no: number
+  en: string
+  zh: string
+}
+
+export interface FcUnitDef {
+  id: string
+  name: string
+  words: FcWord[]
+}
+
+export const FC_UNITS: FcUnitDef[] = [
+  {
+    id: 'u0', name: 'Hello',
+    words: [
+      { no: 1, en: 'blue', zh: '蓝色' }, { no: 2, en: 'red', zh: '红色' },
+      { no: 3, en: 'green', zh: '绿色' }, { no: 4, en: 'yellow', zh: '黄色' },
+      { no: 5, en: 'orange', zh: '橙色' }, { no: 6, en: 'purple', zh: '紫色' },
+      { no: 7, en: 'one', zh: '一' }, { no: 8, en: 'two', zh: '二' },
+      { no: 9, en: 'three', zh: '三' }, { no: 10, en: 'four', zh: '四' },
+      { no: 11, en: 'five', zh: '五' }, { no: 12, en: 'six', zh: '六' },
+      { no: 13, en: 'Jim', zh: '吉姆' }, { no: 14, en: 'Jenny', zh: '珍妮' },
+      { no: 15, en: 'Anna', zh: '安娜' }, { no: 16, en: 'Matt', zh: '马特' },
+      { no: 17, en: 'Mrs Friendly', zh: 'Friendly 太太' }, { no: 18, en: 'Mr Friendly', zh: 'Friendly 先生' },
+      { no: 19, en: 'Cameron', zh: '卡梅伦' }, { no: 20, en: 'Frida', zh: '弗里达' },
+      { no: 21, en: 'cat', zh: '猫' }, { no: 22, en: 'boat', zh: '小船' },
+      { no: 23, en: 'bird', zh: '鸟' }, { no: 24, en: 'book', zh: '书' },
+      { no: 25, en: 'bus', zh: '公交车' },
+    ],
+  },
+  {
+    id: 'u1', name: 'My Family',
+    words: [
+      { no: 26, en: 'boy', zh: '男孩' }, { no: 27, en: 'family', zh: '家庭' },
+      { no: 28, en: 'girl', zh: '女孩' }, { no: 29, en: 'man', zh: '男人' },
+      { no: 30, en: 'woman', zh: '女人' }, { no: 31, en: 'brother', zh: '哥哥；弟弟' },
+      { no: 32, en: 'dad', zh: '爸爸' }, { no: 33, en: 'mum', zh: '妈妈' },
+      { no: 34, en: 'pet', zh: '宠物' }, { no: 35, en: 'sister', zh: '姐姐；妹妹' },
+    ],
+  },
+  {
+    id: 'u2', name: 'My School',
+    words: [
+      { no: 36, en: 'bag', zh: '书包' }, { no: 37, en: 'classroom', zh: '教室' },
+      { no: 38, en: 'pencil', zh: '铅笔' }, { no: 39, en: 'playground', zh: '操场' },
+      { no: 40, en: 'teacher', zh: '老师' }, { no: 41, en: 'board', zh: '黑板' },
+      { no: 42, en: 'bookcase', zh: '书柜' }, { no: 43, en: 'chair', zh: '椅子' },
+      { no: 44, en: 'cupboard', zh: '橱柜' }, { no: 45, en: 'table', zh: '桌子' },
+    ],
+  },
+  {
+    id: 'u3', name: 'Food',
+    words: [
+      { no: 46, en: 'apple', zh: '苹果' }, { no: 47, en: 'banana', zh: '香蕉' },
+      { no: 48, en: 'grapes', zh: '葡萄' }, { no: 49, en: 'orange', zh: '橙子' },
+      { no: 50, en: 'watermelon', zh: '西瓜' }, { no: 51, en: 'beans', zh: '豆角' },
+      { no: 52, en: 'burger', zh: '汉堡' }, { no: 53, en: 'carrot', zh: '胡萝卜' },
+      { no: 54, en: 'egg', zh: '鸡蛋' }, { no: 55, en: 'rice', zh: '米饭' },
+    ],
+  },
+  {
+    id: 'u4', name: 'My House',
+    words: [
+      { no: 56, en: 'bed', zh: '床' }, { no: 57, en: 'clock', zh: '时钟' },
+      { no: 58, en: 'computer', zh: '电脑' }, { no: 59, en: 'lamp', zh: '台灯' },
+      { no: 60, en: 'mirror', zh: '镜子' }, { no: 61, en: 'bathroom', zh: '浴室' },
+      { no: 62, en: 'bedroom', zh: '卧室' }, { no: 63, en: 'garden', zh: '花园' },
+      { no: 64, en: 'kitchen', zh: '厨房' }, { no: 65, en: 'living room', zh: '客厅' },
+    ],
+  },
+  {
+    id: 'u5', name: 'My Body',
+    words: [
+      { no: 66, en: 'ears', zh: '耳朵' }, { no: 67, en: 'eyes', zh: '眼睛' },
+      { no: 68, en: 'hair', zh: '头发' }, { no: 69, en: 'mouth', zh: '嘴巴' },
+      { no: 70, en: 'legs', zh: '腿' }, { no: 71, en: 'beautiful', zh: '漂亮的' },
+      { no: 72, en: 'big', zh: '大的' }, { no: 73, en: 'long', zh: '长的' },
+      { no: 74, en: 'short', zh: '短的' }, { no: 75, en: 'small', zh: '小的' },
+    ],
+  },
+  {
+    id: 'u6', name: 'Toys',
+    words: [
+      { no: 76, en: 'board game', zh: '桌游' }, { no: 77, en: 'camera', zh: '相机' },
+      { no: 78, en: 'doll', zh: '玩偶' }, { no: 79, en: 'teddy', zh: '泰迪熊' },
+      { no: 80, en: 'train', zh: '火车' }, { no: 81, en: 'ball', zh: '球' },
+      { no: 82, en: 'balloon', zh: '气球' }, { no: 83, en: 'bike', zh: '自行车' },
+      { no: 84, en: 'car', zh: '小汽车' }, { no: 85, en: 'plane', zh: '飞机' },
+    ],
+  },
+  {
+    id: 'u7', name: 'I Can',
+    words: [
+      { no: 86, en: 'climb', zh: '爬' }, { no: 87, en: 'jump', zh: '跳' },
+      { no: 88, en: 'run', zh: '跑' }, { no: 89, en: 'swim', zh: '游泳' },
+      { no: 90, en: 'walk', zh: '走' }, { no: 91, en: 'catch a ball', zh: '接球' },
+      { no: 92, en: 'fly a plane', zh: '开飞机' }, { no: 93, en: 'play basketball', zh: '打篮球' },
+      { no: 94, en: 'play football', zh: '踢足球' }, { no: 95, en: 'play the piano', zh: '弹钢琴' },
+    ],
+  },
+  {
+    id: 'u8', name: 'Every Day',
+    words: [
+      { no: 96, en: 'clean', zh: '打扫' }, { no: 97, en: 'drink', zh: '喝' },
+      { no: 98, en: 'eat', zh: '吃' }, { no: 99, en: 'sleep', zh: '睡觉' },
+      { no: 100, en: 'take a photo', zh: '拍照' }, { no: 101, en: 'beach', zh: '海滩' },
+      { no: 102, en: 'flower', zh: '花' }, { no: 103, en: 'sea', zh: '大海' },
+      { no: 104, en: 'sun', zh: '太阳' }, { no: 105, en: 'tree', zh: '树' },
+    ],
+  },
+  {
+    id: 'u9', name: 'Farm & Clothes',
+    words: [
+      { no: 106, en: 'jacket', zh: '夹克' }, { no: 107, en: 'jeans', zh: '牛仔裤' },
+      { no: 108, en: 'shoes', zh: '鞋子' }, { no: 109, en: 'socks', zh: '袜子' },
+      { no: 110, en: 'T-shirt', zh: 'T恤' }, { no: 111, en: 'dog', zh: '狗' },
+      { no: 112, en: 'duck', zh: '鸭子' }, { no: 113, en: 'goat', zh: '山羊' },
+      { no: 114, en: 'horse', zh: '马' }, { no: 115, en: 'sheep', zh: '绵羊' },
+    ],
+  },
+]
+
+/** 卡片编号 → 单词 */
+export const FC_BY_NO = new Map<number, FcWord>()
+for (const u of FC_UNITS) for (const w of u.words) FC_BY_NO.set(w.no, w)
+
+/** 单词 → 首个卡片编号（看词选图的选项渲染；orange 颜色/水果共用第一个图） */
+export const FC_NO_BY_WORD: Record<string, number> = {}
+for (const u of FC_UNITS) for (const w of u.words) if (!(w.en in FC_NO_BY_WORD)) FC_NO_BY_WORD[w.en] = w.no
+
+// 闪卡词表并入 EN_ZH（放在 FC_NO_BY_WORD 之后：FC_UNITS 声明在这里才可见）
+for (const u of FC_UNITS) for (const w of u.words) if (!(w.en in EN_ZH)) EN_ZH[w.en] = w.zh
+
+/** 闪卡配图路径（public/img/fc/<编号>.jpg，PDF 切图） */
+export function fcImgSrc(no: number | string): string {
+  const base = import.meta.env?.BASE_URL ?? '/'
+  return `${base}img/fc/${no}.jpg`
+}
+
+/** 单词 → 配图：闪卡库优先（预备级词与教材词有重叠），回退 AI 生图 */
+export function wordImgSrc(word: string): string {
+  const no = FC_NO_BY_WORD[word]
+  return no === undefined ? enImgSrc(word) : fcImgSrc(no)
 }

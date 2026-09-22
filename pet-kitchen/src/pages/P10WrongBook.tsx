@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
-import { AnswerBox, AnswerPad } from '../components/AnswerPad'
+import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { Empty, toast } from '../components/ui'
-import { buildQuestion } from '../engine/questions'
+import { buildQuestion, specKey } from '../engine/questions'
+import { EN_ZH, fcImgSrc, wordImgSrc } from '../data/courses'
 import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
 import { generateVariants, gradeAnswer, isThenable } from '../engine/provider'
 import type { GradeResult } from '../engine/provider'
@@ -11,6 +12,10 @@ import { MASTER_STREAK } from '../engine/rules'
 import { nowDay, diffDays } from '../engine/time'
 import { speak } from '../utils/speech'
 import type { Question } from '../types'
+
+/** 错题行显示：数学题把 ? 换成答案数值；内容题（choice）答案是选项下标，真正的答案文本在 spec.ans */
+const shown = (text: string, answer: number, ans?: string) =>
+  ans ? `${text}（答案：${ans}）` : text.replace('?', String(answer))
 
 /** 3 题小练习（练一练 / 举一反三），无奖励，纯复习 */
 function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) => void }) {
@@ -25,7 +30,7 @@ function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) =>
   const total = qs.length
   const firstCorrect = firstCorrectCount(total, missed.length)
   const q = queue[0]
-  const isRetry = !!q && missed.some((m) => m.text === q.text)
+  const isRetry = !!q && missed.some((m) => specKey(m.spec) === specKey(q.spec))
 
   useEffect(() => () => {
     if (tick.current) window.clearTimeout(tick.current)
@@ -44,9 +49,9 @@ function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) =>
         {missed.length > 0 && (
           <div className="mt-4 text-left">
             {missed.map((m) => (
-              <div key={m.text} className="mt-2 rounded-xl bg-sky-50 px-3 py-2.5">
+              <div key={specKey(m.spec)} className="mt-2 rounded-xl bg-sky-50 px-3 py-2.5">
                 <div className="text-[15px] font-extrabold text-ink">
-                  {m.text.replace('?', String(m.answer))}
+                  {shown(m.text, m.answer, m.spec.ans)}
                 </div>
                 <div className="mt-0.5 text-[12px] leading-relaxed text-muted">{m.explain}</div>
               </div>
@@ -71,10 +76,26 @@ function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) =>
     const cur = q
     setInput('')
     setPassing(true)
-    setMissed((m) => (m.some((x) => x.text === cur.text) ? m : [...m, cur]))
+    setMissed((m) => (m.some((x) => specKey(x.spec) === specKey(cur.spec)) ? m : [...m, cur]))
     setQueue((qs2) => advanceQueue(qs2, false))
     speak('再想想，一会儿再回来', readAloud)
     tick.current = window.setTimeout(() => setPassing(false), PASS_DELAY)
+  }
+
+  /** 统一判分入口：数字键盘交 input，选项板交点选的单词/汉字 */
+  const submit = (raw: string) => {
+    if (!q || !raw) return
+    const g = gradeAnswer(q, raw)
+    const done = (r: GradeResult) => {
+      if (r.correct) {
+        setInput('')
+        setQueue((qs2) => advanceQueue(qs2, true))
+        return
+      }
+      pass()
+    }
+    if (isThenable(g)) g.then(done)
+    else done(g)
   }
 
   return (
@@ -83,9 +104,12 @@ function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) =>
         <span>已答对 {total - queue.length} / {total}</span>
         {missed.length > 0 && <span className="text-warn">待重做 {missed.length} 道</span>}
       </div>
-      <div className={`mt-3 flex items-center justify-center gap-2 rounded-xl3 bg-white py-7 shadow-card ${passing ? 'opacity-40' : ''}`}>
+      <div className={`mt-3 flex flex-col items-center justify-center gap-2 rounded-xl3 bg-white py-7 shadow-card ${passing ? 'opacity-40' : ''}`}>
+        {q.promptImg && (
+          <QImg src={/^\d+$/.test(q.promptImg) ? fcImgSrc(q.promptImg) : wordImgSrc(q.promptImg)} alt={q.promptImg} />
+        )}
         <button className="text-[20px]" onClick={() => speak(q.speech, true)}>🔊</button>
-        <div className="text-[36px] font-extrabold text-ink">{q.text}</div>
+        <div className={`font-extrabold text-ink ${q.promptImg ? 'text-[22px]' : 'text-[36px]'}`}>{q.text}</div>
       </div>
 
       {(isRetry || passing) && (
@@ -94,33 +118,36 @@ function MiniQuiz({ qs, onDone }: { qs: Question[]; onDone: (correct: number) =>
         </div>
       )}
 
-      <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
-        <AnswerBox value={input} size="md" />
-      </div>
-      <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
-        <AnswerPad
-          value={input}
-          onChange={setInput}
-          compact
-          disabled={passing}
-          onSubmit={() => {
-            if (!input) return
-            const g = gradeAnswer(q, input)
-            const done = (r: GradeResult) => {
-              if (r.correct) {
-                setInput('')
-                setQueue((qs2) => advanceQueue(qs2, true))
-                return
-              }
-              pass()
-            }
-            if (isThenable(g)) g.then(done)
-            else done(g)
-          }}
-        />
-      </div>
+      {q.answerType === 'choice' && q.options ? (
+        <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+          <ChoicePad
+            options={q.options}
+            picOptions={q.pictureOptions ? q.options.map((w) => ({ word: w, src: wordImgSrc(w), zh: EN_ZH[w] ?? w })) : undefined}
+            onPick={submit}
+            disabled={passing}
+          />
+        </div>
+      ) : (
+        <>
+          <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+            <AnswerBox value={input} size="md" />
+          </div>
+          <div className={`mt-3 ${passing ? 'pointer-events-none opacity-40' : ''}`}>
+            <AnswerPad value={input} onChange={setInput} compact disabled={passing} onSubmit={() => submit(input)} />
+          </div>
+        </>
+      )}
     </div>
   )
+}
+
+/** 题干配图（闪卡卡号或单词 key），加载失败就不显示 —— 下面还有文字和 🔊 兜底 */
+function QImg({ src, alt }: { src: string; alt: string }) {
+  const [err, setErr] = useState(false)
+  // 换图重置失败标记（同 WordImg / PetAvatar 的坑）
+  useEffect(() => setErr(false), [src])
+  if (err) return null
+  return <img src={src} alt={alt} className="h-[130px] w-[130px] object-contain" onError={() => setErr(true)} />
 }
 
 /** P10 错题集：今天要复习 / 已掌握；每道错题 3 道举一反三变式 */
@@ -201,7 +228,7 @@ export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 
         <div key={w.id} className="card mt-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[20px] font-extrabold text-ink">{w.text.replace('?', String(w.answer))}</div>
+              <div className="text-[20px] font-extrabold text-ink">{shown(w.text, w.answer, w.spec.ans)}</div>
               <div className="mt-0.5 text-[12px] text-muted">知识点：{w.skill} · 错 {w.wrongCount} 次</div>
             </div>
             <div className="text-[12px] font-bold text-warn">
@@ -234,7 +261,7 @@ export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 
           {pending.slice(0, 20).map((w) => (
             <div key={w.id} className="mt-2 flex items-center justify-between rounded-xl bg-white px-3 py-2.5 shadow-card">
               <div>
-                <div className="text-[15px] font-bold text-ink">{w.text.replace('?', String(w.answer))}</div>
+                <div className="text-[15px] font-bold text-ink">{shown(w.text, w.answer, w.spec.ans)}</div>
                 <div className="text-[12px] text-muted">
                   {w.nextReviewDay} 复习 · 错 {w.wrongCount} 次
                 </div>
@@ -250,7 +277,7 @@ export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 
           <div className="mt-5 text-[14px] font-extrabold text-ok">已掌握（连续答对 3 次）</div>
           {mastered.slice(0, 20).map((w) => (
             <div key={w.id} className="mt-2 flex items-center justify-between rounded-xl bg-white px-3 py-2.5 shadow-card">
-              <span className="text-[15px] font-bold text-muted">{w.text.replace('?', String(w.answer))}</span>
+              <span className="text-[15px] font-bold text-muted">{shown(w.text, w.answer, w.spec.ans)}</span>
               <span className="text-[16px]">✅</span>
             </div>
           ))}
