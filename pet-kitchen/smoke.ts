@@ -302,6 +302,50 @@ console.log('== 12. 错题本（入库 / 复习 / 掌握）==')
   ok(s().wrongSolvedTotal === 1, `已攻克计数 ${s().wrongSolvedTotal}`)
 }
 
+console.log('== 12.5 Boss 对战（设计建议 v0.1 §4/§5：血量上限 / 伤害倍率 / 每日首胜 / 温和失败）==')
+{
+  // §4.2 数值：HP 基础 5、属性加成封顶 7；提示封顶 3；伤害倍率 0.8~2.0×
+  ok(rules.baseHp(0) === 5 && rules.baseHp(10) === 6 && rules.baseHp(99) === 7, `HP = 5 + 属性/10，封顶 7（${rules.baseHp(0)}/${rules.baseHp(10)}/${rules.baseHp(99)}）`)
+  ok(rules.hintCount(0) === 1 && rules.hintCount(99) === 3, '提示 1 次 + 属性加成，封顶 3')
+  ok(rules.bossDamageMult(0) === 0.8 && rules.bossDamageMult(30) === 2 && rules.bossDamageMult(300) === 2, '伤害倍率 0.8~2.0×（属性 ≥30 封顶）')
+  ok(rules.bossDamage(10) === Math.round(rules.BOSS_HIT * rules.bossDamageMult(10)), `属性 10 → 单击 ${rules.bossDamage(10)} 伤害`)
+
+  // ③ 每日 Boss 首胜：当天第一场 Boss 胜利积分 ×1.5
+  const lv = MATH_LEVELS.find((l) => l.id === 'mb1')!
+  const before = s().points
+  const res = s().finishBattle('math', lv.id, 10, 10, [])
+  ok(res.firstClear && res.dailyBossWin === true, 'Boss 首通 = 当日首胜')
+  ok(res.points === Math.round((3 + rules.FIRST_CLEAR_BONUS) * rules.DAILY_BOSS_BONUS),
+    `Boss 首通 + 首胜加成 = ${res.points} 分（4 × 1.5）`, res.points)
+  ok(s().points === before + res.points, '积分已入账')
+  ok(s().lastBossWinDay === nowDay(), 'lastBossWinDay 已记录今天')
+
+  // 当天第二场 Boss 胜：不再加成
+  const res2 = s().finishBattle('math', 'mb2', 10, 10, [])
+  ok(res2.dailyBossWin !== true && res2.points === 3 + rules.FIRST_CLEAR_BONUS, `同日第二场 Boss 首通 ${res2.points} 分（无加成）`)
+
+  // 复刷 Boss：无加成（复刷封顶 1 ≈ 首通 30% 衰减）
+  const res3 = s().finishBattle('math', lv.id, 10, 10, [])
+  ok(res3.points === 1 && res3.dailyBossWin !== true, `Boss 复刷 ${res3.points} 分`)
+
+  // 跨天后首胜恢复：复刷 1 分 × 1.5 = 2（把上次首胜记到昨天来模拟跨天）
+  useStore.setState({ lastBossWinDay: addDays(nowDay(), -1) })
+  const res4 = s().finishBattle('math', lv.id, 9, 10, [])
+  ok(res4.dailyBossWin === true && res4.points === Math.round(1 * rules.DAILY_BOSS_BONUS), `跨天 Boss 首胜 ${res4.points} 分（1 × 1.5）`, res4.points)
+  ok(s().lastBossWinDay === nowDay(), 'lastBossWinDay 推进到新的一天')
+
+  // 温和失败（P2）：只记错题与练习量，积分/星级/属性/通关一律不发
+  const beforeF = s().points
+  const beforeAttr = s().pet!.attrs.chinese
+  const qs = buildLevelQuestions(MATH_LEVELS[0], [], 3)
+  const resF = s().finishBattle('chinese', 'cb1', 1, 3, [qs[0]], undefined, { failed: true })
+  ok(resF.points === 0 && resF.stars === 0 && resF.attr === 0 && !resF.firstClear, 'Boss 战失败：零积分零星零属性')
+  ok(s().points === beforeF && s().pet!.attrs.chinese === beforeAttr, '失败不扣不发')
+  ok(!s().levels.some((l) => l.levelId === 'cb1'), '失败不写通关记录')
+  ok(s().wrong.some((w) => w.subject === 'chinese'), '失败后错题照常进错题本')
+  ok(s().todayBattles >= 1 && s().todayTotal >= 3, '失败照记练习量')
+}
+
 console.log('== 13. 商店 & 家园布置 ==')
 {
   s().parentGrantPoints(500, '测试发放')

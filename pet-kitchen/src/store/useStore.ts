@@ -6,7 +6,7 @@ import type {
 } from '../types'
 import { addDays, diffDays, nowDay } from '../engine/time'
 import {
-  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FIRST_CLEAR_BONUS,
+  ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_BOSS_BONUS, DAILY_DECAY, EXP_PER_FOOD, FIRST_CLEAR_BONUS,
   FEED_LIMIT, FOOD_PER_SATIETY, MASTER_STREAK, REDEEM_TIMEOUT_DAYS,
   REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STREAK_30_FOOD,
   STREAK_7_FOOD, stageOf, starsOf,
@@ -115,6 +115,7 @@ const initialState: AppState = {
   todayFoodEarned: 0,
   todayTasksDone: 0,
   wrongSolvedTotal: 0,
+  lastBossWinDay: '',
 }
 
 /** 纯函数：把一笔流水插到队首（只保留最近 300 笔） */
@@ -351,7 +352,14 @@ function settleDayOnce(s: AppState): Partial<AppState> {
 }
 
 export interface FeedResult { ok: boolean; msg: string }
-export interface BattleResult { points: number; stars: number; attr: number; firstClear: boolean }
+export interface BattleResult {
+  points: number
+  stars: number
+  attr: number
+  firstClear: boolean
+  /** 本场是当日第一场 Boss 胜利（积分已 ×1.5），结算页据此展示 */
+  dailyBossWin?: boolean
+}
 
 interface Actions {
   bootstrap: () => void
@@ -376,7 +384,10 @@ interface Actions {
   rejectTask: (taskId: string, reason: string) => void
   parentAdjustFood: (n: number, note: string) => void
   parentGrantPoints: (n: number, note: string) => void
-  finishBattle: (subject: Subject, levelId: string, correct: number, total: number, wrongQs: Question[], durationMs?: number) => BattleResult
+  finishBattle: (
+    subject: Subject, levelId: string, correct: number, total: number, wrongQs: Question[], durationMs?: number,
+    opts?: { failed?: boolean },
+  ) => BattleResult
   reviewWrong: (wrongId: string, ok: boolean) => void
   buyItem: (itemId: string, cost: number) => boolean
   placeItem: (itemId: string, x: number, y: number) => void
@@ -895,7 +906,7 @@ export const useStore = create<Store>()(
           })
         },
 
-        finishBattle: (subject, levelId, correct, total, wrongQs, durationMs) => {
+        finishBattle: (subject, levelId, correct, total, wrongQs, durationMs, opts) => {
           get().ensureDay()
           const s = get()
           const pet = s.pet
@@ -904,11 +915,6 @@ export const useStore = create<Store>()(
 
           const rec = s.levels.find((l) => l.levelId === levelId)
           const firstClear = !rec?.cleared
-          // 首通：得几颗星就得几分，再额外 +1（FIRST_CLEAR_BONUS）；
-          // 重复挑战：金币最多只给 1 枚 —— 星星照常记录（bestStars 不回退），
-          // 但不给刷分留空间（2026-09-19 需求）。
-          const points = firstClear ? stars + FIRST_CLEAR_BONUS : Math.min(stars, 1)
-          const attrGain = Math.min(ATTR_GAIN_CAP, Math.floor(correct / ATTR_PER_CORRECT))
 
           const today = nowDay()
           const wrong = s.wrong.slice()
@@ -941,11 +947,28 @@ export const useStore = create<Store>()(
             if (item) recordWrong(item)
           }
 
-          // 0 星也没关系：答错的题照样进错题本走遗忘曲线（打得越差越要复习）
-          if (stars === 0) {
-            set({ wrong })
+          // 0 星也没关系：答错的题照样进错题本走遗忘曲线（打得越差越要复习）。
+          // Boss 战落败（opts.failed）同此路径 —— 失败只延迟奖励，永不没收（P2 支柱）：
+          // 练习量照记、错题照收，积分/星级/属性/通关一律不发。
+          if (stars === 0 || opts?.failed) {
+            set({
+              wrong,
+              todayBattles: s.todayBattles + 1,
+              todayCorrect: s.todayCorrect + correct,
+              todayTotal: s.todayTotal + total,
+            })
             return zero
           }
+
+          // 防刷分三件套（设计建议 v0.1 §5.2）：
+          // ① 首通全额：星数 + FIRST_CLEAR_BONUS；
+          // ② 复刷衰减：当前分值下「封顶 1 枚」≈ 首通的 30%，两者等效；
+          //    首通分值上调时改为 round(首通 × 0.3)；
+          // ③ 每日 Boss 首胜：当天第一场 Boss 胜利 ×1.5，当日一次性。
+          let points = firstClear ? stars + FIRST_CLEAR_BONUS : Math.min(stars, 1)
+          const dailyBossWin = !!levelById(levelId)?.boss && s.lastBossWinDay !== today
+          if (dailyBossWin) points = Math.round(points * DAILY_BOSS_BONUS)
+          const attrGain = Math.min(ATTR_GAIN_CAP, Math.floor(correct / ATTR_PER_CORRECT))
 
           const record: LevelRecord = {
             levelId,
@@ -967,19 +990,23 @@ export const useStore = create<Store>()(
           set({
             points: newPoints,
             todayPoints: s.todayPoints + points,
-            pointLedger: recordLedger(s.pointLedger, 'point', points, newPoints, 'battle', `闯关获得 ${points} 分`),
+            pointLedger: recordLedger(
+              s.pointLedger, 'point', points, newPoints, 'battle',
+              `闯关获得 ${points} 分${dailyBossWin ? '（今日 Boss 首胜 ×1.5）' : ''}`,
+            ),
             levels,
             wrong,
             todayBattles: s.todayBattles + 1,
             todayCorrect: s.todayCorrect + correct,
             todayTotal: s.todayTotal + total,
             pet: nextPet,
+            lastBossWinDay: dailyBossWin ? today : s.lastBossWinDay,
           })
 
           recordLevel(record)
           // 三科属性变了，宠物档案跟着更新
           if (nextPet) recordPet(nextPet)
-          return { points, stars, attr: attrGain, firstClear }
+          return { points, stars, attr: attrGain, firstClear, dailyBossWin }
         },
 
         reviewWrong: (wrongId, ok) => {

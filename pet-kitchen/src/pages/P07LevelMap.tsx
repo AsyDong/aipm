@@ -1,7 +1,7 @@
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { CoinBar } from '../components/ui'
-import { LEVELS_BY_SUBJECT, bossRequires, type LevelDef } from '../engine/questions'
+import { BOSS_META, LEVELS_BY_SUBJECT, bossRequires, type LevelDef } from '../engine/questions'
 import { ATTR_LABEL, BATTLE_LIMIT_MIN, SUBJECT_LABEL } from '../engine/rules'
 import { nowDay } from '../engine/time'
 
@@ -73,7 +73,7 @@ export default function P07LevelMap({ subject = 'math' }: { subject?: 'math' | '
               <span className="text-[22px]">{rec?.cleared ? '✅' : isLocked ? '🔒' : l.boss ? '👑' : '⚔️'}</span>
               <span className="flex-1">
                 <span className="block text-[15px] font-extrabold text-ink">
-                  {l.boss ? l.name : `第${l.index}关 · ${l.name}`}
+                  {l.boss ? `${l.name}${BOSS_META[l.id] ? ` · ${BOSS_META[l.id].name}` : ''}` : `第${l.index}关 · ${l.name}`}
                 </span>
                 <span className="block text-[12px] text-muted">
                   {isLocked ? need : `知识点：${l.skill}`}

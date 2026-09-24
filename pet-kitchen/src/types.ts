@@ -271,4 +271,6 @@ export interface AppState {
   todayFoodEarned: number
   todayTasksDone: number
   wrongSolvedTotal: number
+  /** 当天第一场 Boss 胜利的游戏日（每日 Boss 首胜 ×1.5 的判定依据），空串 = 今日还没赢过 */
+  lastBossWinDay: string
 }

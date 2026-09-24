@@ -4,10 +4,11 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
-import { MATH_LEVELS, LEVELS_BY_SUBJECT, levelById, specKey } from '../engine/questions'
+import { BOSS_META, MATH_LEVELS, LEVELS_BY_SUBJECT, levelById, specKey } from '../engine/questions'
 
 import {
   BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, baseHp, hintCount, FIRST_CLEAR_BONUS,
+  BOSS_MAX_HP, BOSS_SHIELD_AT, BOSS_RAGE_AT, BOSS_RAGE_SECONDS, STREAK_WRONG_MERCY, bossDamage,
 } from '../engine/rules'
 import { nowDay } from '../engine/time'
 import { advanceQueue, firstCorrectCount, PASS_DELAY } from '../engine/queue'
@@ -46,6 +47,8 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const level = levelById(levelId) ?? MATH_LEVELS[0]
   const attr = pet?.attrs[level.subject] ?? 0
   const maxHp = baseHp(attr)
+  const isBoss = !!level.boss
+  const boss = isBoss ? BOSS_META[level.id] : undefined
 
   /**
    * 需要穿插的错题。传 spec 而不是题面，是为了让服务端（将来）能按规则重建题目、
@@ -62,9 +65,11 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const injectKey = inject.map((s) => `${s.kind}:${s.a}${s.op}${s.b}${s.c ?? ''}`).join(',')
 
   // 出题走契约层：本地实现同步返回（不闪 loading），远端实现返回 Promise（显示「出题中」）
+  // gen 计入 key：「再来一次」时重新生成题目（设计建议 §4.5 防背题）
+  const [gen, setGen] = useState(0)
   const { questions, loading, degraded, error } = useGeneratedQuestions(
     { subject: level.subject, levelId: level.id, count: QUESTIONS_PER_LEVEL, inject, attr },
-    `${level.id}|${injectKey}`,
+    `${level.id}|${injectKey}|${gen}`,
   )
 
   const total = questions.length
@@ -86,7 +91,46 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const [passing, setPassing] = useState(false)
   const [result, setResult] = useState<{
     win: boolean; correct: number; total: number; points: number; stars: number; attr: number; firstClear: boolean
+    /** Boss 战失败时 Boss 的剩余血量百分比，用于「下次就能赢」进度文案 */
+    bossLeft?: number
+    /** 当日 Boss 首胜加成（积分 ×1.5），结算页展示 */
+    dailyBossWin?: boolean
   } | null>(null)
+
+  // —— Boss 对战演出状态（设计建议 v0.1 §4，普通关不用）——
+  const [bossHp, setBossHp] = useState(BOSS_MAX_HP)
+  /** 破盾阶段：护盾立起，下一次答对 = 双倍伤害打碎 */
+  const [shield, setShield] = useState(false)
+  /** Boss 头顶伤害数字 */
+  const [float, setFloat] = useState<{ id: number; text: string } | null>(null)
+  /** 受击特效：boss = Boss 被打 / pet = 宠物被打 */
+  const [hitFx, setHitFx] = useState<{ id: number; on: 'boss' | 'pet' } | null>(null)
+  const [consecWrong, setConsecWrong] = useState(0)
+  /** 连错保护：下一题自动附带提示（本场只送一次） */
+  const [mercy, setMercy] = useState(false)
+  const [mercyUsed, setMercyUsed] = useState(false)
+  /** 本场实际作答数（含答错的），失败结算的练习量口径；ref 供结算回调读最新值 */
+  const answeredRef = useRef(0)
+  /** 狂暴阶段每题倒计时（秒），null = 未在狂暴 */
+  const [rageLeft, setRageLeft] = useState<number | null>(null)
+  const fxId = useRef(0)
+  const rage = isBoss && bossHp > 0 && bossHp <= BOSS_MAX_HP * BOSS_RAGE_AT
+
+  /** 战斗特写：受击方抖动 + 伤害数字。id 匹配才清场，旧定时器不会误伤新特效 */
+  const showFx = (on: 'boss' | 'pet', text?: string) => {
+    const id = ++fxId.current
+    setHitFx({ id, on })
+    if (text) setFloat({ id, text })
+    window.setTimeout(() => {
+      setHitFx((f) => (f?.id === id ? null : f))
+      if (text) setFloat((f) => (f?.id === id ? null : f))
+    }, 700)
+  }
+
+  /** 每答一次就 +1（对错都算） */
+  const bumpAnswered = () => {
+    answeredRef.current += 1
+  }
   const [left, setLeft] = useState(BATTLE_LIMIT_MIN * 60)
   const [confirmQuit, setConfirmQuit] = useState(false)
   const settled = useRef(false)
@@ -144,6 +188,27 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left])
 
+  /** 狂暴阶段（Boss 血量 ≤25%）：每题倒计时，换题重置；过场/结算时暂停 */
+  useEffect(() => {
+    if (!rage || result || phase !== 'quiz' || !q || passing) {
+      setRageLeft(null)
+      return
+    }
+    setRageLeft(BOSS_RAGE_SECONDS)
+    const t = setInterval(() => setRageLeft((v) => Math.max(0, (v ?? BOSS_RAGE_SECONDS) - 1)), 1000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rage, result, phase, qKey, passing])
+
+  useEffect(() => {
+    // 归零视为答错：Boss 反击、宠物扣血、题目回队尾（只惩罚走神，不惩罚思考慢）
+    if (rageLeft === 0 && q && !passing && !result) {
+      recordAttempt(q, null, false)
+      passToBack(false, '时间到！Boss 反击了')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rageLeft])
+
   /** 结算音效：金币逐枚落袋的「叮」，节奏与下方掉落动画一致（0.16s/枚） */
   useEffect(() => {
     if (!result?.win || !sound) return
@@ -151,8 +216,10 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result])
 
-  // 说明：血量只表示「本关失误次数」，扣到 0 也不再判负——
+  // 说明：普通关血量只表示「本关失误次数」，扣到 0 也不再判负——
   // 本关的完成标准是「每题都真正做对」，判负会和这个目标直接冲突。
+  // Boss 关不同（设计建议 §4）：答错 = Boss 反击扣血，血量归零 = 温和失败
+  // （不没收任何资产，重试无限制；P2 支柱「输了不心疼」）。
   useEffect(() => () => {
     if (tick.current) window.clearTimeout(tick.current)
   }, [])
@@ -161,9 +228,20 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     if (settled.current) return
     settled.current = true
     const durationMs = Date.now() - battleStart.current
-    // 超时没做完：不结算（题都没做完，不写通关也不发奖）
+    // 超时没做完：不结算（题都没做完，不写通关也不发奖）。
+    // Boss 战落败走 opts.failed 路径：错题与练习量照记，积分/星级/属性一律不发。
     if (!win) {
-      setResult({ win: false, correct: firstCorrect, total, points: 0, stars: 0, attr: 0, firstClear: false })
+      if (isBoss) {
+        const bTotal = Math.max(1, answeredRef.current)
+        const bCorrect = Math.max(0, answeredRef.current - missed.length)
+        finishBattle(level.subject, level.id, bCorrect, bTotal, missed, durationMs, { failed: true })
+        setResult({
+          win: false, correct: bCorrect, total: bTotal, points: 0, stars: 0, attr: 0, firstClear: false,
+          bossLeft: Math.ceil((bossHp / BOSS_MAX_HP) * 100),
+        })
+      } else {
+        setResult({ win: false, correct: firstCorrect, total, points: 0, stars: 0, attr: 0, firstClear: false })
+      }
       return
     }
     // 做完了就交给 store 统一结算：0 星也记错题进错题本，只是 0 分 0 星（r.stars===0 → 负局界面）
@@ -189,22 +267,42 @@ export default function P08Battle({ levelId }: { levelId: string }) {
       // 此前没错过 = 这道题第一次作答
       firstTry: !missed.some((x) => specKey(x.spec) === specKey(question.spec)),
       durationMs: Math.max(0, Date.now() - qStart.current),
-      // 点过提示，或这是回炉重做的题（回炉会自动给思路，等于用过脚手架）
-      hintsUsed: hinted || isRetry ? 1 : 0,
+      // 点过提示，或这是回炉重做的题（回炉会自动给思路，等于用过脚手架），或连错保护送的提示
+      hintsUsed: hinted || isRetry || mercy ? 1 : 0,
     })
   }
 
-  /** 答错 / 跳过：不公布答案，题目回队尾，扣 1 血 */
-  const passToBack = (bySkip: boolean) => {
+  /** 答错 / 跳过：不公布答案，题目回队尾，扣 1 血（Boss 战时 Boss 同时反击） */
+  const passToBack = (bySkip: boolean, msg?: string) => {
     if (!q || passing || result) return
     const cur = q
     setInput('')
     setHinted(false)
     setPassing(true)
     setMissed((m) => (m.some((x) => specKey(x.spec) === specKey(cur.spec)) ? m : [...m, cur]))
-    setPetHp((h) => Math.max(0, h - 1))
+    const nextHp = Math.max(0, petHp - 1)
+    setPetHp(nextHp)
+    bumpAnswered()
+    // 连错保护（设计建议 §4.5）：同场连错 2 题 → 下一题自动附带提示，本场只送一次
+    let tip = msg ?? (bySkip ? '先放一放，最后再回来做它' : '先记下，最后再回来做它')
+    const nWrong = consecWrong + 1
+    setConsecWrong(nWrong)
+    if (nWrong >= STREAK_WRONG_MERCY && !mercyUsed) {
+      setMercy(true)
+      setMercyUsed(true)
+      tip = '🐾 别灰心！下一题自动送你一个提示'
+    } else if (mercy) {
+      setMercy(false)
+    }
+    if (isBoss) {
+      showFx('pet')
+      if (nextHp === 0) {
+        finish(false) // 宠物打累了：温和失败，零损失
+        return
+      }
+    }
     setQueue((qs) => advanceQueue(qs, false))
-    toast(bySkip ? '先放一放，最后再回来做它' : '先记下，最后再回来做它')
+    toast(tip)
     tick.current = window.setTimeout(() => setPassing(false), PASS_DELAY)
   }
 
@@ -217,6 +315,31 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     }
     // 答对：出队；队列清空即全部做对
     setHinted(false)
+    setConsecWrong(0)
+    if (mercy) setMercy(false)
+    bumpAnswered()
+    if (isBoss) {
+      // 宠物反击！答对一次 = 一拳，破盾期双倍伤害（设计建议 §4.3）
+      const dmg = bossDamage(attr) * (shield ? 2 : 1)
+      const nextBossHp = Math.max(0, bossHp - dmg)
+      setBossHp(nextBossHp)
+      showFx('boss', `${shield ? '💥 双倍 ' : ''}−${dmg}`)
+      if (shield) {
+        setShield(false)
+        toast('🛡 护盾被打碎了！')
+      }
+      if (nextBossHp <= 0) {
+        finish(true) // Boss 倒下，剩余题目不用做了
+        return
+      }
+      // 阶段推进：跨线那一刻提示一次（破盾 → 狂暴）
+      if (nextBossHp <= BOSS_MAX_HP * BOSS_SHIELD_AT && bossHp > BOSS_MAX_HP * BOSS_SHIELD_AT) {
+        setShield(true)
+        toast('Boss 举起了护盾！答对一题就能打碎它！')
+      } else if (nextBossHp <= BOSS_MAX_HP * BOSS_RAGE_AT && bossHp > BOSS_MAX_HP * BOSS_RAGE_AT) {
+        toast('Boss 狂暴了！要在 10 秒内作答！')
+      }
+    }
     if (queue.length === 1) {
       finish(true)
       return
@@ -263,6 +386,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const reset = () => {
     settled.current = false
     battleStart.current = Date.now()
+    setGen((g) => g + 1) // 重新出题（Boss 重开防背题，设计建议 §4.5）
     setQueue(questions)
     setPetHp(maxHp)
     setHints(hintCount(attr))
@@ -272,6 +396,16 @@ export default function P08Battle({ levelId }: { levelId: string }) {
     setPassing(false)
     setResult(null)
     setLeft(BATTLE_LIMIT_MIN * 60)
+    // Boss 战场复位
+    setBossHp(BOSS_MAX_HP)
+    setShield(false)
+    setConsecWrong(0)
+    setMercy(false)
+    setMercyUsed(false)
+    answeredRef.current = 0
+    setRageLeft(null)
+    setFloat(null)
+    setHitFx(null)
   }
 
   const quitDialog = confirmQuit && (
@@ -292,7 +426,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
       <div className="flex min-h-screen flex-col items-center px-6 pb-10 pt-14">
         <div className="animate-popin text-[54px]">{result.win ? '🎉' : '💪'}</div>
         <div className="mt-2 text-[26px] font-extrabold text-ink">
-          {result.win ? '过 关 啦 ！' : '差 一 点 点 ！'}
+          {result.win ? (level.boss && boss ? `打 败 ${boss.name} 啦！` : '过 关 啦 ！') : level.boss ? '打 得 好 累 ！' : '差 一 点 点 ！'}
         </div>
         {result.win && (
           <div className="mt-3">
@@ -344,15 +478,29 @@ export default function P08Battle({ levelId }: { levelId: string }) {
               <Row label="新错题" value="0 道，全对啦！" tone="muted" />
             )}
             {result.firstClear && <div className="mt-2 text-center text-[13px] font-extrabold text-amber-500">首通奖励：金币 +{FIRST_CLEAR_BONUS} 枚</div>}
+            {result.dailyBossWin && <div className="mt-1 text-center text-[13px] font-extrabold text-amber-500">今日 Boss 首胜：积分 ×1.5！</div>}
           </div>
         )}
 
         {!result.win && (
-          <div className="mt-5 w-full max-w-[340px] rounded-xl3 bg-white p-4 text-center text-[13px] leading-relaxed text-muted shadow-card">
-            {solved === total
-              ? '题目都做完了，只是第一次对的还不够多。再来一遍会顺很多～'
-              : '题目还有没做完的。慢一点，看清算式再写答案。'}
-          </div>
+          level.boss && result.bossLeft != null ? (
+            // Boss 战失败：把失败重构为进度（设计建议 §4.5 —— 显示已造成的伤害）
+            <div className="mt-5 w-full max-w-[340px] rounded-xl3 bg-white p-4 text-center shadow-card">
+              <div className="text-[15px] font-extrabold text-ink">{pet?.nickname} 打累了，回家吃点东西再战！</div>
+              <div className="mt-1 text-[13px] font-bold text-muted">
+                {boss?.name ?? 'Boss'} 还剩 {result.bossLeft}% 血，下次就能赢！
+              </div>
+              <div className="mt-1 text-[13px] font-bold text-muted">
+                第一次就答对 {result.correct} / {result.total} 题
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 w-full max-w-[340px] rounded-xl3 bg-white p-4 text-center text-[13px] leading-relaxed text-muted shadow-card">
+              {solved === total
+                ? '题目都做完了，只是第一次对的还不够多。再来一遍会顺很多～'
+                : '题目还有没做完的。慢一点，看清算式再写答案。'}
+            </div>
+          )
         )}
 
         <div className="mt-6 flex w-full max-w-[340px] gap-3">
@@ -436,19 +584,68 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between rounded-2xl bg-white px-3 py-2 shadow-card">
-        <div className="flex items-center gap-2">
-          <PetAvatar species={pet.species} stage={pet.stage} size={40} />
-          <div>
-            <div className="text-[13px] font-extrabold text-ink">{pet.nickname}</div>
-            <Hearts n={petHp} total={maxHp} />
+      {isBoss && boss ? (
+        // Boss 战：回合制演出（设计建议 §4.1）—— 答对宠物反击、Boss 掉血；答错 Boss 反击、宠物掉血
+        <div className="mt-3 rounded-2xl bg-white px-3 py-2.5 shadow-card">
+          <div className="flex items-center gap-3">
+            <span
+              key={hitFx?.on === 'boss' ? hitFx.id : 'boss'}
+              className={`text-[38px] leading-none ${hitFx?.on === 'boss' ? 'animate-jump' : ''}`}
+            >
+              {boss.emoji}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] font-extrabold text-ink">{boss.name}</span>
+                <span className={`text-[12px] font-extrabold ${rage ? 'text-danger' : 'text-sky-500'}`}>
+                  {rage ? `🔥 狂暴 ⏱ ${rageLeft ?? 0}s` : shield ? '🛡 护盾' : ''}
+                </span>
+              </div>
+              <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${rage ? 'bg-danger' : shield ? 'bg-sky-400' : 'bg-amber-400'}`}
+                  style={{ width: `${(bossHp / BOSS_MAX_HP) * 100}%` }}
+                />
+              </div>
+            </div>
+            <div className="relative w-9 text-right text-[12px] font-extrabold text-muted">
+              {Math.ceil((bossHp / BOSS_MAX_HP) * 100)}%
+              {float && (
+                <span
+                  key={float.id}
+                  className="absolute -top-4 right-0 animate-coindrop whitespace-nowrap text-[15px] font-extrabold text-danger"
+                >
+                  {float.text}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="mt-2 flex items-center justify-between border-t border-sky-50 pt-1.5">
+            <div className="flex items-center gap-2">
+              <PetAvatar species={pet.species} stage={pet.stage} size={34} mood={hitFx?.on === 'pet' ? 'sad' : 'idle'} />
+              <div>
+                <div className="text-[12px] font-extrabold text-ink">{pet.nickname}</div>
+                <Hearts n={petHp} total={maxHp} />
+              </div>
+            </div>
+            <div className="text-[11px] font-bold text-muted">答对一题，打 Boss 一拳！</div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-[13px] font-extrabold text-ink">Boss</div>
-          <Hearts n={queue.length} total={total} />
+      ) : (
+        <div className="mt-3 flex items-center justify-between rounded-2xl bg-white px-3 py-2 shadow-card">
+          <div className="flex items-center gap-2">
+            <PetAvatar species={pet.species} stage={pet.stage} size={40} />
+            <div>
+              <div className="text-[13px] font-extrabold text-ink">{pet.nickname}</div>
+              <Hearts n={petHp} total={maxHp} />
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[13px] font-extrabold text-ink">Boss</div>
+            <Hearts n={queue.length} total={total} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-2 flex items-center justify-between text-[13px] font-bold text-muted">
         <span>已答对 {solved} / {total}</span>
@@ -459,7 +656,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </span>
       </div>
 
-      {petHp === 0 && (
+      {petHp === 0 && !isBoss && (
         <div className="mt-2 rounded-xl bg-warn/10 px-3 py-2 text-center text-[13px] font-bold text-warn">
           失误有点多啦，不着急，慢慢算清楚再写
         </div>
@@ -476,7 +673,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
       <div className="mt-3 flex gap-3">
         <button
           className="btn-chip"
-          disabled={hints <= 0 || hinted || isRetry || passing}
+          disabled={hints <= 0 || hinted || isRetry || mercy || passing}
           onClick={() => {
             setHints((h) => h - 1)
             setHinted(true)
@@ -490,9 +687,13 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         </button>
       </div>
 
-      {(hinted || isRetry) && (
+      {(hinted || isRetry || mercy) && (
         <div className="mt-3 rounded-xl bg-sky-50 px-3 py-2.5 text-[14px] font-bold leading-relaxed text-sky-700">
-          {isRetry ? `🔁 这道刚才没做出来，看个思路：${q.hint}` : `💡 ${q.hint}`}
+          {isRetry
+            ? `🔁 这道刚才没做出来，看个思路：${q.hint}`
+            : mercy && !hinted
+              ? `🐾 ${pet.nickname} 给你打气，送你一个思路：${q.hint}`
+              : `💡 ${q.hint}`}
         </div>
       )}
 

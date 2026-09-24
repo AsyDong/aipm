@@ -39,13 +39,41 @@ export const ATTR_GAIN_CAP = 3
 /** 关卡解锁属性门槛（与 MATH_LEVELS 顺序一一对应） */
 export const ATTR_LADDER = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33]
 
-/** 血量 = 4 + floor(属性 / 5) */
-export const baseHp = (attr: number) => 4 + Math.floor(attr / 5)
-/** 提示次数 = floor(属性 / 10) + 1 */
-export const hintCount = (attr: number) => Math.floor(attr / 10) + 1
+/**
+ * 血量 = 5 + floor(属性 / 10)，上限 7（Boss 对战设计建议 v0.1 §4.2）。
+ * 属性加成温和（≤ +40%）：属性滚雪球后 Boss 仍要有威胁，张力不能塌。
+ */
+export const baseHp = (attr: number) => Math.min(5 + Math.floor(attr / 10), 7)
+/** 提示次数 = floor(属性 / 10) + 1，上限 3（同上 §4.2） */
+export const hintCount = (attr: number) => Math.min(3, Math.floor(attr / 10) + 1)
 /** 单关限时（分钟，防沉迷） */
 export const BATTLE_LIMIT_MIN = 15
 export const QUESTIONS_PER_LEVEL = 10
+
+// ============ Boss 对战（设计建议 v0.1 §4，数值未 playtest，都是占位） ============
+
+/** Boss 总血量：答对 9 题（倍率 1.0）即可击杀 —— 0.9 系数 = 容错 1 题，首通率目标 60~80% */
+export const BOSS_MAX_HP = 90
+/** 每答对一题的基础伤害（Boss 血量的 10%），乘以属性倍率后取整 */
+export const BOSS_HIT = 10
+/** 伤害倍率 0.8 ~ 2.0×：属性 0 → 0.8×，属性 ≥30 → 2.0×（数学力归一化） */
+export function bossDamageMult(attr: number) {
+  return 0.8 + 1.2 * Math.min(1, attr / 30)
+}
+/** 单击伤害 = BOSS_HIT × 倍率（取整） */
+export function bossDamage(attr: number) {
+  return Math.round(BOSS_HIT * bossDamageMult(attr))
+}
+/** 破盾线：Boss 血量 ≤ 60% 举起护盾，下一次答对 = 双倍伤害打碎 */
+export const BOSS_SHIELD_AT = 0.6
+/** 狂暴线：Boss 血量 ≤ 25% 进入狂暴，每题限时 */
+export const BOSS_RAGE_AT = 0.25
+/** 狂暴每题倒计时（秒）。归零视为答错 —— 只惩罚走神，不惩罚思考慢 */
+export const BOSS_RAGE_SECONDS = 10
+/** 连错保护：同场连错 N 题 → 下一题自动附带提示（本场只送一次） */
+export const STREAK_WRONG_MERCY = 2
+/** 每日 Boss 首胜：当天第一场 Boss 胜利，积分 ×1.5（当日一次性，防刷分三件套之一） */
+export const DAILY_BOSS_BONUS = 1.5
 /** 未掌握错题注入下次同类关卡的道数 */
 export const WRONG_INJECT = 2
 /** 连续答对 N 次判定掌握 */

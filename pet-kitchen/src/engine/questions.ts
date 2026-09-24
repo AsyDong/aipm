@@ -44,6 +44,19 @@ export function bossRequires(level: LevelDef): string[] {
     .map((l) => l.id)
 }
 
+/**
+ * Boss 名录（山海经，与宠物同源；设计建议 v0.1 §4.4）。
+ * 立绘未做（ART 待排期，先 3 个验证）前用 emoji 代位 —— 换图只动这里。
+ */
+export const BOSS_META: Record<string, { name: string; emoji: string }> = {
+  mb1: { name: '饕餮', emoji: '🦁' }, // 贪吃的饕餮把数字吞进肚子，喂它正确的数
+  mb2: { name: '穷奇', emoji: '🐯' }, // 爱拆东西的穷奇，把算式拆开再算
+  cb1: { name: '混沌', emoji: '🐻' }, // 没有面目的混沌，分不清 b p / d q
+  cb2: { name: '梼杌', emoji: '🐗' }, // 顽凶梼杌把词句搅得一团糟
+  eb1: { name: '毕方', emoji: '🦅' }, // 独脚火鸟毕方，只肯说一个单词
+  eb2: { name: '九婴', emoji: '🐉' }, // 九个脑袋的九婴，问什么都会
+}
+
 // ============ 语文关卡（一年级上册：拼音 / 识字 错开重排 + 古诗课文） ============
 // 拼音按 PINYIN_UNITS 每 ~5 个一关累积推进；识字关穿插其间，只考「已学音拼得出来」的字。
 // 题型：py_unit 看拼音选字（学音）/ py_rep 认字读音（学音）/ char_py 看字标音（识字）/
