@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { Confirm, Empty, Modal, toast } from '../components/ui'
 import { fmtDate, diffDays, nowDay } from '../engine/time'
+import { AVG_POINTS_PER_DAY_EARLY, AVG_POINTS_PER_DAY_LATE } from '../engine/rules'
 
 /** P17 家长 · 现实奖品管理与兑换审批 */
 export default function P17PrizeManage() {
@@ -119,7 +120,15 @@ export default function P17PrizeManage() {
       {/* 添加/编辑奖品 */}
       <Modal open={adding} title="奖品" onClose={() => setAdding(false)}>
         <input className="field" placeholder="奖品名字（10 字内）" value={name} onChange={(e) => setName(e.target.value.slice(0, 10))} />
-        <input className="field mt-2" type="number" value={pts} onChange={(e) => setPts(Math.max(1, Number(e.target.value)))} />
+        <div className="mt-3 text-[13px] font-extrabold text-ink">需要多少分</div>
+        <input className="field mt-1" type="number" value={pts} onChange={(e) => setPts(Math.max(1, Number(e.target.value)))} />
+        <div className="mt-1 rounded-2xl bg-sky-50 px-3 py-2 text-[12px] leading-relaxed text-muted">
+          攒分速度：前期每天约 {AVG_POINTS_PER_DAY_EARLY} 分（还有新关可打），
+          新关玩完后约 {AVG_POINTS_PER_DAY_LATE} 分/天。
+          <br />
+          这个价 ≈ 前期 <b className="text-sky-600">{Math.ceil(pts / AVG_POINTS_PER_DAY_EARLY)} 天</b>
+          ，后期 <b className="text-sky-600">{Math.ceil(pts / AVG_POINTS_PER_DAY_LATE)} 天</b>。
+        </div>
         <input className="field mt-2" placeholder="备注（可选）" value={note} onChange={(e) => setNote(e.target.value.slice(0, 20))} />
         <button
           className="btn-main mt-4"

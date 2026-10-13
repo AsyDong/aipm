@@ -1,5 +1,6 @@
 /* 冒烟脚本：在 Node 里跑一遍核心状态机，验证 PRD 规则是否被正确执行 */
 import { useStore, dailyTaskVisible, templateAppliesOn, weekdayOf } from './src/store/useStore'
+import { checkName } from './src/utils/sensitive'
 import * as rules from './src/engine/rules'
 import {
   MATH_LEVELS, PINYIN_LEVELS, PINYIN_WORLD_LEVELS, LITERACY_LEVELS, MIXED_LEVELS,
@@ -29,6 +30,8 @@ import {
   configureSync, dropQueue, flushSync, pendingCount, resetSync, syncStats,
 } from './src/store/sync'
 import { applyOp } from './server/ops'
+import { newMediaKey, openBytes, sealBytes } from './src/utils/media'
+import { ACHIEVEMENTS, unlockedCount } from './src/data/achievements'
 
 let fail = 0
 function ok(cond: boolean, msg: string, extra?: unknown) {
@@ -1241,6 +1244,160 @@ void (async () => {
     // 复位（本组是最后一组，但保持状态干净总没坏处）
     s().setLimits({ dailyBattleLimit: 0, allowFrom: '', allowTo: '' })
     useStore.setState({ todayBattles: 0 })
+  }
+
+  // ==========================================================================
+  console.log('== 30. 佐证加密存储（FE-02）==')
+  {
+    const plain = new TextEncoder().encode('fake-jpeg-bytes-\u0001\u0002\u0003').buffer as ArrayBuffer
+    const pb = new Uint8Array(plain)
+    const key = await newMediaKey()
+
+    // ① 密钥性质：AES-GCM 256、不可导出
+    ok(key.algorithm.name === 'AES-GCM', `密钥算法 ${key.algorithm.name}`)
+    ok((key.algorithm as AesKeyAlgorithm).length === 256, '密钥长度 256 位')
+    ok(key.extractable === false, '密钥 extractable=false（导不出原始字节）')
+    let exportThrew = false
+    try { await crypto.subtle.exportKey('raw', key) } catch { exportThrew = true }
+    ok(exportThrew, '尝试导出密钥字节会抛错')
+
+    // ② 加密：密文 ≠ 明文；长度 = 明文 + 16（GCM 认证标签）
+    const sealed = await sealBytes(plain, key)
+    const cipher = new Uint8Array(sealed.data)
+    ok(cipher.length === pb.length + 16, `密文 ${cipher.length} 字节 = 明文 ${pb.length} + 16`)
+    ok(sealed.iv.length === 12, `iv ${sealed.iv.length} 字节（GCM 标准）`)
+    ok(!cipher.every((b, i) => b === pb[i]), '密文与明文不同（确实加密了，不是原样存）')
+
+    // ③ 解密还原
+    const back = new Uint8Array(await openBytes(sealed, key))
+    ok(back.length === pb.length && back.every((b, i) => b === pb[i]), '解密后与原文逐字节一致')
+
+    // ④ iv 随机：同一明文两次结果不同
+    const sealed2 = await sealBytes(plain, key)
+    ok(sealed2.iv.join(',') !== sealed.iv.join(','), '两次加密 iv 不同（同明文不产出相同密文）')
+
+    // ⑤ 完整性：动过就解不开（AES-GCM 自带认证）
+    const badIv = { iv: new Uint8Array(sealed.iv), data: sealed.data }
+    badIv.iv[0] ^= 0xff
+    let ivThrew = false
+    try { await openBytes(badIv, key) } catch { ivThrew = true }
+    ok(ivThrew, '改 iv → 解密失败')
+
+    const badData = new Uint8Array(sealed.data)
+    badData[badData.length - 1] ^= 0x01
+    let dataThrew = false
+    try { await openBytes({ iv: sealed.iv, data: badData.buffer }, key) } catch { dataThrew = true }
+    ok(dataThrew, '改密文 → 解密失败')
+
+    // ⑥ 换密钥解不开
+    const key2 = await newMediaKey()
+    let wrongThrew = false
+    try { await openBytes(sealed, key2) } catch { wrongThrew = true }
+    ok(wrongThrew, '换一把密钥解不开（拿不到密钥就拿不到原图）')
+  }
+
+  // ==========================================================================
+  console.log('== 31. 养成节奏数值（NUM-01）==')
+  {
+    ok(rules.STAGE_EXP.length === 6, `6 阶门槛共 ${rules.STAGE_EXP.length} 项`)
+    ok(rules.STAGE_EXP[0] === 0, 'Lv1 起点为 0')
+    const last = rules.STAGE_EXP[5]
+    ok(last === 2700, `满阶门槛 ${last} 经验`)
+
+    // 每阶增量递增 —— 越往后越慢，前期给足成就感
+    const steps = rules.STAGE_EXP.slice(1).map((v, i) => v - rules.STAGE_EXP[i])
+    ok(
+      steps.every((v, i) => i === 0 || v > steps[i - 1]),
+      `每阶增量递增：${steps.join(' / ')}`,
+    )
+
+    // 推导口径：饱食度决定每天最多 3 份 → 30 经验/天
+    const perDay = 3 * rules.EXP_PER_FOOD
+    ok(perDay === 30, `每天产出 ${perDay} 经验（3 份 × ${rules.EXP_PER_FOOD}）`)
+    const days = Math.round(last / perDay)
+    ok(days >= 85 && days <= 95, `满阶约 ${days} 天（目标「约 3 个月」）`)
+
+    // 阶段边界：达线即升阶，超限封顶
+    ok(rules.stageOf(0) === 1, '0 经验 = Lv1')
+    ok(rules.stageOf(199) === 1, '199 经验仍在 Lv1')
+    ok(rules.stageOf(200) === 2, '200 经验升 Lv2')
+    ok(rules.stageOf(2699) === 5, '2699 经验仍在 Lv5')
+    ok(rules.stageOf(2700) === 6, '2700 经验满阶 Lv6（神兽）')
+    ok(rules.stageOf(99999) === 6, '远超门槛也封顶 Lv6，不越界')
+  }
+
+  // ==========================================================================
+  console.log('== 32. 成就判定（FE-06）==')
+  {
+    // 造一个判定上下文，只覆盖关心的字段
+    const ctx = (o: Record<string, unknown>) =>
+      ({ levels: [], owned: [], stage: 1, longestStreak: 0, wrongSolvedTotal: 0, ...o }) as never
+    const lv = (id: string, cleared = true, bestStars = 3) => ({
+      levelId: id, subject: 'math', bestStars, cleared, bestCorrect: 8, total: 10, lastAt: 0, playCount: 1,
+    })
+    const byId = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)!
+    const hit = (id: string, c: unknown) => byId(id).test(c as never)
+
+    ok(ACHIEVEMENTS.length >= 12, `成就共 ${ACHIEVEMENTS.length} 个`)
+    ok(new Set(ACHIEVEMENTS.map((a) => a.id)).size === ACHIEVEMENTS.length, '成就 id 无重复')
+
+    // 入门线
+    ok(hit('first_battle', ctx({ levels: [] })) === false, '没打过关卡 → 未解锁「初次出征」')
+    ok(hit('first_battle', ctx({ levels: [lv('m1')] })) === true, '打了 1 关 → 解锁「初次出征」')
+    ok(hit('stars_4', ctx({ levels: [lv('m1', true, 3)] })) === false, '3 星不算「满分小将」')
+    ok(hit('stars_4', ctx({ levels: [lv('m1', true, 4)] })) === true, '4 星达标')
+
+    // 中程线：通关计数只看 cleared
+    const nine = Array.from({ length: 9 }, (_, i) => lv(`m${i + 1}`))
+    const ten = [...nine, lv('m10')]
+    ok(hit('clear_10', ctx({ levels: nine })) === false, '9 关未达「十关通」')
+    ok(hit('clear_10', ctx({ levels: ten })) === true, '10 关解锁「十关通」')
+    ok(hit('clear_10', ctx({ levels: ten.map((l) => ({ ...l, cleared: false })) })) === false, '没过关的不计数')
+
+    // Boss 线：靠关卡定义里的 boss 标记判定，不是硬编码 id 前缀
+    ok(hit('boss_1', ctx({ levels: [lv('m1')] })) === false, '普通关不算首领关')
+    ok(hit('boss_1', ctx({ levels: [lv('mb1')] })) === true, 'mb1 是首领关 → 解锁「首领克星」')
+    ok(hit('boss_3', ctx({ levels: [lv('mb1'), lv('cb1'), lv('eb1')] })) === true, '三个首领关 → 「三战三捷」')
+
+    // 长线：取历史最长，断签不清零（成就一旦拿到不回收）
+    ok(hit('streak_7', ctx({ longestStreak: 6 })) === false, '连续 6 天未达「一周坚持」')
+    ok(hit('streak_7', ctx({ longestStreak: 7 })) === true, '连续 7 天达标')
+    ok(hit('streak_30', ctx({ longestStreak: 30 })) === true, '连续 30 天达标')
+
+    // 养成线
+    ok(hit('stage_6', ctx({ stage: 5 })) === false, '5 阶未满阶')
+    ok(hit('stage_6', ctx({ stage: 6 })) === true, '6 阶解锁「神兽降临」')
+    const fourDecor = ['hut', 'tree', 'lamp', 'pond']
+    ok(hit('decor_5', ctx({ owned: fourDecor })) === false, '4 件装饰不够')
+    ok(hit('decor_5', ctx({ owned: [...fourDecor, 'bridge'] })) === true, '5 件装饰达标')
+    ok(hit('wrong_10', ctx({ wrongSolvedTotal: 10 })) === true, '掌握 10 道错题达标')
+
+    // 进度显示
+    const [cur, target] = byId('clear_10').progress(ctx({ levels: [lv('m1'), lv('m2'), lv('m3')] }))
+    ok(cur === 3 && target === 10, `「十关通」进度显示 ${cur}/${target}`)
+    const [capped] = byId('streak_30').progress(ctx({ longestStreak: 99 }))
+    ok(capped === 30, '超出的进度会被夹到目标值（99 天显示 30/30）')
+
+    // 已点亮计数
+    ok(unlockedCount(['streak_3', 'streak_7']) === 2, 'unlockedCount 数已解锁个数')
+    ok(unlockedCount(['不存在的 id']) === 0, '未知 id 不计入')
+  }
+
+  // == 33. 取名校验（FE-04：口径 = PRD「6 字内，支持后改」）==
+  {
+    console.log('== 33. 取名校验（FE-04）==')
+    ok(checkName('小朏朏').ok === true, '正常名字通过')
+    ok(checkName('  小朏朏  ').ok === true, '首尾空格会被 trim')
+    ok(checkName('').ok === false, '空名拒绝')
+    ok(checkName('   ').ok === false, '纯空格拒绝')
+    ok(checkName('一二三四五六七').ok === false, '7 个字拒绝（上限 6）')
+    ok(checkName('一二三四五六').ok === true, '恰好 6 个字通过')
+    ok(checkName('小朏2号').ok === false, '含数字拒绝')
+    ok(checkName('Tom猫').ok === false, '含英文字母拒绝')
+    ok(checkName('小笨蛋').ok === false, '脏话拒绝')
+    ok(checkName('王小明同学').ok === false, '疑似真实姓名（姓氏开头 ≥3 字）拒绝')
+    ok(checkName('王小小').ok === false, '三字姓氏开头仍拒绝')
+    ok(checkName('朏朏').ok === true, '两字名通过')
   }
 
   console.log(`\n结果：${fail === 0 ? '全部通过 ✅' : fail + ' 项失败 ❌'}`)

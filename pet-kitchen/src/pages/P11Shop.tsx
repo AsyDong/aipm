@@ -4,6 +4,7 @@ import { useNav } from '../store/nav'
 import { Confirm, Empty, toast } from '../components/ui'
 import { SHOP_ITEMS } from '../data/content'
 import Coin from '../components/Coin'
+import DecorIcon from '../components/DecorIcon'
 
 type Sub = 'decor' | 'prize'
 
@@ -42,7 +43,7 @@ export default function P11Shop() {
             const short = Math.max(0, it.points - points)
             return (
               <div key={it.id} className="rounded-xl3 bg-white p-3 text-center shadow-card">
-                <div className="text-[44px]">{it.emoji}</div>
+                <div className="flex justify-center"><DecorIcon id={it.id} size={52} /></div>
                 <div className="mt-1 text-[15px] font-extrabold text-ink">{it.name}</div>
                 <div className="mt-0.5 flex items-center justify-center gap-0.5 text-[13px] font-bold text-amber-500"><Coin size={14} />{it.points}</div>
                 {has ? (

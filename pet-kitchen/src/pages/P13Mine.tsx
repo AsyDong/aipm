@@ -5,6 +5,7 @@ import PetAvatar from '../components/PetAvatar'
 import { Confirm, Modal, toast } from '../components/ui'
 import Coin from '../components/Coin'
 import { SPECIES } from '../data/content'
+import { ACHIEVEMENTS, unlockedCount } from '../data/achievements'
 import {
   ATTR_GAIN_CAP, ATTR_LABEL, ATTR_PER_CORRECT, DAILY_DECAY, EXP_PER_FOOD, FEED_LIMIT,
   FIRST_CLEAR_BONUS, FOOD_PER_SATIETY, MAINTAIN_FOOD, REVIEW_INTERVALS, SATIETY_FULL,
@@ -47,6 +48,7 @@ export default function P13Mine() {
   const [ledger, setLedger] = useState<'food' | 'point' | null>(null)
   const [rules, setRules] = useState(false)
   const [askParent, setAskParent] = useState(false)
+  const [ach, setAch] = useState(false)
 
   if (!pet) return null
   const def = SPECIES.find((x) => x.id === pet.species)!
@@ -74,6 +76,7 @@ export default function P13Mine() {
         <Row icon={<Coin size={18} />} text="积分流水" onClick={() => setLedger('point')} />
         <Row icon="🍖" text="食物流水" onClick={() => setLedger('food')} />
         <Row icon="📖" text="规则详情" onClick={() => setRules(true)} />
+        <Row icon="🏅" text="成就墙" onClick={() => setAch(true)} />
       </div>
 
       <div className="mx-4 mt-3 overflow-hidden rounded-xl3 bg-white shadow-card">
@@ -84,6 +87,39 @@ export default function P13Mine() {
       <div className="mx-4 mt-5">
         <button className="btn-sub" onClick={() => setAskParent(true)}>爸 爸 妈 妈 请 进</button>
       </div>
+
+      {/* 成就墙（FE-06）。未解锁的**不隐藏** —— 灰色 + 进度条，让孩子看见下一步能拿什么 */}
+      <Modal open={ach} title="成就墙" onClose={() => setAch(false)}>
+        <div className="mb-2 text-center text-[13px] font-bold text-muted">
+          已点亮 {unlockedCount(s.achievements.map((a) => a.id))} / {ACHIEVEMENTS.length}
+        </div>
+        <div className="grid max-h-[55vh] grid-cols-2 gap-2 overflow-y-auto">
+          {ACHIEVEMENTS.map((a) => {
+            const got = s.achievements.some((x) => x.id === a.id)
+            const [cur, target] = a.progress({
+              levels: s.levels,
+              owned: s.owned,
+              stage: pet.stage,
+              longestStreak: s.longestStreak,
+              wrongSolvedTotal: s.wrongSolvedTotal,
+            })
+            return (
+              <div key={a.id} className={`rounded-2xl px-3 py-3 text-center ${got ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                <div className={`text-[30px] leading-none ${got ? '' : 'opacity-30 grayscale'}`}>{a.icon}</div>
+                <div className={`mt-1 text-[13px] font-extrabold ${got ? 'text-amber-600' : 'text-muted'}`}>
+                  {a.name}
+                </div>
+                <div className="mt-0.5 text-[11px] text-muted">{a.desc}</div>
+                {!got && (
+                  <div className="mt-1 text-[11px] font-bold text-sky-600">
+                    {cur} / {target}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </Modal>
 
       {/* 规则详情（数值取自 engine/rules.ts，改规则这里自动跟着变） */}
       <Modal open={rules} title="规则详情" onClose={() => setRules(false)}>

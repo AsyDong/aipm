@@ -15,6 +15,7 @@ import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
 import { levelById, specKey, subjectOfKind } from '../engine/questions'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
+import { ACHIEVEMENTS } from '../data/achievements'
 import {
   childId as syncChildId, enabled as syncEnabled, enqueueOp, flushSync,
   pendingCount, pullState,
@@ -122,6 +123,7 @@ const initialState: AppState = {
   todayPinyinChecked: false,
   wrongSolvedTotal: 0,
   lastBossWinDay: '',
+  achievements: [],
 }
 
 /** 纯函数：把一笔流水插到队首（只保留最近 300 笔） */
@@ -430,6 +432,12 @@ interface Actions {
   removeTemplate: (id: string) => void
   setPin: (pin: string) => void
   toggleSetting: (k: 'sound' | 'readAloud') => void
+  /**
+   * 评估成就（FE-06）。
+   * 判定是纯函数（见 data/achievements.ts），只在**有新增**时才写状态，所以可以安全地
+   * 由 store 订阅在关键字段变化时反复调用 —— 没有新增就立刻返回，不会自激循环。
+   */
+  checkAchievements: () => void
   /** 防沉迷设置（PRD §8）：每日闯关上限 + 可用时段。只传要改的字段 */
   setLimits: (patch: Partial<Pick<Settings, 'dailyBattleLimit' | 'allowFrom' | 'allowTo'>>) => void
 }
@@ -630,6 +638,9 @@ export const useStore = create<Store>()(
             // 一批最多 200 条，队列超过一批时循环推到排空（拉取要求队列清零）
             for (let i = 0; i < 10 && pendingCount() > 0; i++) await flushSync()
             await get().pullRemote()
+            // 补算历史成就（FE-06）：老存档可能已经攒了几十关记录，但那会儿还没有成就系统。
+            // 少了这一步，这些孩子得等到「下次状态变化」才会看到早就该拿的徽章。
+            get().checkAchievements()
           })()
         },
 
@@ -1263,6 +1274,25 @@ export const useStore = create<Store>()(
 
         toggleSetting: (k) => set((s) => ({ settings: { ...s.settings, [k]: !s.settings[k] } })),
 
+        checkAchievements: () => {
+          const s = get()
+          const ctx = {
+            levels: s.levels,
+            owned: s.owned,
+            stage: s.pet?.stage ?? 1,
+            longestStreak: s.longestStreak,
+            wrongSolvedTotal: s.wrongSolvedTotal,
+          }
+          const got = new Set(s.achievements.map((a) => a.id))
+          const fresh = ACHIEVEMENTS.filter((a) => !got.has(a.id) && a.test(ctx))
+          // 没有新解锁就直接返回 —— 这样订阅里反复调用也不会自激
+          if (fresh.length === 0) return
+          const at = Date.now()
+          set({ achievements: [...s.achievements, ...fresh.map((a) => ({ id: a.id, at }))] })
+          // 提示交给 UI 层（App.tsx 订阅 achievements 变化后弹 toast）——
+          // store 这里刻意不引 .tsx，冒烟测试才能继续在纯 Node 里跑
+        },
+
         /**
          * 防沉迷设置（PRD §8）。
          * 时段不做格式校验 —— UI 用 `<input type="time">`，产出必是 'HH:MM' 或空串；
@@ -1303,3 +1333,19 @@ export const useStore = create<Store>()(
     },
   ),
 )
+
+// ============ 成就自动评估（FE-06）============
+//
+// 用订阅实现，而不是在「每个会改状态的 action」里手动调 —— 后者迟早会漏。
+// 这里只盯住判定真正依赖的几个字段（关卡记录 / 装饰 / 宠物阶 / 最长连击 /
+// 错题掌握数），任一变化就评估一次。checkAchievements 内部「无新增即返回」，
+// 所以不会因为写状态而再次触发订阅、形成自激循环。
+useStore.subscribe((s, prev) => {
+  const changed =
+    s.levels !== prev.levels ||
+    s.owned !== prev.owned ||
+    s.pet?.stage !== prev.pet?.stage ||
+    s.longestStreak !== prev.longestStreak ||
+    s.wrongSolvedTotal !== prev.wrongSolvedTotal
+  if (changed) useStore.getState().checkAchievements()
+})

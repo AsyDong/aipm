@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
+import DecorIcon from '../components/DecorIcon'
 import { Confirm, Empty, toast } from '../components/ui'
 import { SHOP_ITEMS } from '../data/content'
 
@@ -69,12 +70,13 @@ export default function P12Decorate() {
           return (
             <div
               key={p.uid}
-              className="absolute cursor-grab select-none text-[34px] active:cursor-grabbing"
+              className="absolute cursor-grab select-none active:cursor-grabbing"
               style={{ left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%,-50%)' }}
               onPointerDown={() => setDragUid(p.uid)}
               onDoubleClick={() => removePlaced(p.uid)}
             >
-              {it.emoji}
+              {/* ART-03：装饰从 emoji / 纯色块换成矢量插画，拖动时不再是一坨方块 */}
+              <DecorIcon id={it.id} size={46} />
             </div>
           )
         })}
@@ -102,10 +104,10 @@ export default function P12Decorate() {
                 key={it.id}
                 draggable
                 onDragStart={(e) => e.dataTransfer.setData('text/item', it.id)}
-                className="flex min-w-[76px] flex-col items-center rounded-2xl bg-white px-3 py-2 shadow-card active:scale-95"
+                className="flex min-w-[76px] flex-col items-center gap-1 rounded-2xl bg-white px-3 py-2 shadow-card active:scale-95"
               >
-                <span className="text-[32px]">{it.emoji}</span>
-                <span className="mt-0.5 text-[12px] font-bold text-ink">{it.name}</span>
+                <DecorIcon id={it.id} size={42} />
+                <span className="text-[12px] font-bold text-ink">{it.name}</span>
               </div>
             ))}
           </div>

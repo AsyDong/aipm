@@ -329,4 +329,9 @@ export interface AppState {
   wrongSolvedTotal: number
   /** 当天第一场 Boss 胜利的游戏日（每日 Boss 首胜 ×1.5 的判定依据），空串 = 今日还没赢过 */
   lastBossWinDay: string
+  /**
+   * 已解锁的成就（FE-06）。只增不减 —— 断签、重置家园都不会把成就收回去。
+   * 存 id + 达成时间；成就墙按它渲染「已点亮」的徽章。
+   */
+  achievements: { id: string; at: number }[]
 }

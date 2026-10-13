@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from './store/useStore'
 import { useNav } from './store/nav'
 import { useParent } from './store/parent'
 import TabBar from './components/TabBar'
 import LimitGuard from './components/LimitGuard'
-import { ToastLayer } from './components/ui'
+import { ToastLayer, toast } from './components/ui'
+import { ACHIEVEMENTS } from './data/achievements'
 import P01Adopt from './pages/P01Adopt'
 import P02Hatch from './pages/P02Hatch'
 import P03Name from './pages/P03Name'
@@ -47,6 +48,20 @@ export default function App() {
     // 拉远端（新设备先拉再种）→ 引导 → 推 → 再拉
     init()
   }, [init])
+
+  // 成就解锁提示（FE-06）。
+  // store 只负责判定与落库；「告诉孩子」这一步放 UI 层，
+  // 这样 store 就不必依赖 .tsx，冒烟测试能继续在纯 Node 里跑。
+  const achCount = useStore((s) => s.achievements.length)
+  const seenAch = useRef(achCount)
+  useEffect(() => {
+    if (achCount > seenAch.current) {
+      const last = useStore.getState().achievements[achCount - 1]
+      const def = last ? ACHIEVEMENTS.find((a) => a.id === last.id) : null
+      if (def) toast(`🏅 解锁成就「${def.name}」`, 'ok')
+    }
+    seenAch.current = achCount
+  }, [achCount])
 
   // 回到前台 / 跨天时重新结算，并顺手把攒着的数据推上去、把另一台设备的改动拉下来
   useEffect(() => {
