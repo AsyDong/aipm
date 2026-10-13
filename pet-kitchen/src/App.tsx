@@ -3,6 +3,7 @@ import { useStore } from './store/useStore'
 import { useNav } from './store/nav'
 import { useParent } from './store/parent'
 import TabBar from './components/TabBar'
+import LimitGuard from './components/LimitGuard'
 import { ToastLayer } from './components/ui'
 import P01Adopt from './pages/P01Adopt'
 import P02Hatch from './pages/P02Hatch'
@@ -85,16 +86,30 @@ export default function App() {
         {/* 闯关第一屏是「版块中心」，选版块用 replace 原地换参（go 会压栈，TabBar 就没了） */}
         {page === 'battle' && <P07LevelMap section={top.arg as Section | undefined} />}
         {/* key 绑定关卡/任务 id：连续闯关时必须重挂载，否则上一关的答题状态会残留 */}
-        {page === 'play' && <P08Battle key={top.arg ?? 'm1'} levelId={top.arg ?? 'm1'} />}
+        {/* 三个战斗页都套 LimitGuard：入口守卫之外的兜底（防沉迷，PRD §8） */}
+        {page === 'play' && (
+          <LimitGuard>
+            <P08Battle key={top.arg ?? 'm1'} levelId={top.arg ?? 'm1'} />
+          </LimitGuard>
+        )}
         {/* 课本跟读关走 P18（录音 + 讯飞评测），不是 P08 */}
-        {page === 'follow' && <P18FollowRead key={top.arg ?? ''} levelId={top.arg ?? ''} />}
+        {page === 'follow' && (
+          <LimitGuard>
+            <P18FollowRead key={top.arg ?? ''} levelId={top.arg ?? ''} />
+          </LimitGuard>
+        )}
         {/* 拼音版块 = 一套完整的「拼音方块世界」，已整体搬进本应用（不再是 iframe 子应用） */}
         {page === 'pinyin' && <P20PinyinHub />}
         {page === 'pyalpha' && <P21PinyinAlphabet />}
         {page === 'pylesson' && <P22PinyinLesson />}
         {page === 'pyspell' && <P23PinyinSpell />}
         {/* key 绑定玩法 / 关卡 id：换玩法必须重挂载，否则上一轮答题状态会残留 */}
-        {page === 'pygame' && <P24PinyinGame key={top.arg ?? 'listen'} mode={top.arg ?? 'listen'} />}
+        {/* 拼音页只在「闯关型」玩法（lvl: / unit:）受限；听音 / 认字 / 拼装是学习，放行 */}
+        {page === 'pygame' && (
+          <LimitGuard active={/^(lvl|unit):/.test(String(top.arg ?? ''))}>
+            <P24PinyinGame key={top.arg ?? 'listen'} mode={top.arg ?? 'listen'} />
+          </LimitGuard>
+        )}
         {page === 'pymap' && <P25PinyinMap />}
         {page === 'pyplan' && <P26PinyinPlan />}
         {/* 英语版块由 P07 渲染 P27EnglishHub；听音选词是它下面的一个游戏页 */}

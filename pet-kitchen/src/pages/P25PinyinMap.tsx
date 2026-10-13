@@ -10,6 +10,7 @@ import { usePinyin } from '../pinyin/store'
 import { CoinBar } from '../components/ui'
 import { PINYIN_WORLD_LEVELS } from '../engine/questions'
 import { FINAL_GROUPS, INITIALS, PW_LEVELS, PW_UNITS, ZHENGTI } from '../pinyin/data'
+import { enterGuard } from '../utils/gate'
 
 export default function P25PinyinMap() {
   const nav = useNav()
@@ -78,7 +79,9 @@ export default function P25PinyinMap() {
               return (
                 <button
                   key={l.id}
-                  onClick={() => nav.go('pygame', `lvl:py${l.id}`)}
+                  onClick={() => {
+                    if (enterGuard()) nav.go('pygame', `lvl:py${l.id}`)
+                  }}
                   className={`mb-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left active:scale-[0.98] ${
                     done ? 'bg-emerald-50' : 'bg-sky-50'
                   }`}
@@ -99,7 +102,9 @@ export default function P25PinyinMap() {
 
             <button
               disabled={!unlocked}
-              onClick={() => nav.go('pygame', `unit:${u.id}`)}
+              onClick={() => {
+                if (enterGuard()) nav.go('pygame', `unit:${u.id}`)
+              }}
               className={`mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-[15px] font-extrabold ${
                 unlocked ? 'bg-amber-400 text-white shadow-card active:scale-[0.98]' : 'bg-slate-100 text-slate-400'
               }`}

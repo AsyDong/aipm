@@ -5,6 +5,7 @@ import { useParent } from '../store/parent'
 import { claimPin, loginChild, setCredentials, syncStats } from '../store/sync'
 import { Modal, toast } from '../components/ui'
 import Coin from '../components/Coin'
+import { DAILY_LIMIT_PRESETS, limitSummary } from '../engine/limits'
 
 function Entry({ icon, title, desc, onClick }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void }) {
   return (
@@ -104,6 +105,7 @@ export default function ParentHub({ focus }: { focus?: string }) {
   const [pts, setPts] = useState(20)
   const [note, setNote] = useState('')
   const [bind, setBind] = useState(false)
+  const [limitOpen, setLimitOpen] = useState(false)
 
   const sync = syncStats()
 
@@ -145,10 +147,75 @@ export default function ParentHub({ focus }: { focus?: string }) {
           }
           onClick={() => setBind(true)}
         />
+        <Entry
+          icon="⏰"
+          title="游玩限制"
+          desc={`${limitSummary(s.settings.dailyBattleLimit, s.settings.allowFrom, s.settings.allowTo)} · 今日已玩 ${s.todayBattles} 场`}
+          onClick={() => setLimitOpen(true)}
+        />
         <Entry icon="🔑" title="修改家长密码" desc={s.settings.pinChanged ? '已修改过' : '当前仍是默认密码 1234'} onClick={() => nav.go('pin', 'change')} />
       </div>
 
       {bind && <BindModal onClose={() => setBind(false)} />}
+
+      <Modal open={limitOpen} title="游玩限制" onClose={() => setLimitOpen(false)}>
+        <div className="text-[12px] leading-relaxed text-muted">
+          只限制<b className="text-ink">闯关</b>（数学 / 语文 / 英语 / 综合，以及拼音的关卡与单元测试）。
+          拼音的听音、认字、拼装属于学习，不受限制。
+        </div>
+
+        <div className="mt-4 text-[13px] font-extrabold text-ink">每天最多玩几场</div>
+        <div className="mt-2 flex gap-2">
+          {DAILY_LIMIT_PRESETS.map((n) => (
+            <button
+              key={n}
+              className={`btn-chip flex-1 ${s.settings.dailyBattleLimit === n ? 'ring-2 ring-sky-400' : ''}`}
+              onClick={() => s.setLimits({ dailyBattleLimit: n })}
+            >
+              {n === 0 ? '不限' : `${n} 场`}
+            </button>
+          ))}
+        </div>
+        <div className="mt-1 text-[11px] text-muted">每天 0 点重新计数；今天已玩 {s.todayBattles} 场。</div>
+
+        <div className="mt-4 text-[13px] font-extrabold text-ink">可玩时段</div>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="time"
+            className="field flex-1"
+            value={s.settings.allowFrom}
+            onChange={(e) => s.setLimits({ allowFrom: e.target.value })}
+          />
+          <span className="text-[13px] text-muted">—</span>
+          <input
+            type="time"
+            className="field flex-1"
+            value={s.settings.allowTo}
+            onChange={(e) => s.setLimits({ allowTo: e.target.value })}
+          />
+        </div>
+        <div className="mt-1 text-[11px] text-muted">
+          两端都留空 = 不限时段；起点晚于终点表示<b className="text-ink">跨零点</b>（如 20:00–07:00）。
+        </div>
+        {(s.settings.allowFrom || s.settings.allowTo) && (
+          <button className="btn-chip mt-2 w-full" onClick={() => s.setLimits({ allowFrom: '', allowTo: '' })}>
+            清空时段
+          </button>
+        )}
+
+        <div className="mt-4 rounded-xl bg-sky-50 px-3 py-2 text-[12px] font-bold text-sky-700">
+          当前：{limitSummary(s.settings.dailyBattleLimit, s.settings.allowFrom, s.settings.allowTo)}
+        </div>
+        <button
+          className="btn-main mt-3"
+          onClick={() => {
+            toast('已保存，立即生效')
+            setLimitOpen(false)
+          }}
+        >
+          完 成
+        </button>
+      </Modal>
 
       <Modal open={grant} title="奖励积分" onClose={() => setGrant(false)}>
         <div className="text-center text-[13px] text-muted">孩子当前积分 {s.points} 分</div>

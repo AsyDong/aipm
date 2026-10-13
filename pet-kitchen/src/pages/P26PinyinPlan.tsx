@@ -10,6 +10,7 @@ import { PINYIN_WORLD_LEVELS } from '../engine/questions'
 import { PLAN_21, PLAN_DAYS, newDoneOf, reviewsForDay } from '../pinyin/plan'
 import { speak } from '../pinyin/audio'
 import { notePinyinCheckIn } from '../pinyin/bridge'
+import { enterGuard } from '../utils/gate'
 
 export default function P26PinyinPlan() {
   const nav = useNav()
@@ -102,11 +103,11 @@ export default function P26PinyinPlan() {
             </div>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {p.levelIds.slice(0, 1).map((id) => (
-                <button key={id} onClick={() => nav.go('pygame', `lvl:py${id}`)} className="btn-chip">🏰 闯关</button>
+                <button key={id} onClick={() => { if (enterGuard()) nav.go('pygame', `lvl:py${id}`) }} className="btn-chip">🏰 闯关</button>
               ))}
               <button onClick={() => nav.go('pyalpha')} className="btn-chip">🔤 字母表</button>
               {p.games.map((g) => (
-                <button key={g.id} onClick={() => nav.go('pygame', g.id)} className="btn-chip">{g.icon} {g.label}</button>
+                <button key={g.id} onClick={() => { if (enterGuard()) nav.go('pygame', g.id) }} className="btn-chip">{g.icon} {g.label}</button>
               ))}
               {!newDone && (
                 <button onClick={() => setNewDone(day, true)} className="btn-chip">✓ 标记完成</button>
@@ -136,7 +137,7 @@ export default function P26PinyinPlan() {
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     <button onClick={() => nav.go('pyalpha')} className="btn-chip">🔤 读一读</button>
                     {r.levelIds.slice(0, 1).map((id) => (
-                      <button key={id} onClick={() => nav.go('pygame', `lvl:py${id}`)} className="btn-chip">🎯 重玩关卡</button>
+                      <button key={id} onClick={() => { if (enterGuard()) nav.go('pygame', `lvl:py${id}`) }} className="btn-chip">🎯 重玩关卡</button>
                     ))}
                   </div>
                 </div>

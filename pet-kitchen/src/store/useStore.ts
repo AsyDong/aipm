@@ -80,6 +80,10 @@ const baseSettings: Settings = {
   parentPin: '1234',
   pinChanged: false,
   dailyBattleMinutes: 15,
+  // 防沉迷默认关闭（PRD §8）：家长不去「游玩限制」里设，就不限制任何东西
+  dailyBattleLimit: 0,
+  allowFrom: '',
+  allowTo: '',
 }
 
 /** 孩子档案的默认值：昵称非真名（PRD 明确要求），年级默认一年级 */
@@ -426,6 +430,8 @@ interface Actions {
   removeTemplate: (id: string) => void
   setPin: (pin: string) => void
   toggleSetting: (k: 'sound' | 'readAloud') => void
+  /** 防沉迷设置（PRD §8）：每日闯关上限 + 可用时段。只传要改的字段 */
+  setLimits: (patch: Partial<Pick<Settings, 'dailyBattleLimit' | 'allowFrom' | 'allowTo'>>) => void
 }
 
 export type Store = AppState & Actions
@@ -1256,6 +1262,24 @@ export const useStore = create<Store>()(
         setPin: (pin) => set((s) => ({ settings: { ...s.settings, parentPin: pin, pinChanged: true } })),
 
         toggleSetting: (k) => set((s) => ({ settings: { ...s.settings, [k]: !s.settings[k] } })),
+
+        /**
+         * 防沉迷设置（PRD §8）。
+         * 时段不做格式校验 —— UI 用 `<input type="time">`，产出必是 'HH:MM' 或空串；
+         * 万一存进脏值（老存档 / 手改 localStorage），`engine/limits.parseHM()` 会当「没填」处理，
+         * 即「不限制」而不是「随时都不许玩」，不会把孩子锁在外面。
+         */
+        setLimits: (patch) =>
+          set((s) => ({
+            settings: {
+              ...s.settings,
+              ...patch,
+              dailyBattleLimit: Math.max(
+                0,
+                Math.floor((patch.dailyBattleLimit ?? s.settings.dailyBattleLimit) || 0),
+              ),
+            },
+          })),
       }
     },
     {

@@ -1,6 +1,8 @@
 import { useStore } from '../store/useStore'
 import { useNav } from '../store/nav'
 import { CoinBar } from '../components/ui'
+import { enterGuard } from '../utils/gate'
+import { limitOf } from '../engine/limits'
 import {
   BOSS_META, LEVELS_BY_SECTION, SECTIONS, SECTION_ATTR,
   bossRequires, pageOfLevel, type LevelDef, type SectionMeta,
@@ -39,6 +41,11 @@ export default function P07LevelMap({ section }: { section?: Section }) {
   const wrong = useStore((s) => s.wrong)
   const food = useStore((s) => s.food)
   const points = useStore((s) => s.points)
+  // 防沉迷（PRD §8）：这里只取来展示「今日已玩 X/Y 场」，
+  // 真正的拦截在点击时的 enterGuard() 与战斗页的 LimitGuard
+  const settings = useStore((s) => s.settings)
+  const todayBattles = useStore((s) => s.todayBattles)
+  const limitState = limitOf({ settings, todayBattles })
 
   if (!section) {
     return <SectionHub food={food} points={points} levels={levels} wrong={wrong} />
@@ -104,7 +111,9 @@ export default function P07LevelMap({ section }: { section?: Section }) {
             <button
               key={l.id}
               disabled={isLocked}
-              onClick={() => nav.go(pageOfLevel(l), l.id)}
+              onClick={() => {
+                if (enterGuard()) nav.go(pageOfLevel(l), l.id)
+              }}
               className={`mb-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left ${
                 l.boss ? 'bg-amber-50' : 'bg-sky-50'
               } ${isLocked ? 'opacity-55' : 'active:scale-[0.98]'}`}
@@ -146,6 +155,13 @@ export default function P07LevelMap({ section }: { section?: Section }) {
             ? `综合关四科混着出，属性成长会摊到三科上（当前按三科均值 ${attr} 解锁）。`
             : `属性越高，血量越多、提示越多，还能解锁后面的关卡。`}
           单关限时 {BATTLE_LIMIT_MIN} 分钟。
+        </div>
+        {/* 防沉迷：把「今天还剩几场」直接摆出来，孩子心里有数，不用撞到上限才知道 */}
+        <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-[12px] font-bold text-muted">
+          ⏳ 今日已玩 {limitState.used} 场
+          {limitState.limit > 0 ? ` / 上限 ${limitState.limit} 场` : ''}
+          {limitState.overCount ? ' · 玩够啦，明天再来' : ''}
+          {limitState.outsideWindow ? ' · 现在不在可玩时段' : ''}
         </div>
       </div>
     </div>

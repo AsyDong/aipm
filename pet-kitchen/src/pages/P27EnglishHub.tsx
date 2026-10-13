@@ -15,6 +15,7 @@ import {
 } from '../engine/questions'
 import { ATTR_LABEL, BATTLE_LIMIT_MIN, attrOf } from '../engine/rules'
 import { nowDay } from '../engine/time'
+import { enterGuard } from '../utils/gate'
 
 type View = 'hub' | 'read' | 'quiz' | 'oxford'
 
@@ -124,7 +125,9 @@ export default function P27EnglishHub() {
             <button
               key={l.id}
               disabled={isLocked}
-              onClick={() => nav.go(pageOfLevel(l), l.id)}
+              onClick={() => {
+                if (enterGuard()) nav.go(pageOfLevel(l), l.id)
+              }}
               className={`mb-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left ${
                 l.boss ? 'bg-amber-50' : l.play === 'read' ? 'bg-violet-50' : 'bg-sky-50'
               } ${isLocked ? 'opacity-55' : 'active:scale-[0.98]'}`}

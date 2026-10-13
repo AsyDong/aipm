@@ -17,6 +17,7 @@ import { alignScores } from './src/engine/follow'
 import {
   READ_WRONG_KIND, isReadWord, reviewItemsOf, weakWordsOf, wrongQuestionOf, wrongSpecOf,
 } from './src/engine/readwrong'
+import * as limits from './src/engine/limits'
 import { advanceQueue, firstCorrectCount } from './src/engine/queue'
 import { toDay, addDays, nowDay, DAY_START_HOUR } from './src/engine/time'
 import { gradeLocally, needsModel, normalizeNumeric } from './src/engine/grading'
@@ -1156,6 +1157,90 @@ void (async () => {
     // ⑥ 反例：一整天什么都没做 → 断签
     nextDay()
     ok(s().streak === 0, `没做任务、也没碰拼音 → 连击清零（${s().streak}）`)
+  }
+
+  // == 29. 防沉迷：每日闯关上限 + 可用时段（FE-01，PRD §8） ==
+  {
+    console.log('\n== 29. 防沉迷（每日上限 / 可用时段） ==')
+
+    // 固定一个「今天」，把边界时刻造出来（不依赖跑冒烟时的真实时间）
+    const at = (h: number, m: number) => limits.atClock(2026, 10, 13, h, m)
+
+    // 干净起点：不限场次、不限时段、今天已玩 2 场
+    useStore.setState({
+      todayBattles: 2,
+      settings: { ...s().settings, dailyBattleLimit: 0, allowFrom: '', allowTo: '' },
+    })
+
+    // ① 默认什么都不限制
+    ok(limits.limitOf(s(), at(10, 0)).blocked === false, '默认（0 场 / 空时段）不拦任何一场')
+    ok(limits.limitOf(s(), at(3, 0)).blocked === false, '没设时段时凌晨 3 点也放行')
+
+    // ② 每日上限（含边界：正好玩满就拦）
+    s().setLimits({ dailyBattleLimit: 3 })
+    ok(s().settings.dailyBattleLimit === 3, '家长设「每天 3 场」已写入 settings')
+    ok(limits.limitOf(s(), at(10, 0)).blocked === false, '已玩 2/3 场 → 放行（还剩 1 场）')
+    useStore.setState({ todayBattles: 3 })
+    const r3 = limits.limitOf(s(), at(10, 0))
+    ok(r3.blocked && r3.overCount, '正好玩满 3 场 → 拦下（>= 判定，边界不漏）')
+    ok(r3.reason.includes('3 场'), `拦截提示带上限数字：「${r3.reason}」`)
+    useStore.setState({ todayBattles: 9 })
+    ok(limits.limitOf(s(), at(10, 0)).blocked, '超出上限当然也拦')
+
+    // ③ 上限归零 / 脏值
+    s().setLimits({ dailyBattleLimit: 0 })
+    ok(limits.limitOf(s(), at(10, 0)).blocked === false, '上限设回 0 = 不限场次')
+    s().setLimits({ dailyBattleLimit: -5 })
+    ok(s().settings.dailyBattleLimit === 0, '负数夹到 0（家长手滑不会把孩子锁死）')
+
+    // ④ 可用时段：含起点、不含终点
+    useStore.setState({ todayBattles: 0 })
+    s().setLimits({ allowFrom: '08:00', allowTo: '20:00' })
+    ok(limits.inWindow(at(8, 0), '08:00', '20:00') === true, '时段起点那一刻放行（含左端）')
+    ok(limits.inWindow(at(12, 0), '08:00', '20:00') === true, '时段中间放行')
+    ok(limits.inWindow(at(19, 59), '08:00', '20:00') === true, '终点前一分钟仍放行')
+    ok(limits.inWindow(at(20, 0), '08:00', '20:00') === false, '终点那一刻就拦（不含右端）')
+    ok(limits.inWindow(at(7, 59), '08:00', '20:00') === false, '起点前一分钟仍拦')
+    const out = limits.limitOf(s(), at(7, 0))
+    ok(out.outsideWindow && out.blocked, '时段外进入被拦下')
+    ok(out.reason.includes('08:00'), `时段外提示里带出可玩时段：「${out.reason}」`)
+    ok(limits.limitOf(s(), at(9, 0)).blocked === false, '回到时段内立刻放行')
+
+    // ⑤ 跨零点时段（20:00–07:00）
+    ok(limits.inWindow(at(23, 0), '20:00', '07:00') === true, '跨零点：23:00 放行')
+    ok(limits.inWindow(at(3, 0), '20:00', '07:00') === true, '跨零点：次日 03:00 放行')
+    ok(limits.inWindow(at(7, 0), '20:00', '07:00') === false, '跨零点：07:00 收口')
+    ok(limits.inWindow(at(12, 0), '20:00', '07:00') === false, '跨零点：白天拦')
+
+    // ⑥ 只填一端 / 填错
+    ok(limits.inWindow(at(9, 0), '08:00', '') === true, '只填起点：其后都放行')
+    ok(limits.inWindow(at(7, 0), '08:00', '') === false, '只填起点：之前仍拦')
+    ok(limits.inWindow(at(21, 0), '', '20:00') === false, '只填终点：其后拦')
+    ok(limits.inWindow(at(9, 0), '垃圾', '数据') === true, '两端都是非法值 → 当没填（不锁死）')
+    ok(limits.inWindow(at(9, 0), '09:00', '09:00') === true, '起止相同视作不限（填错的兜底）')
+
+    // ⑦ 时段优先于场次：两条都命中时提示的是时段
+    useStore.setState({ todayBattles: 99 })
+    s().setLimits({ dailyBattleLimit: 3 })
+    const both = limits.limitOf(s(), at(2, 0))
+    ok(both.overCount && both.outsideWindow, '场次与时段同时命中')
+    ok(both.reason.includes('休息时间'), '两条都命中 → 提示时段原因（更硬的那条优先）')
+
+    // ⑧ 老存档兜底：settings 里根本没有这三个字段
+    const legacy = { settings: { sound: true } as never, todayBattles: 1 }
+    const lr = limits.limitOf(legacy as never, at(10, 0))
+    ok(lr.blocked === false && lr.limit === 0, '老存档缺字段 → 当作不限制（不会把孩子锁在外面）')
+
+    // ⑨ 家长端摘要文案
+    ok(
+      limits.limitSummary(3, '08:00', '20:00') === '每天 3 场 · 08:00–20:00 可玩',
+      `摘要：${limits.limitSummary(3, '08:00', '20:00')}`,
+    )
+    ok(limits.limitSummary(0, '', '') === '场次不限', '什么都不限时摘要只有一句')
+
+    // 复位（本组是最后一组，但保持状态干净总没坏处）
+    s().setLimits({ dailyBattleLimit: 0, allowFrom: '', allowTo: '' })
+    useStore.setState({ todayBattles: 0 })
   }
 
   console.log(`\n结果：${fail === 0 ? '全部通过 ✅' : fail + ' 项失败 ❌'}`)

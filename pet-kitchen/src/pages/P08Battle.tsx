@@ -5,6 +5,7 @@ import PetAvatar from '../components/PetAvatar'
 import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
 import { BOSS_META, MATH_LEVELS, levelById, levelsOf, pageOfLevel, specKey, subjectOfKind } from '../engine/questions'
+import { enterGuard } from '../utils/gate'
 
 import {
   BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, attrOf, baseHp, hintCount, FIRST_CLEAR_BONUS,
@@ -515,7 +516,9 @@ export default function P08Battle({ levelId }: { levelId: string }) {
           <button
             className="btn-main"
             disabled={!result.win || !nextLevel}
-            onClick={() => nextLevel && nav.go(pageOfLevel(nextLevel), nextLevel.id)}
+            onClick={() => {
+              if (nextLevel && enterGuard()) nav.go(pageOfLevel(nextLevel), nextLevel.id)
+            }}
           >
             下 一 关
           </button>

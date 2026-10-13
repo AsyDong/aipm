@@ -250,6 +250,16 @@ export interface Settings {
   parentPin: string
   pinChanged: boolean
   dailyBattleMinutes: number
+  /**
+   * 每日闯关上限（场次），0 = 不限 —— PRD §8 防沉迷，家长在「游玩限制」里设置。
+   * 口径是「当天已开始的场次」= `todayBattles`（结算时 +1），到点后由
+   * `engine/limits.limitOf()` 判定、`utils/gate.enterGuard()` 拦截。
+   */
+  dailyBattleLimit: number
+  /** 可用时段起点 'HH:MM'；空 = 不限制起点（只填一端就只管那一侧） */
+  allowFrom: string
+  /** 可用时段终点 'HH:MM'；空 = 不限制终点。from > to 表示**跨零点**（如 20:00–07:00） */
+  allowTo: string
 }
 
 /**
