@@ -492,6 +492,10 @@ console.log('== 13. 商店 & 家园布置 ==')
   ok(s().buyItem('tree', 60), '购买小树成功')
   ok(s().owned.includes('tree'), '进入已拥有列表')
   ok(s().points === before - 60, `积分 ${before} → ${s().points}`)
+  // 重复购买：UI 已挡（按钮变「去布置」），store 也得兜底 —— 否则扣分而毫无获得
+  const ptsAfterBuy = s().points
+  ok(s().buyItem('tree', 60) === false, '重复购买已拥有的装饰被拒绝')
+  ok(s().points === ptsAfterBuy, '被拒绝的重复购买不扣分')
   s().placeItem('tree', 30, 40)
   ok(s().placed.length === 1, '放置到家园')
   s().movePlaced(s().placed[0].uid, 60, 70)

@@ -1134,6 +1134,9 @@ export const useStore = create<Store>()(
 
         buyItem: (itemId, cost) => {
           const s = get()
+          // 已拥有必须直接拒绝：商店 UI 已把按钮换成「去布置」，但 store 是唯一事实来源，
+          // 少了这道闸就会「扣了分、列表里却什么也没多」—— 静默吞积分。
+          if (s.owned.includes(itemId)) return false
           if (s.points < cost) return false
           const points = s.points - cost
           set({
