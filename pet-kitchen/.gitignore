@@ -40,3 +40,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 _scratch/
+
+# 浏览器实测截图（临时产物）
+.shots/
