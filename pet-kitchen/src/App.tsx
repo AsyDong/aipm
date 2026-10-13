@@ -11,6 +11,15 @@ import P04Home from './pages/P04Home'
 import P06TaskSubmit from './pages/P06TaskSubmit'
 import P07LevelMap from './pages/P07LevelMap'
 import P08Battle from './pages/P08Battle'
+import P18FollowRead from './pages/P18FollowRead'
+import P20PinyinHub from './pages/P20PinyinHub'
+import P21PinyinAlphabet from './pages/P21PinyinAlphabet'
+import P22PinyinLesson from './pages/P22PinyinLesson'
+import P23PinyinSpell from './pages/P23PinyinSpell'
+import P24PinyinGame from './pages/P24PinyinGame'
+import P25PinyinMap from './pages/P25PinyinMap'
+import P26PinyinPlan from './pages/P26PinyinPlan'
+import P28EnglishListen from './pages/P28EnglishListen'
 import P10WrongBook from './pages/P10WrongBook'
 import P11Shop from './pages/P11Shop'
 import P12Decorate from './pages/P12Decorate'
@@ -20,6 +29,7 @@ import P15ParentGate from './pages/P15ParentGate'
 import P16TaskManage from './pages/P16TaskManage'
 import P17PrizeManage from './pages/P17PrizeManage'
 import ParentHub from './pages/ParentHub'
+import type { Section } from './types'
 
 const PARENT_PAGES = ['parentHub', 'ptasks', 'pprizes']
 const TAB_PAGES = ['home', 'battle', 'shop', 'mine']
@@ -72,10 +82,23 @@ export default function App() {
     <div className="app-shell">
       <main className={`flex-1 ${showTab ? 'pb-[68px]' : ''}`}>
         {page === 'home' && <P04Home />}
-        {/* 闯关地图就是 battle 本页：切科目用 replace 原地换参（go 会压栈，TabBar 就没了） */}
-        {page === 'battle' && <P07LevelMap subject={top.arg as 'math' | 'chinese' | 'english' | undefined} />}
+        {/* 闯关第一屏是「版块中心」，选版块用 replace 原地换参（go 会压栈，TabBar 就没了） */}
+        {page === 'battle' && <P07LevelMap section={top.arg as Section | undefined} />}
         {/* key 绑定关卡/任务 id：连续闯关时必须重挂载，否则上一关的答题状态会残留 */}
         {page === 'play' && <P08Battle key={top.arg ?? 'm1'} levelId={top.arg ?? 'm1'} />}
+        {/* 课本跟读关走 P18（录音 + 讯飞评测），不是 P08 */}
+        {page === 'follow' && <P18FollowRead key={top.arg ?? ''} levelId={top.arg ?? ''} />}
+        {/* 拼音版块 = 一套完整的「拼音方块世界」，已整体搬进本应用（不再是 iframe 子应用） */}
+        {page === 'pinyin' && <P20PinyinHub />}
+        {page === 'pyalpha' && <P21PinyinAlphabet />}
+        {page === 'pylesson' && <P22PinyinLesson />}
+        {page === 'pyspell' && <P23PinyinSpell />}
+        {/* key 绑定玩法 / 关卡 id：换玩法必须重挂载，否则上一轮答题状态会残留 */}
+        {page === 'pygame' && <P24PinyinGame key={top.arg ?? 'listen'} mode={top.arg ?? 'listen'} />}
+        {page === 'pymap' && <P25PinyinMap />}
+        {page === 'pyplan' && <P26PinyinPlan />}
+        {/* 英语版块由 P07 渲染 P27EnglishHub；听音选词是它下面的一个游戏页 */}
+        {page === 'enlisten' && <P28EnglishListen />}
         {page === 'task' && <P06TaskSubmit key={top.arg ?? ''} taskId={top.arg ?? ''} />}
         {page === 'wrong' && <P10WrongBook subject={(top.arg as 'math') ?? 'math'} />}
         {page === 'shop' && <P11Shop />}

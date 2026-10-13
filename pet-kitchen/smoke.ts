@@ -1,8 +1,22 @@
 /* 冒烟脚本：在 Node 里跑一遍核心状态机，验证 PRD 规则是否被正确执行 */
 import { useStore, dailyTaskVisible, templateAppliesOn, weekdayOf } from './src/store/useStore'
 import * as rules from './src/engine/rules'
-import { MATH_LEVELS, CHINESE_LEVELS, ENGLISH_LEVELS, levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion, charPool, specKey } from './src/engine/questions'
+import {
+  MATH_LEVELS, PINYIN_LEVELS, PINYIN_WORLD_LEVELS, LITERACY_LEVELS, MIXED_LEVELS,
+  EN_LEVELS, EN_READ_LEVELS, EN_QUIZ_LEVELS, EN_TEXTBOOK_LEVELS, EN_OXFORD_LEVELS,
+  SECTIONS, SECTION_ATTR, LEVELS_BY_SECTION, LEVELS_BY_SUBJECT, levelsOf, pageOfLevel, subjectOfKind,
+  levelById, bossRequires, buildLevelQuestions, variantsOf, questionOfKind, buildQuestion, charPool, specKey,
+} from './src/engine/questions'
+import { INITIALS, FINALS, ZHENGTI, PW_LEVELS, PW_UNITS } from './src/pinyin/data'
+import { genLevelQuestions, genTestQuestions, stripTone, setTone, isPinyinLearned } from './src/pinyin/quiz'
+import { specOf, toAppQuestion } from './src/pinyin/toApp'
+import { learnedLettersByDay } from './src/pinyin/plan'
 import { CHAR_BANK, FC_UNITS } from './src/data/courses'
+import { READ_UNITS } from './src/data/readtext'
+import { alignScores } from './src/engine/follow'
+import {
+  READ_WRONG_KIND, isReadWord, reviewItemsOf, weakWordsOf, wrongQuestionOf, wrongSpecOf,
+} from './src/engine/readwrong'
 import { advanceQueue, firstCorrectCount } from './src/engine/queue'
 import { toDay, addDays, nowDay, DAY_START_HOUR } from './src/engine/time'
 import { gradeLocally, needsModel, normalizeNumeric } from './src/engine/grading'
@@ -183,12 +197,17 @@ console.log('== 10. 出题引擎（12 关 × 10 题）==')
 
 console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / 英语单元）==')
 {
-  ok(CHINESE_LEVELS.length === 23 && ENGLISH_LEVELS.length === 9,
-    `语文 ${CHINESE_LEVELS.length} 关 / 英语 ${ENGLISH_LEVELS.length} 关`)
+  // 2026-10-12 改版：「语文」拆成拼音线 + 识字线。
+  // 注意这里跑的是**历史拼音题**（c1…c20，本应用出题，能出选择题）；
+  // 现役拼音版块（PINYIN_WORLD_LEVELS）走拼音世界玩法、kinds 为空，不在这一节跑。
+  const chinese = [...PINYIN_LEVELS, ...LITERACY_LEVELS]
+  ok(chinese.length === 23 && EN_QUIZ_LEVELS.length === 9,
+    `历史语文 ${chinese.length} 关（拼音存档 ${PINYIN_LEVELS.length} + 识字 ${LITERACY_LEVELS.length}）/ 英语认读 ${EN_QUIZ_LEVELS.length} 关`)
   ok(!!levelById('m1') && !!levelById('c1') && !!levelById('e1'), 'levelById 三科都能找到')
-  ok(bossRequires(CHINESE_LEVELS.find((l) => l.boss)!).length === 5, 'Boss 解锁要求取自本 subject 的关卡列表')
+  ok(bossRequires(LITERACY_LEVELS.find((l) => l.boss)!).length === 5, 'Boss 解锁要求取自本版块的关卡列表')
 
-  for (const level of [...CHINESE_LEVELS, ...ENGLISH_LEVELS]) {
+  // 只跑「选择题关」：跟读关（play==='read'、kinds 为空）不出选择题，走 P18
+  for (const level of [...chinese, ...EN_QUIZ_LEVELS]) {
     const qs = buildLevelQuestions(level, [], rules.QUESTIONS_PER_LEVEL)
     let bad = 0
     for (const q of qs) {
@@ -202,7 +221,7 @@ console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / �
         if (rebuilt.options?.[rebuilt.answer] !== opts[q.answer]) bad++
       }
     }
-    ok(bad === 0, `${level.name}：${qs.length} 题，选项/答案/重建 全部合法`, bad)
+    ok(qs.length > 0 && bad === 0, `${level.name}：${qs.length} 题，选项/答案/重建 全部合法`, bad)
   }
 
   // 题面样例抽查
@@ -235,6 +254,121 @@ console.log('== 10.5 语文 / 英语关卡内容（拼音 / 识字 / 古诗 / �
   ok(charPool('u2').some((c) => c.zh === '马') && !charPool('u2').some((c) => c.zh === '猫'), 'u2 后会拼「马」还不会拼「猫」')
   ok(charPool('u7').some((c) => c.zh === '猫') && !charPool('u7').some((c) => c.zh === '三'), 'u7 后会拼「猫」，「三」要等鼻韵母')
   ok(charPool('u13').length === CHAR_BANK.length, '全部拼音学完后字库全解锁')
+}
+
+console.log('== 10.6 闯关 5 版块结构（拼音 / 数学 / 英语 / 识字 / 综合）==')
+{
+  ok(SECTIONS.length === 5, `版块 ${SECTIONS.length} 个：${SECTIONS.map((s) => s.name).join(' / ')}`)
+  ok(
+    SECTIONS.map((s) => s.id).join(',') === 'pinyin,math,english,literacy,mixed',
+    '版块顺序 拼音 → 数学 → 英语 → 识字 → 综合',
+  )
+
+  // 每个版块：关卡 index 必须在本版块内连续（Boss 解锁与「下一关」都按它找）
+  for (const meta of SECTIONS) {
+    const list = LEVELS_BY_SECTION[meta.id]
+    ok(list.every((l) => l.section === meta.id), `${meta.name}版块：${list.length} 关，section 全部归属正确`)
+    const idx = list.map((l) => l.index)
+    ok(idx.every((n, i) => n === i + 1), `${meta.name}版块：index 连续 ${idx[0]}…${idx[idx.length - 1]}`)
+  }
+
+  // 拼音版块：现役 15 关（拼音方块世界，玩法 play=pinyin → P24PinyinGame）
+  ok(PINYIN_WORLD_LEVELS.length === 15 && LEVELS_BY_SECTION.pinyin === PINYIN_WORLD_LEVELS,
+    `拼音版块 ${PINYIN_WORLD_LEVELS.length} 关（拼音方块世界已整体搬进本应用）`)
+  ok(
+    PINYIN_WORLD_LEVELS.every((l) => l.play === 'pinyin' && pageOfLevel(l) === 'pyplay'),
+    '拼音关：play=pinyin → 路由到 pyplay（P24PinyinGame）',
+  )
+  // 历史拼音存档（c1…c20）已下架，但 levelById 仍要认得 —— 老存档的 level_records / 错题靠它解析
+  ok(PINYIN_LEVELS.length === 15 && levelById('c1')?.id === 'c1',
+    `历史拼音存档 ${PINYIN_LEVELS.length} 关，levelById 仍能解析（老存档兼容）`)
+
+  // 英语 = 课本（跟读 18 + 认读 9）+ 牛津树（闪卡）
+  ok(EN_READ_LEVELS.length === 18, `课本跟读关 ${EN_READ_LEVELS.length} 关（6 单元 × 词/短语/句）`)
+  ok(EN_TEXTBOOK_LEVELS.length === 27, `课本线共 ${EN_TEXTBOOK_LEVELS.length} 关（18 跟读 + 9 认读）`)
+  ok(EN_OXFORD_LEVELS.length === FC_UNITS.length, `牛津树 ${EN_OXFORD_LEVELS.length} 关（= FC_UNITS 单元数）`)
+  ok(EN_LEVELS.length === 27 + FC_UNITS.length, `英语版块合计 ${EN_LEVELS.length} 关`)
+  ok(EN_READ_LEVELS.every((l) => l.track === 'textbook' && l.play === 'read' && pageOfLevel(l) === 'follow'),
+    '跟读关：track=textbook / play=read → 路由到 follow（P18）')
+  ok(EN_QUIZ_LEVELS.every((l) => pageOfLevel(l) === 'play'), '认读关：路由到 play（P08）')
+  ok(EN_OXFORD_LEVELS.every((l) => l.track === 'oxford'), '牛津树关 track=oxford（原闪卡速记内容不变）')
+  ok(EN_OXFORD_LEVELS.every((l) => l.kinds.every((k) => k.startsWith('fc_'))), '牛津树关只出闪卡题（fc_*）')
+
+  // 综合版块：混合抽题 + 错题复习
+  ok(MIXED_LEVELS.length === 2, `综合版块 ${MIXED_LEVELS.length} 关：${MIXED_LEVELS.map((l) => l.name).join(' / ')}`)
+  ok(MIXED_LEVELS.every((l) => SECTION_ATTR.mixed === l.subject && l.subject === 'mixed'), '综合关 subject=mixed')
+  ok((MIXED_LEVELS[1].wrongInject ?? 0) === 10, `错题复习关 wrongInject=${MIXED_LEVELS[1].wrongInject}（整关基本由错题组成）`)
+
+  // 综合关出题：题面合法、且四路都摇得到（多摇几轮，避免偶发全落在同一路）
+  {
+    const qs = buildLevelQuestions(MIXED_LEVELS[0], [], 10)
+    ok(qs.length === 10, `混合大乱斗出 ${qs.length} 题`)
+    ok(qs.every((q) => !!q.text && !!q.hint && !!q.explain), '混合题面/提示/讲解齐全')
+    ok(qs.every((q) => q.spec.kind !== 'mix_all'), '混合题落地为具体题型（可行错题本、举一反三）')
+
+    const subjects = new Set<string>()
+    for (let i = 0; i < 60; i++) subjects.add(subjectOfKind(questionOfKind('mix_all').spec.kind))
+    ok(subjects.size >= 3, `综合关能摇出多科题目（60 次样本命中 ${subjects.size} 科：${[...subjects].join('/')}）`)
+    ok(subjectOfKind('cou10') === 'math', '归科：数学题 → math')
+    ok(subjectOfKind('char_py:u13') === 'chinese' && subjectOfKind('poem_next') === 'chinese', '归科：识字/古诗 → chinese')
+    ok(subjectOfKind('en_pic:family') === 'english' && subjectOfKind('fc_pic:u3') === 'english', '归科：课本/闪卡 → english')
+  }
+
+  // 学科 → 关卡列表 与 版块列表 一一对上（服务端出题、结算页取数都靠它）
+  ok(LEVELS_BY_SUBJECT.math === MATH_LEVELS, '学科 math → 数学版块')
+  ok(LEVELS_BY_SUBJECT.chinese === LITERACY_LEVELS, '学科 chinese → 识字线（拼音版块按 section 走，不在 subject 表里）')
+  ok(LEVELS_BY_SUBJECT.english === EN_LEVELS && LEVELS_BY_SUBJECT.mixed === MIXED_LEVELS, '学科 english / mixed 对得上')
+  ok(levelsOf(EN_OXFORD_LEVELS[0]).length === EN_LEVELS.length, 'levelsOf 取整条英语版块（Boss 往前数 5 关用）')
+  for (const meta of SECTIONS) {
+    const list = LEVELS_BY_SECTION[meta.id]
+    const last = list[list.length - 1]
+    ok(levelsOf(last).find((l) => l.index === last.index + 1) === undefined, `${meta.name}版块最后一关（${last.name}）没有「下一关」`)
+  }
+}
+
+console.log('== 10.7 拼音方块世界（数据 / 出题 / 错题桥接）==')
+{
+  ok(INITIALS.length === 23 && FINALS.length === 24 && ZHENGTI.length === 16,
+    `拼音字母：声母 ${INITIALS.length} / 韵母 ${FINALS.length} / 整体认读 ${ZHENGTI.length}`)
+  ok(PW_LEVELS.length === 15 && PW_UNITS.length === 4, `拼音关卡 ${PW_LEVELS.length} 关 / ${PW_UNITS.length} 个单元`)
+  ok(
+    PW_UNITS.every((u) => PW_LEVELS.filter((l) => l.unit === u.id).length === u.range[1] - u.range[0] + 1),
+    '单元区间与关卡分布对得上',
+  )
+
+  // 关卡出题：选项不少于 4 个，且正确答案只出现一次
+  for (const lv of PW_LEVELS) {
+    const qs = genLevelQuestions(lv)
+    const bad = qs.filter((q) => q.options.length < 4 || q.options.filter((o) => o === q.answer).length !== 1).length
+    ok(bad === 0 && qs.length > 0, `关卡${lv.id}「${lv.name}」出 ${qs.length} 题，选项合法`, bad)
+  }
+
+  for (const u of PW_UNITS) {
+    const qs = genTestQuestions(u.id)
+    ok(qs.length === 10, `第${u.id}单元测试出 ${qs.length} 题`)
+  }
+
+  ok(stripTone('mā') === 'ma' && stripTone('zhōng') === 'zhong', '去声调')
+  ok(setTone('ma', 1) === 'mā' && setTone('liu', 2) === 'liú' && setTone('hao', 3) === 'hǎo', '按标调规则加声调')
+  ok(isPinyinLearned('mā', learnedLettersByDay(2)) === false && isPinyinLearned('ā', learnedLettersByDay(2)) === true,
+    '已学范围能正确把关（第 2 天只学了 a o e i u ü）')
+
+  // 错题桥接：三种题型都能转成主应用 spec，归语文、且能从 spec 无损重建
+  {
+    const qs = genLevelQuestions(PW_LEVELS[1])
+    const kinds = new Set(qs.map((q) => q.kind))
+    ok(kinds.size >= 2, `拼音题覆盖 ${kinds.size} 种题型：${[...kinds].join('/')}`)
+    let bad = 0
+    for (const q of qs) {
+      const spec = specOf(q)
+      const app = toAppQuestion(q)
+      const rebuilt = buildQuestion(spec)
+      if (subjectOfKind(spec.kind) !== 'chinese') bad++
+      if (rebuilt.options?.[rebuilt.answer] !== q.answer) bad++
+      if (!app.spec.kind.startsWith('pyw_')) bad++
+    }
+    ok(bad === 0, '拼音错题 → 主应用 spec：归语文 / 无损重建 全部通过', bad)
+  }
 }
 
 console.log('== 11. 闯关结算（首次通关双倍 / 星级 / 属性）==')
@@ -902,6 +1036,126 @@ void (async () => {
     ok(!!fcLevel && fcLevel.subject === 'english' && fcLevel.kinds.length === 2, 'levelById 解析 fc-u4（english, 2 kinds）')
     const batch = buildLevelQuestions(fcLevel!, [], 10)
     ok(batch.length === 10 && batch.every((x) => x.spec.kind.startsWith('fc_')), '按 fc 关卡出 10 题，全是闪卡题')
+  }
+
+  // == 27. 跟读纠音回灌错题本（FE-08：读不好的词 → 错题本 → 下次开练先补它） ==
+  {
+    console.log('\n== 27. 跟读纠音回灌 ==')
+
+    // ① 逐词对齐 → 挑该回灌的词：漏读优先，且只收课本实词（this / is / my 这类挡在门外）
+    const toks = ['This', 'is', 'my', 'sister']
+    const rows = alignScores(toks, [
+      { word: 'This', score: 96, dp_message: 0 },
+      { word: 'is', score: 58, dp_message: 0 },
+      { word: 'my', score: 95, dp_message: 0 },
+      // sister 引擎压根没给分 → 视为漏读
+    ])
+    const weak = weakWordsOf(toks, rows, 3)
+    ok(weak.includes('sister') && !weak.includes('this'),
+      `读不好的词只收课本实词（${weak.join(' / ') || '空'}）`)
+    ok(isReadWord('sister') && !isReadWord('this'), 'isReadWord：课本词放行、虚词挡掉')
+
+    // ② 纠音题：题面 = 英文词，答案 = 中文释义，四选一
+    const spec = wrongSpecOf('sister')
+    ok(!!spec && spec.kind === READ_WRONG_KIND && spec.ans === '姐姐；妹妹',
+      `纠音 spec：${spec?.kind}「${spec?.prompt}」→ ${spec?.ans}`)
+    ok(!!spec && (spec.opts?.length ?? 0) === 3 && !spec.opts!.includes(spec.ans ?? ''),
+      '干扰项 3 个，且不与答案重复')
+    ok(wrongSpecOf('this') === null, '查不到释义的词（this）不入库')
+
+    const q = wrongQuestionOf('sister')
+    ok(!!q && q.answerType === 'choice' && (q.options?.length ?? 0) === 4,
+      `纠音题出 4 选 1（题面：${q?.text}）`)
+    ok(!!q && q.options?.[q.answer] === q.spec.ans, '正确答案文本与 spec.ans 一致')
+    ok(!!q && q.speechLang === 'en-US' && q.skill === '跟读纠音', '朗读用 en-US、知识点标「跟读纠音」')
+    ok(subjectOfKind(READ_WRONG_KIND) === 'english', '纠音题归英语科（错题本按英语筛得到）')
+
+    // ③ 举一反三：换个单词再出（复用英语词汇题）
+    const vs = variantsOf(spec!)
+    ok(vs.length === 3 && vs.every((v) => v.spec.kind === 'en_word' && v.answerType === 'choice'),
+      '举一反三 3 道，全是英语词汇选择题')
+
+    // ④ 回灌：走主应用 finishBattle 那条既有链路（入库 / 去重 / 遗忘曲线）
+    const before = s().wrong.length
+    const lv = 'rd-e1-w'
+    const res = s().finishBattle('english', lv, 1, 10, [q!], 60_000)
+    ok(res.stars === 0 && res.points === 0, '1/10 未通关：不发分不发星（错题照收）')
+    const added = s().wrong.filter((w) => w.spec.kind === READ_WRONG_KIND)
+    ok(s().wrong.length === before + 1 && added.length === 1, `错题本新增 1 条纠音错题（共 ${s().wrong.length}）`)
+    ok(added[0]?.subject === 'english' && added[0]?.wrongCount === 1 && added[0]?.mastered === false,
+      '学科 = english / 错 1 次 / 未掌握')
+    ok(added[0]?.nextReviewDay === addDays(nowDay(), 1), `排进遗忘曲线（下次复习 ${added[0]?.nextReviewDay}）`)
+
+    // 同一个词再错一次：不新增行，只累计次数
+    s().finishBattle('english', lv, 1, 10, [wrongQuestionOf('sister')!], 60_000)
+    const added2 = s().wrong.filter((w) => w.spec.kind === READ_WRONG_KIND)
+    ok(added2.length === 1 && added2[0].wrongCount === 2, `同一个词再错只累计次数（错 ${added2[0]?.wrongCount} 次）`)
+
+    // ⑤ 反向：到了复习日 → 词转回跟读素材，下一关开练先补它
+    const today = nowDay()
+    ok(reviewItemsOf(s().wrong, today).length === 0, '还没到复习日 → 不注入跟读关')
+    useStore.setState({
+      wrong: s().wrong.map((w) => (w.spec.kind === READ_WRONG_KIND ? { ...w, nextReviewDay: today } : w)),
+    })
+    const rev = reviewItemsOf(s().wrong, today)
+    ok(rev.length === 1 && rev[0].en === 'sister' && rev[0].category === 'read_word',
+      `到复习日 → 注入跟读素材 ${rev[0]?.en}（${rev[0]?.cn}）`)
+    ok(reviewItemsOf(s().wrong, today, 0).length === 0, 'limit 生效（0 条 → 不注入）')
+
+    // ⑥ 词表一致性：注入的词必须是课本跟读素材里真有的（否则跟读关会读到一个陌生的词）
+    const allWords = new Set(READ_UNITS.flatMap((u) => u.words.map((w) => w.en.toLowerCase())))
+    ok(allWords.has('sister') && allWords.has('noodles'), '课本词表覆盖 sister / noodles')
+
+    // 清掉本组造的错题，别影响后面的断言
+    useStore.setState({ wrong: s().wrong.filter((w) => w.spec.kind !== READ_WRONG_KIND) })
+  }
+
+  // == 28. 拼音练习量与打卡合并计数（FE-09：拼音那份进度汇进主应用） ==
+  {
+    console.log('\n== 28. 拼音练习量与打卡合并 ==')
+
+    // 干净的起点：连击 5 天、今天还什么都没做
+    useStore.setState({ streak: 5, longestStreak: 5, todayTasksDone: 0, todayPinyin: 0, todayPinyinChecked: false })
+
+    // ① 练习量累加（点读 / 答题 / 发音评测都走这里）
+    s().notePinyinPractice(1)
+    s().notePinyinPractice(2)
+    ok(s().todayPinyin === 3, `拼音练习量累加（今天练了 ${s().todayPinyin} 个音）`)
+    s().notePinyinPractice(0)
+    ok(s().todayPinyin === 3, 'notePinyinPractice(0) 不计数')
+
+    // ② 拼音打卡撑起连击：今天没做家务任务也能续上
+    ok(s().notePinyinCheckIn() === true, '拼音打卡成功（今天首次）')
+    ok(s().streak === 6, `连击合并计数：5 → ${s().streak}`)
+    ok(s().notePinyinCheckIn() === false && s().streak === 6, '同一天重复拼音打卡不再 +1')
+
+    // ③ 任务侧去重：今天已因拼音打过卡 → 第一个任务完成也不再 +1
+    useStore.setState({ daily: [] })
+    s().ensureDay()
+    const todoTask = s().daily.find((d) => d.status === 'todo' && d.type !== 'subjective')
+    ok(!!todoTask, '重建出今天的待办任务（用于验证任务侧去重）')
+    if (todoTask) {
+      s().submitTask(todoTask.id)
+      ok(s().todayTasksDone === 1, '任务照常完成并计数')
+      ok(s().streak === 6, `同一天两个来源只算一次连击（仍 ${s().streak}）`)
+    }
+
+    // ④ 反方向：今天先做完任务，再去拼音打卡，也不该 +1
+    useStore.setState({ streak: 5, todayTasksDone: 1, todayPinyinChecked: false, daily: [] })
+    ok(s().notePinyinCheckIn() === false && s().streak === 5, '今天已因任务加过连击 → 拼音打卡不再 +1')
+    ok(s().todayPinyinChecked === true, '但去重标记已置位（挡住任务侧再 +1）')
+
+    // ⑤ 跨日：练习量进当日快照、今日计数归零、连击按「今天有没有学过」结算
+    useStore.setState({ todayTasksDone: 0, todayPinyinChecked: true, todayPinyin: 3, streak: 6 })
+    nextDay()
+    const pySnap = s().snapshots[s().snapshots.length - 1]
+    ok(pySnap?.pinyin === 3, `当日快照留下拼音练习量（${pySnap?.pinyin} 个音）`)
+    ok(s().todayPinyin === 0 && s().todayPinyinChecked === false, '跨日：今日拼音量与打卡标记归零')
+    ok(s().streak === 6, `只在拼音里学过也算今天学过（连击保留 ${s().streak}）`)
+
+    // ⑥ 反例：一整天什么都没做 → 断签
+    nextDay()
+    ok(s().streak === 0, `没做任务、也没碰拼音 → 连击清零（${s().streak}）`)
   }
 
   console.log(`\n结果：${fail === 0 ? '全部通过 ✅' : fail + ' 项失败 ❌'}`)

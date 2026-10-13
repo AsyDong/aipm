@@ -10,10 +10,15 @@ dist-ssr
 .env.local
 .env.*.local
 
+# 讯飞语音评测密钥（跟读评分用；模板见 server/xfyun.config.json.example）
+server/xfyun.config.json
+xfyun.config.json
+
 # esbuild 打包的临时文件
 smoke.build.cjs
 server/server.build.cjs
 tools/mock-api.build.cjs
+tools/audit-math.build.cjs
 
 # TypeScript 增量构建信息
 *.tsbuildinfo

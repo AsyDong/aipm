@@ -10,6 +10,8 @@
 //   POST /api/sync                   客户端数据入库（op 幂等，重试不会写重）
 //   GET  /api/state                  跨设备拉取（实体快照 + 最近账本，配合客户端合并）
 //   GET  /api/report                 成长报告（按孩子 + 天数查快照）
+//   GET  /api/score/health           跟读评分用的讯飞配置自检
+//   POST /api/score                  跟读评分（转发讯飞 ISE，见 server/xfyun.ts）
 //
 // op → SQL 的分发在 server/ops.ts；本文件只管 HTTP、鉴权、PG 连接。
 // 支持的 op：
@@ -32,6 +34,10 @@ import { gradeLocally, needsModel, normalizeNumeric } from '../src/engine/gradin
 import { QUESTIONS_PER_LEVEL } from '../src/engine/rules'
 import { PgError, applyOp, OPS_PER_REQUEST, type Op } from './ops'
 import { PIN_PATTERN, hashPin, verifyPin, lockRemaining, recordFail, clearFails } from './auth'
+import {
+  ALLOWED_CATEGORIES, DEFAULT_CHECK_TYPE, EXCEPT_MSG, XF_HOST, XF_PATH,
+  credentialsReady, loadXfyunConfig, scoreWithXfyun, wavToPcm,
+} from './xfyun'
 
 const PORT = Number(process.env.PORT || 8787)
 const ENV_ID = process.env.TCB_ENV_ID || ''
@@ -156,6 +162,102 @@ const server = http.createServer(async (req, res) => {
         live = false
       }
       send(res, 200, { ok: true, pgOk: live, pgLastError, env: ENV_ID, uptime: process.uptime() })
+      return
+    }
+
+    // ---- 跟读评分（英语课本跟读关用）----
+    //
+    // 这一组接口是 reading-score-demo 的 server.py 并进来的：前端把录音压成
+    // 16k 单声道 WAV 再 base64 发过来，这里转 PCM 送讯飞 ISE，拿回分数与逐词明细。
+    // 密钥只在服务端（环境变量或 server/xfyun.config.json），前端拿不到。
+    if (req.method === 'GET' && url === '/api/score/health') {
+      const cfg = loadXfyunConfig()
+      const ready = credentialsReady(cfg)
+      send(res, 200, {
+        ok: true,
+        provider: cfg.provider,
+        config_found: !!cfg.source,
+        endpoint: `wss://${XF_HOST}${XF_PATH}`,
+        credentials_ready: ready,
+        hint: ready
+          ? '配置就绪，可以真实评分'
+          : '还没填讯飞密钥：在 server/xfyun.config.json 里填 app_id / api_key / api_secret，'
+            + '或设置环境变量 XFYUN_APP_ID / XFYUN_API_KEY / XFYUN_API_SECRET',
+      })
+      return
+    }
+
+    if (req.method === 'POST' && url === '/api/score') {
+      const body = JSON.parse(await readBody(req)) as {
+        text?: string; language?: string; category?: string; check_type?: string; audio?: string
+      }
+      const text = (body.text ?? '').trim()
+      const category = (body.category ?? 'read_sentence').trim()
+
+      // 参数校验没过的请求不写日志、更不连引擎 —— 它们根本不该产生计费
+      if (!text) { send(res, 400, { ok: false, error: '缺少 text（参考文本）' }); return }
+      if (!body.audio) { send(res, 400, { ok: false, error: '缺少 audio（录音数据）' }); return }
+      if (/[[\]]/.test(text)) {
+        send(res, 400, { ok: false, error: '参考文本里不能出现中括号 [ ]（讯飞用它做试卷标签）' })
+        return
+      }
+      if (!(ALLOWED_CATEGORIES as readonly string[]).includes(category)) {
+        send(res, 400, {
+          ok: false,
+          error: `category 不支持：${category}（可选 ${ALLOWED_CATEGORIES.join('/')}）`,
+        })
+        return
+      }
+
+      const wav = Buffer.from(body.audio, 'base64')
+      if (wav.length < 44) {
+        send(res, 400, { ok: false, error: 'audio 不是合法的 WAV（base64）' })
+        return
+      }
+      const { pcm, rate } = wavToPcm(wav)
+      if (!pcm.length) { send(res, 400, { ok: false, error: 'WAV 里没有 PCM 数据' }); return }
+
+      const cfg = loadXfyunConfig()
+      const checkType = body.check_type || cfg.xfyun.check_type || DEFAULT_CHECK_TYPE
+      const t0 = Date.now()
+      const r = await scoreWithXfyun(cfg, pcm, text, {
+        language: body.language || 'en',
+        category,
+        checkType,
+      })
+
+      console.log(
+        `[score] category=${category} rate=${rate} audio=${wav.length}B pcm=${pcm.length}B `
+        + `text=${JSON.stringify(text)} ${Date.now() - t0}ms`,
+      )
+
+      if (!r.ok) {
+        console.log(`[score] 失败：${r.error}`)
+        send(res, 502, { ok: false, error: r.error || '评分失败' })
+        return
+      }
+
+      const exceptInfo = r.except_info ?? null
+      console.log(
+        `[score] total=${r.total} words=${(r.words ?? []).length} `
+        + `rejected=${r.is_rejected} except=${exceptInfo}`,
+      )
+      // 逐词明细：word:score:dp —— dp_message 0 正常 / 16 漏读 / 32 增读 / 64 回读 / 128 替换
+      console.log(
+        '[score] detail '
+        + (r.words ?? []).map((w) => `${w.word}:${w.score ?? '-'}:${w.dp_message}`).join(' '),
+      )
+
+      send(res, 200, {
+        ok: true,
+        provider: 'xfyun',
+        total: r.total,
+        words: r.words,
+        dimensions: r.dimensions,
+        is_rejected: r.is_rejected,
+        except_info: exceptInfo,
+        except_msg: exceptInfo ? (EXCEPT_MSG[exceptInfo] ?? '') : '',
+      })
       return
     }
 

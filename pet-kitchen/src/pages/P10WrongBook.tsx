@@ -11,7 +11,7 @@ import type { GradeResult } from '../engine/provider'
 import { MASTER_STREAK } from '../engine/rules'
 import { nowDay, diffDays } from '../engine/time'
 import { speak } from '../utils/speech'
-import type { Question } from '../types'
+import type { Question, WrongItem } from '../types'
 
 /** 错题行显示：数学题把 ? 换成答案数值；内容题（choice）答案是选项下标，真正的答案文本在 spec.ans */
 const shown = (text: string, answer: number, ans?: string) =>
@@ -151,17 +151,25 @@ function QImg({ src, alt }: { src: string; alt: string }) {
 }
 
 /** P10 错题集：今天要复习 / 已掌握；每道错题 3 道举一反三变式 */
-const SUBJECT_ZH = { math: '数学', chinese: '语文', english: '英语' } as const
-export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 'chinese' | 'english' }) {
+const SUBJECT_ZH: Record<string, string> = {
+  math: '数学', chinese: '语文', english: '英语', mixed: '综合', all: '全部',
+}
+/**
+ * subject 支持 'all'：综合版块进来的口子。
+ * 综合关的错题在结算时已按题目自身的 kind 归到三科（见 useStore.finishBattle），
+ * 所以「全部」就是跨科复习该有的样子。
+ */
+export default function P10WrongBook({ subject = 'math' }: { subject?: string }) {
   const nav = useNav()
   const wrong = useStore((s) => s.wrong)
   const reviewWrong = useStore((s) => s.reviewWrong)
   const [quiz, setQuiz] = useState<{ qs: Question[]; wrongId: string; mode: 'practice' | 'variant' } | null>(null)
 
   const today = nowDay()
-  const due = wrong.filter((w) => w.subject === subject && !w.mastered && w.nextReviewDay <= today)
-  const pending = wrong.filter((w) => w.subject === subject && !w.mastered && w.nextReviewDay > today)
-  const mastered = wrong.filter((w) => w.subject === subject && w.mastered)
+  const match = (w: WrongItem) => subject === 'all' || w.subject === subject
+  const due = wrong.filter((w) => match(w) && !w.mastered && w.nextReviewDay <= today)
+  const pending = wrong.filter((w) => match(w) && !w.mastered && w.nextReviewDay > today)
+  const mastered = wrong.filter((w) => match(w) && w.mastered)
 
   const itemOf = (id: string) => wrong.find((w) => w.id === id)
 
@@ -201,7 +209,7 @@ export default function P10WrongBook({ subject = 'math' }: { subject?: 'math' | 
       <div className="flex items-center gap-3">
         <button className="text-[15px] font-bold text-muted" onClick={() => nav.back()}>← 返回</button>
         <div className="flex-1 text-center text-[18px] font-extrabold text-ink">错题集</div>
-        <div className="w-[60px] text-right text-[13px] font-bold text-sky-600">{SUBJECT_ZH[subject]} ({wrong.filter((w) => w.subject === subject).length})</div>
+        <div className="w-[60px] text-right text-[13px] font-bold text-sky-600">{SUBJECT_ZH[subject] ?? subject} ({wrong.filter(match).length})</div>
       </div>
 
       <div className="mt-3 flex gap-3">

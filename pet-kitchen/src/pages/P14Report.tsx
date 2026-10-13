@@ -28,6 +28,8 @@ export default function P14Report() {
   const todayPoints = useStore((s) => s.todayPoints)
   const todayFoodEarned = useStore((s) => s.todayFoodEarned)
   const todayTasksDone = useStore((s) => s.todayTasksDone)
+  // 拼音练习量（FE-09）：拼音那份进度现在也汇进主应用，报告里能回答「今天拼音练了 N 个音」
+  const todayPinyin = useStore((s) => s.todayPinyin)
 
   const todayRow: DailySnapshot = {
     day: activeDay,
@@ -41,6 +43,7 @@ export default function P14Report() {
     correctRate: todayTotalQ ? todayCorrect / todayTotalQ : 0,
     pointsEarned: todayPoints,
     foodEarned: todayFoodEarned,
+    pinyin: todayPinyin,
   }
 
   const days = useMemo(() => {
@@ -64,6 +67,7 @@ export default function P14Report() {
   const battles = sum((r) => r.battles)
   const points = sum((r) => r.pointsEarned)
   const food = sum((r) => r.foodEarned)
+  const pinyin = sum((r) => r.pinyin ?? 0)
   const maxStreak = rows.reduce((a, r) => Math.max(a, r.streak), 0)
   const avgCorrect = rows.length ? rows.reduce((a, r) => a + r.correctRate, 0) / rows.length : 0
   const noFeedDays = rows.filter((r) => r.fed === 0).length
@@ -97,6 +101,12 @@ export default function P14Report() {
         <Bar label="平均正确率" value={avgCorrect} text={`${Math.round(avgCorrect * 100)}%`} />
         <Stat label="获得积分" value={`${points} 分`} />
         <Stat label="攻克错题" value={`${mastered} 道`} />
+        <Stat label="拼音练习" value={`${pinyin} 个音`} />
+        {/* FE-09：拼音进度与主应用合流后，家长能直接看到「今天拼音练了 N 个音」 */}
+        <div className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-700">
+          🅰️ 今天拼音练了 {todayPinyin} 个音
+          {pinyin > todayPinyin ? ` · 这个区间累计 ${pinyin} 个` : ''}
+        </div>
       </div>
 
       <div className="mt-3 rounded-xl3 bg-white p-4 shadow-card">

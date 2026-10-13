@@ -1,0 +1,3893 @@
+{
+  "byPy": {
+    "b": "shengmu/b.mp3",
+    "p": "shengmu/p.mp3",
+    "m": "shengmu/m.mp3",
+    "f": "shengmu/f.mp3",
+    "d": "shengmu/d.mp3",
+    "t": "shengmu/t.mp3",
+    "n": "shengmu/n.mp3",
+    "l": "shengmu/l.mp3",
+    "g": "shengmu/g.mp3",
+    "k": "shengmu/k.mp3",
+    "h": "shengmu/h.mp3",
+    "j": "shengmu/j.mp3",
+    "q": "shengmu/q.mp3",
+    "x": "shengmu/x.mp3",
+    "zh": "shengmu/zh.mp3",
+    "ch": "shengmu/ch.mp3",
+    "sh": "shengmu/sh.mp3",
+    "r": "shengmu/r.mp3",
+    "z": "shengmu/z.mp3",
+    "c": "shengmu/c.mp3",
+    "s": "shengmu/s.mp3",
+    "y": "shengmu/y.mp3",
+    "w": "shengmu/w.mp3",
+    "a": "yunmu/a1.mp3",
+    "o": "yunmu/o1.mp3",
+    "e": "yunmu/e1.mp3",
+    "i": "yunmu/i1.mp3",
+    "u": "yunmu/u1.mp3",
+    "ü": "yunmu/ü1.mp3",
+    "ai": "yunmu/ai1.mp3",
+    "ei": "yunmu/ei1.mp3",
+    "ui": "yunmu/ui1.mp3",
+    "ao": "yunmu/ao1.mp3",
+    "ou": "yunmu/ou1.mp3",
+    "iu": "yunmu/iu1.mp3",
+    "ie": "yunmu/ie1.mp3",
+    "üe": "yunmu/üe1.mp3",
+    "er": "yunmu/er1.mp3",
+    "an": "yunmu/an1.mp3",
+    "en": "yunmu/en1.mp3",
+    "in": "yunmu/in1.mp3",
+    "un": "yunmu/un1.mp3",
+    "ün": "yunmu/ün1.mp3",
+    "ang": "yunmu/ang1.mp3",
+    "eng": "yunmu/eng1.mp3",
+    "ing": "yunmu/ing1.mp3",
+    "ong": "yunmu/ong1.mp3",
+    "zhi": "zhengti/zhi1.mp3",
+    "chi": "zhengti/chi1.mp3",
+    "shi": "zhengti/shi1.mp3",
+    "ri": "zhengti/ri4.mp3",
+    "zi": "zhengti/zi1.mp3",
+    "ci": "zhengti/ci1.mp3",
+    "si": "zhengti/si1.mp3",
+    "yi": "zhengti/yi1.mp3",
+    "wu": "zhengti/wu1.mp3",
+    "yu": "zhengti/yu2.mp3",
+    "ye": "zhengti/ye1.mp3",
+    "yue": "zhengti/yue1.mp3",
+    "yuan": "zhengti/yuan1.mp3",
+    "yin": "zhengti/yin1.mp3",
+    "yun": "zhengti/yun2.mp3",
+    "ying": "zhengti/ying1.mp3",
+    "ā": "yunmu/a1.mp3",
+    "á": "yunmu/a2.mp3",
+    "ǎ": "yunmu/a3.mp3",
+    "à": "yunmu/a4.mp3",
+    "ō": "yunmu/o1.mp3",
+    "ó": "yunmu/o2.mp3",
+    "ǒ": "yunmu/o3.mp3",
+    "ò": "yunmu/o4.mp3",
+    "ē": "yunmu/e1.mp3",
+    "é": "yunmu/e2.mp3",
+    "ě": "yunmu/e3.mp3",
+    "è": "yunmu/e4.mp3",
+    "ī": "zhengti/yi1.mp3",
+    "í": "yunmu/i2.mp3",
+    "ǐ": "yunmu/i3.mp3",
+    "ì": "yunmu/i4.mp3",
+    "ū": "zhengti/wu1.mp3",
+    "ú": "yunmu/u2.mp3",
+    "ǔ": "yunmu/u3.mp3",
+    "ù": "yunmu/u4.mp3",
+    "ǖ": "zhengti/yu1.mp3",
+    "ǘ": "yunmu/ü2.mp3",
+    "ǚ": "yunmu/ü3.mp3",
+    "ǜ": "yunmu/ü4.mp3",
+    "āi": "yunmu/ai1.mp3",
+    "ái": "yunmu/ai2.mp3",
+    "ǎi": "yunmu/ai3.mp3",
+    "ài": "yunmu/ai4.mp3",
+    "ēi": "yunmu/ei1.mp3",
+    "éi": "yunmu/ei2.mp3",
+    "ěi": "yunmu/ei3.mp3",
+    "èi": "yunmu/ei4.mp3",
+    "uī": "yunmu/ui1.mp3",
+    "uí": "yunmu/ui2.mp3",
+    "uǐ": "yunmu/ui3.mp3",
+    "uì": "yunmu/ui4.mp3",
+    "āo": "yunmu/ao1.mp3",
+    "áo": "yunmu/ao2.mp3",
+    "ǎo": "yunmu/ao3.mp3",
+    "ào": "yunmu/ao4.mp3",
+    "ōu": "yunmu/ou1.mp3",
+    "óu": "yunmu/ou2.mp3",
+    "ǒu": "yunmu/ou3.mp3",
+    "òu": "yunmu/ou4.mp3",
+    "iū": "yunmu/iu1.mp3",
+    "iú": "yunmu/iu2.mp3",
+    "iǔ": "yunmu/iu3.mp3",
+    "iù": "yunmu/iu4.mp3",
+    "iē": "yunmu/ie1.mp3",
+    "ié": "yunmu/ie2.mp3",
+    "iě": "yunmu/ie3.mp3",
+    "iè": "yunmu/ie4.mp3",
+    "üē": "yunmu/üe1.mp3",
+    "üé": "yunmu/üe2.mp3",
+    "üě": "yunmu/üe3.mp3",
+    "üè": "yunmu/üe4.mp3",
+    "ēr": "yunmu/er1.mp3",
+    "ér": "yunmu/er2.mp3",
+    "ěr": "yunmu/er3.mp3",
+    "èr": "yunmu/er4.mp3",
+    "ān": "yunmu/an1.mp3",
+    "án": "yunmu/an2.mp3",
+    "ǎn": "yunmu/an3.mp3",
+    "àn": "yunmu/an4.mp3",
+    "ēn": "yunmu/en1.mp3",
+    "én": "yunmu/en2.mp3",
+    "ěn": "yunmu/en3.mp3",
+    "èn": "yunmu/en4.mp3",
+    "īn": "yunmu/in1.mp3",
+    "ín": "yunmu/in2.mp3",
+    "ǐn": "yunmu/in3.mp3",
+    "ìn": "yunmu/in4.mp3",
+    "ūn": "yunmu/un1.mp3",
+    "ún": "yunmu/un2.mp3",
+    "ǔn": "yunmu/un3.mp3",
+    "ùn": "yunmu/un4.mp3",
+    "ǖn": "yunmu/ün1.mp3",
+    "ǘn": "yunmu/ün2.mp3",
+    "ǚn": "yunmu/ün3.mp3",
+    "ǜn": "yunmu/ün4.mp3",
+    "āng": "yunmu/ang1.mp3",
+    "áng": "yunmu/ang2.mp3",
+    "ǎng": "yunmu/ang3.mp3",
+    "àng": "yunmu/ang4.mp3",
+    "ēng": "yunmu/eng1.mp3",
+    "éng": "yunmu/eng2.mp3",
+    "ěng": "yunmu/eng3.mp3",
+    "èng": "yunmu/eng4.mp3",
+    "īng": "yunmu/ing1.mp3",
+    "íng": "yunmu/ing2.mp3",
+    "ǐng": "yunmu/ing3.mp3",
+    "ìng": "yunmu/ing4.mp3",
+    "ōng": "yunmu/ong1.mp3",
+    "óng": "yunmu/ong2.mp3",
+    "ǒng": "yunmu/ong3.mp3",
+    "òng": "yunmu/ong4.mp3",
+    "zhī": "zhengti/zhi1.mp3",
+    "zhí": "zhengti/zhi2.mp3",
+    "zhǐ": "zhengti/zhi3.mp3",
+    "zhì": "zhengti/zhi4.mp3",
+    "chī": "zhengti/chi1.mp3",
+    "chí": "zhengti/chi2.mp3",
+    "chǐ": "zhengti/chi3.mp3",
+    "chì": "zhengti/chi4.mp3",
+    "shī": "zhengti/shi1.mp3",
+    "shí": "zhengti/shi2.mp3",
+    "shǐ": "zhengti/shi3.mp3",
+    "shì": "zhengti/shi4.mp3",
+    "rī": "zhengti/ri1.mp3",
+    "rí": "zhengti/ri2.mp3",
+    "rǐ": "zhengti/ri3.mp3",
+    "rì": "zhengti/ri4.mp3",
+    "zī": "zhengti/zi1.mp3",
+    "zí": "zhengti/zi2.mp3",
+    "zǐ": "zhengti/zi3.mp3",
+    "zì": "zhengti/zi4.mp3",
+    "cī": "zhengti/ci1.mp3",
+    "cí": "zhengti/ci2.mp3",
+    "cǐ": "zhengti/ci3.mp3",
+    "cì": "zhengti/ci4.mp3",
+    "sī": "zhengti/si1.mp3",
+    "sí": "zhengti/si2.mp3",
+    "sǐ": "zhengti/si3.mp3",
+    "sì": "zhengti/si4.mp3",
+    "yī": "zhengti/yi1.mp3",
+    "yí": "zhengti/yi2.mp3",
+    "yǐ": "zhengti/yi3.mp3",
+    "yì": "zhengti/yi4.mp3",
+    "wū": "zhengti/wu1.mp3",
+    "wú": "zhengti/wu2.mp3",
+    "wǔ": "zhengti/wu3.mp3",
+    "wù": "zhengti/wu4.mp3",
+    "yū": "zhengti/yu1.mp3",
+    "yú": "zhengti/yu2.mp3",
+    "yǔ": "zhengti/yu3.mp3",
+    "yù": "zhengti/yu4.mp3",
+    "yē": "zhengti/ye1.mp3",
+    "yé": "zhengti/ye2.mp3",
+    "yě": "zhengti/ye3.mp3",
+    "yè": "zhengti/ye4.mp3",
+    "yuē": "zhengti/yue1.mp3",
+    "yué": "zhengti/yue2.mp3",
+    "yuě": "zhengti/yue3.mp3",
+    "yuè": "zhengti/yue4.mp3",
+    "yuān": "zhengti/yuan1.mp3",
+    "yuán": "zhengti/yuan2.mp3",
+    "yuǎn": "zhengti/yuan3.mp3",
+    "yuàn": "zhengti/yuan4.mp3",
+    "yīn": "zhengti/yin1.mp3",
+    "yín": "zhengti/yin2.mp3",
+    "yǐn": "zhengti/yin3.mp3",
+    "yìn": "zhengti/yin4.mp3",
+    "yūn": "zhengti/yun1.mp3",
+    "yún": "zhengti/yun2.mp3",
+    "yǔn": "zhengti/yun3.mp3",
+    "yùn": "zhengti/yun4.mp3",
+    "yīng": "zhengti/ying1.mp3",
+    "yíng": "zhengti/ying2.mp3",
+    "yǐng": "zhengti/ying3.mp3",
+    "yìng": "zhengti/ying4.mp3",
+    "bā": "pindu/ba1.mp3",
+    "pá": "pindu/pa2.mp3",
+    "mā": "pindu/ma1.mp3",
+    "fā": "pindu/fa1.mp3",
+    "dà": "pindu/da4.mp3",
+    "tā": "pindu/ta1.mp3",
+    "ná": "pindu/na2.mp3",
+    "lù": "pindu/lu4.mp3",
+    "gē": "pindu/ge1.mp3",
+    "kě": "pindu/ke3.mp3",
+    "hē": "pindu/he1.mp3",
+    "jī": "pindu/ji1.mp3",
+    "qī": "pindu/qi1.mp3",
+    "xī": "pindu/xi1.mp3",
+    "jū": "pindu/ju1.mp3",
+    "qū": "pindu/qu1.mp3",
+    "xū": "pindu/xu1.mp3",
+    "cā": "pindu/ca1.mp3",
+    "sǎ": "pindu/sa3.mp3",
+    "chá": "pindu/cha2.mp3",
+    "shā": "pindu/sha1.mp3",
+    "bái": "pindu/bai2.mp3",
+    "hēi": "pindu/hei1.mp3",
+    "shuǐ": "pindu/shui3.mp3",
+    "duì": "pindu/dui4.mp3",
+    "māo": "pindu/mao1.mp3",
+    "gǒu": "pindu/gou3.mp3",
+    "niú": "pindu/niu2.mp3",
+    "dāo": "pindu/dao1.mp3",
+    "jiě": "pindu/jie3.mp3",
+    "xuě": "pindu/xue3.mp3",
+    "shān": "pindu/shan1.mp3",
+    "mén": "pindu/men2.mp3",
+    "lín": "pindu/lin2.mp3",
+    "chūn": "pindu/chun1.mp3",
+    "tiān": "pindu/tian1.mp3",
+    "yáng": "pindu/yang2.mp3",
+    "dēng": "pindu/deng1.mp3",
+    "míng": "pindu/ming2.mp3",
+    "zhōng": "pindu/zhong1.mp3",
+    "shàng": "pindu/shang4.mp3",
+    "mèng": "pindu/meng4.mp3",
+    "líng": "pindu/ling2.mp3",
+    "sān": "pindu/san1.mp3",
+    "liù": "pindu/liu4.mp3",
+    "jiǔ": "pindu/jiu3.mp3",
+    "dì": "pindu/di4.mp3",
+    "rén": "pindu/ren2.mp3",
+    "nǐ": "pindu/ni3.mp3",
+    "wǒ": "pindu/wo3.mp3",
+    "xiǎo": "pindu/xiao3.mp3",
+    "xià": "pindu/xia4.mp3",
+    "huǒ": "pindu/huo3.mp3",
+    "tián": "pindu/tian2.mp3",
+    "hé": "pindu/he2.mp3",
+    "mǎ": "pindu/ma3.mp3",
+    "niǎo": "pindu/niao3.mp3",
+    "chóng": "pindu/chong2.mp3",
+    "fēng": "pindu/feng1.mp3",
+    "fēi": "pindu/fei1.mp3",
+    "kǒu": "pindu/kou3.mp3",
+    "mù": "pindu/mu4.mp3",
+    "shǒu": "pindu/shou3.mp3",
+    "zú": "pindu/zu2.mp3",
+    "tǔ": "pindu/tu3.mp3",
+    "tù": "pindu/tu4.mp3",
+    "huā": "pindu/hua1.mp3",
+    "cǎo": "pindu/cao3.mp3",
+    "bá": "pindu/ba2.mp3",
+    "bǎ": "pindu/ba3.mp3",
+    "bà": "pindu/ba4.mp3",
+    "pā": "pindu/pa1.mp3",
+    "pǎ": "pindu/pa3.mp3",
+    "pà": "pindu/pa4.mp3",
+    "má": "pindu/ma2.mp3",
+    "mà": "pindu/ma4.mp3",
+    "fá": "pindu/fa2.mp3",
+    "fǎ": "pindu/fa3.mp3",
+    "fà": "pindu/fa4.mp3",
+    "dā": "pindu/da1.mp3",
+    "dá": "pindu/da2.mp3",
+    "dǎ": "pindu/da3.mp3",
+    "tá": "pindu/ta2.mp3",
+    "tǎ": "pindu/ta3.mp3",
+    "tà": "pindu/ta4.mp3",
+    "nā": "pindu/na1.mp3",
+    "nǎ": "pindu/na3.mp3",
+    "nà": "pindu/na4.mp3",
+    "lū": "pindu/lu1.mp3",
+    "lú": "pindu/lu2.mp3",
+    "lǔ": "pindu/lu3.mp3",
+    "gé": "pindu/ge2.mp3",
+    "gě": "pindu/ge3.mp3",
+    "gè": "pindu/ge4.mp3",
+    "kē": "pindu/ke1.mp3",
+    "ké": "pindu/ke2.mp3",
+    "kè": "pindu/ke4.mp3",
+    "hě": "pindu/he3.mp3",
+    "hè": "pindu/he4.mp3",
+    "jí": "pindu/ji2.mp3",
+    "jǐ": "pindu/ji3.mp3",
+    "jì": "pindu/ji4.mp3",
+    "qí": "pindu/qi2.mp3",
+    "qǐ": "pindu/qi3.mp3",
+    "qì": "pindu/qi4.mp3",
+    "xí": "pindu/xi2.mp3",
+    "xǐ": "pindu/xi3.mp3",
+    "xì": "pindu/xi4.mp3",
+    "jú": "pindu/ju2.mp3",
+    "jǔ": "pindu/ju3.mp3",
+    "jù": "pindu/ju4.mp3",
+    "qú": "pindu/qu2.mp3",
+    "qǔ": "pindu/qu3.mp3",
+    "qù": "pindu/qu4.mp3",
+    "xú": "pindu/xu2.mp3",
+    "xǔ": "pindu/xu3.mp3",
+    "xù": "pindu/xu4.mp3",
+    "cá": "pindu/ca2.mp3",
+    "cǎ": "pindu/ca3.mp3",
+    "cà": "pindu/ca4.mp3",
+    "sā": "pindu/sa1.mp3",
+    "sá": "pindu/sa2.mp3",
+    "sà": "pindu/sa4.mp3",
+    "chā": "pindu/cha1.mp3",
+    "chǎ": "pindu/cha3.mp3",
+    "chà": "pindu/cha4.mp3",
+    "shá": "pindu/sha2.mp3",
+    "shǎ": "pindu/sha3.mp3",
+    "shà": "pindu/sha4.mp3",
+    "bāi": "pindu/bai1.mp3",
+    "bǎi": "pindu/bai3.mp3",
+    "bài": "pindu/bai4.mp3",
+    "héi": "pindu/hei2.mp3",
+    "hěi": "pindu/hei3.mp3",
+    "hèi": "pindu/hei4.mp3",
+    "shuī": "pindu/shui1.mp3",
+    "shuí": "pindu/shui2.mp3",
+    "shuì": "pindu/shui4.mp3",
+    "duī": "pindu/dui1.mp3",
+    "duí": "pindu/dui2.mp3",
+    "duǐ": "pindu/dui3.mp3",
+    "máo": "pindu/mao2.mp3",
+    "mǎo": "pindu/mao3.mp3",
+    "mào": "pindu/mao4.mp3",
+    "gōu": "pindu/gou1.mp3",
+    "góu": "pindu/gou2.mp3",
+    "gòu": "pindu/gou4.mp3",
+    "niū": "pindu/niu1.mp3",
+    "niǔ": "pindu/niu3.mp3",
+    "niù": "pindu/niu4.mp3",
+    "dáo": "pindu/dao2.mp3",
+    "dǎo": "pindu/dao3.mp3",
+    "dào": "pindu/dao4.mp3",
+    "jiē": "pindu/jie1.mp3",
+    "jié": "pindu/jie2.mp3",
+    "jiè": "pindu/jie4.mp3",
+    "xuē": "pindu/xue1.mp3",
+    "xué": "pindu/xue2.mp3",
+    "xuè": "pindu/xue4.mp3",
+    "shán": "pindu/shan2.mp3",
+    "shǎn": "pindu/shan3.mp3",
+    "shàn": "pindu/shan4.mp3",
+    "mēn": "pindu/men1.mp3",
+    "měn": "pindu/men3.mp3",
+    "mèn": "pindu/men4.mp3",
+    "līn": "pindu/lin1.mp3",
+    "lǐn": "pindu/lin3.mp3",
+    "lìn": "pindu/lin4.mp3",
+    "chún": "pindu/chun2.mp3",
+    "chǔn": "pindu/chun3.mp3",
+    "chùn": "pindu/chun4.mp3",
+    "tiǎn": "pindu/tian3.mp3",
+    "tiàn": "pindu/tian4.mp3",
+    "yāng": "pindu/yang1.mp3",
+    "yǎng": "pindu/yang3.mp3",
+    "yàng": "pindu/yang4.mp3",
+    "déng": "pindu/deng2.mp3",
+    "děng": "pindu/deng3.mp3",
+    "dèng": "pindu/deng4.mp3",
+    "mīng": "pindu/ming1.mp3",
+    "mǐng": "pindu/ming3.mp3",
+    "mìng": "pindu/ming4.mp3",
+    "zhóng": "pindu/zhong2.mp3",
+    "zhǒng": "pindu/zhong3.mp3",
+    "zhòng": "pindu/zhong4.mp3",
+    "shāng": "pindu/shang1.mp3",
+    "sháng": "pindu/shang2.mp3",
+    "shǎng": "pindu/shang3.mp3",
+    "mēng": "pindu/meng1.mp3",
+    "méng": "pindu/meng2.mp3",
+    "měng": "pindu/meng3.mp3",
+    "līng": "pindu/ling1.mp3",
+    "lǐng": "pindu/ling3.mp3",
+    "lìng": "pindu/ling4.mp3",
+    "sán": "pindu/san2.mp3",
+    "sǎn": "pindu/san3.mp3",
+    "sàn": "pindu/san4.mp3",
+    "liū": "pindu/liu1.mp3",
+    "liú": "pindu/liu2.mp3",
+    "liǔ": "pindu/liu3.mp3",
+    "jiū": "pindu/jiu1.mp3",
+    "jiú": "pindu/jiu2.mp3",
+    "jiù": "pindu/jiu4.mp3",
+    "dī": "pindu/di1.mp3",
+    "dí": "pindu/di2.mp3",
+    "dǐ": "pindu/di3.mp3",
+    "rēn": "pindu/ren1.mp3",
+    "rěn": "pindu/ren3.mp3",
+    "rèn": "pindu/ren4.mp3",
+    "nī": "pindu/ni1.mp3",
+    "ní": "pindu/ni2.mp3",
+    "nì": "pindu/ni4.mp3",
+    "wō": "pindu/wo1.mp3",
+    "wó": "pindu/wo2.mp3",
+    "wò": "pindu/wo4.mp3",
+    "xiāo": "pindu/xiao1.mp3",
+    "xiáo": "pindu/xiao2.mp3",
+    "xiào": "pindu/xiao4.mp3",
+    "xiā": "pindu/xia1.mp3",
+    "xiá": "pindu/xia2.mp3",
+    "xiǎ": "pindu/xia3.mp3",
+    "huō": "pindu/huo1.mp3",
+    "huó": "pindu/huo2.mp3",
+    "huò": "pindu/huo4.mp3",
+    "niāo": "pindu/niao1.mp3",
+    "niáo": "pindu/niao2.mp3",
+    "niào": "pindu/niao4.mp3",
+    "chōng": "pindu/chong1.mp3",
+    "chǒng": "pindu/chong3.mp3",
+    "chòng": "pindu/chong4.mp3",
+    "féng": "pindu/feng2.mp3",
+    "fěng": "pindu/feng3.mp3",
+    "fèng": "pindu/feng4.mp3",
+    "féi": "pindu/fei2.mp3",
+    "fěi": "pindu/fei3.mp3",
+    "fèi": "pindu/fei4.mp3",
+    "kōu": "pindu/kou1.mp3",
+    "kóu": "pindu/kou2.mp3",
+    "kòu": "pindu/kou4.mp3",
+    "mū": "pindu/mu1.mp3",
+    "mú": "pindu/mu2.mp3",
+    "mǔ": "pindu/mu3.mp3",
+    "shōu": "pindu/shou1.mp3",
+    "shóu": "pindu/shou2.mp3",
+    "shòu": "pindu/shou4.mp3",
+    "zū": "pindu/zu1.mp3",
+    "zǔ": "pindu/zu3.mp3",
+    "zù": "pindu/zu4.mp3",
+    "tū": "pindu/tu1.mp3",
+    "tú": "pindu/tu2.mp3",
+    "huá": "pindu/hua2.mp3",
+    "huǎ": "pindu/hua3.mp3",
+    "huà": "pindu/hua4.mp3",
+    "cāo": "pindu/cao1.mp3",
+    "cáo": "pindu/cao2.mp3",
+    "cào": "pindu/cao4.mp3",
+    "bō": "pindu/bo1.mp3",
+    "bó": "pindu/bo2.mp3",
+    "bǒ": "pindu/bo3.mp3",
+    "bò": "pindu/bo4.mp3",
+    "pō": "pindu/po1.mp3",
+    "pó": "pindu/po2.mp3",
+    "pǒ": "pindu/po3.mp3",
+    "pò": "pindu/po4.mp3",
+    "mō": "pindu/mo1.mp3",
+    "mó": "pindu/mo2.mp3",
+    "mǒ": "pindu/mo3.mp3",
+    "mò": "pindu/mo4.mp3",
+    "fō": "pindu/fo1.mp3",
+    "fó": "pindu/fo2.mp3",
+    "fǒ": "pindu/fo3.mp3",
+    "fò": "pindu/fo4.mp3",
+    "lē": "pindu/le1.mp3",
+    "lé": "pindu/le2.mp3",
+    "lě": "pindu/le3.mp3",
+    "lè": "pindu/le4.mp3",
+    "nē": "pindu/ne1.mp3",
+    "né": "pindu/ne2.mp3",
+    "ně": "pindu/ne3.mp3",
+    "nè": "pindu/ne4.mp3",
+    "tē": "pindu/te1.mp3",
+    "té": "pindu/te2.mp3",
+    "tě": "pindu/te3.mp3",
+    "tè": "pindu/te4.mp3",
+    "jiā": "pindu/jia1.mp3",
+    "jiá": "pindu/jia2.mp3",
+    "jiǎ": "pindu/jia3.mp3",
+    "jià": "pindu/jia4.mp3",
+    "qiā": "pindu/qia1.mp3",
+    "qiá": "pindu/qia2.mp3",
+    "qiǎ": "pindu/qia3.mp3",
+    "qià": "pindu/qia4.mp3",
+    "biāo": "pindu/biao1.mp3",
+    "biáo": "pindu/biao2.mp3",
+    "biǎo": "pindu/biao3.mp3",
+    "biào": "pindu/biao4.mp3",
+    "piāo": "pindu/piao1.mp3",
+    "piáo": "pindu/piao2.mp3",
+    "piǎo": "pindu/piao3.mp3",
+    "piào": "pindu/piao4.mp3",
+    "miāo": "pindu/miao1.mp3",
+    "miáo": "pindu/miao2.mp3",
+    "miǎo": "pindu/miao3.mp3",
+    "miào": "pindu/miao4.mp3",
+    "diāo": "pindu/diao1.mp3",
+    "diáo": "pindu/diao2.mp3",
+    "diǎo": "pindu/diao3.mp3",
+    "diào": "pindu/diao4.mp3",
+    "tiāo": "pindu/tiao1.mp3",
+    "tiáo": "pindu/tiao2.mp3",
+    "tiǎo": "pindu/tiao3.mp3",
+    "tiào": "pindu/tiao4.mp3",
+    "liāo": "pindu/liao1.mp3",
+    "liáo": "pindu/liao2.mp3",
+    "liǎo": "pindu/liao3.mp3",
+    "liào": "pindu/liao4.mp3",
+    "jiāo": "pindu/jiao1.mp3",
+    "jiáo": "pindu/jiao2.mp3",
+    "jiǎo": "pindu/jiao3.mp3",
+    "jiào": "pindu/jiao4.mp3",
+    "qiāo": "pindu/qiao1.mp3",
+    "qiáo": "pindu/qiao2.mp3",
+    "qiǎo": "pindu/qiao3.mp3",
+    "qiào": "pindu/qiao4.mp3",
+    "diū": "pindu/diu1.mp3",
+    "diú": "pindu/diu2.mp3",
+    "diǔ": "pindu/diu3.mp3",
+    "diù": "pindu/diu4.mp3",
+    "miū": "pindu/miu1.mp3",
+    "miú": "pindu/miu2.mp3",
+    "miǔ": "pindu/miu3.mp3",
+    "miù": "pindu/miu4.mp3",
+    "qiū": "pindu/qiu1.mp3",
+    "qiú": "pindu/qiu2.mp3",
+    "qiǔ": "pindu/qiu3.mp3",
+    "qiù": "pindu/qiu4.mp3",
+    "xiū": "pindu/xiu1.mp3",
+    "xiú": "pindu/xiu2.mp3",
+    "xiǔ": "pindu/xiu3.mp3",
+    "xiù": "pindu/xiu4.mp3",
+    "biān": "pindu/bian1.mp3",
+    "bián": "pindu/bian2.mp3",
+    "biǎn": "pindu/bian3.mp3",
+    "biàn": "pindu/bian4.mp3",
+    "piān": "pindu/pian1.mp3",
+    "pián": "pindu/pian2.mp3",
+    "piǎn": "pindu/pian3.mp3",
+    "piàn": "pindu/pian4.mp3",
+    "miān": "pindu/mian1.mp3",
+    "mián": "pindu/mian2.mp3",
+    "miǎn": "pindu/mian3.mp3",
+    "miàn": "pindu/mian4.mp3",
+    "diān": "pindu/dian1.mp3",
+    "dián": "pindu/dian2.mp3",
+    "diǎn": "pindu/dian3.mp3",
+    "diàn": "pindu/dian4.mp3",
+    "niān": "pindu/nian1.mp3",
+    "nián": "pindu/nian2.mp3",
+    "niǎn": "pindu/nian3.mp3",
+    "niàn": "pindu/nian4.mp3",
+    "liān": "pindu/lian1.mp3",
+    "lián": "pindu/lian2.mp3",
+    "liǎn": "pindu/lian3.mp3",
+    "liàn": "pindu/lian4.mp3",
+    "jiān": "pindu/jian1.mp3",
+    "jián": "pindu/jian2.mp3",
+    "jiǎn": "pindu/jian3.mp3",
+    "jiàn": "pindu/jian4.mp3",
+    "qiān": "pindu/qian1.mp3",
+    "qián": "pindu/qian2.mp3",
+    "qiǎn": "pindu/qian3.mp3",
+    "qiàn": "pindu/qian4.mp3",
+    "xiān": "pindu/xian1.mp3",
+    "xián": "pindu/xian2.mp3",
+    "xiǎn": "pindu/xian3.mp3",
+    "xiàn": "pindu/xian4.mp3",
+    "liāng": "pindu/liang1.mp3",
+    "liáng": "pindu/liang2.mp3",
+    "liǎng": "pindu/liang3.mp3",
+    "liàng": "pindu/liang4.mp3",
+    "jiāng": "pindu/jiang1.mp3",
+    "jiáng": "pindu/jiang2.mp3",
+    "jiǎng": "pindu/jiang3.mp3",
+    "jiàng": "pindu/jiang4.mp3",
+    "qiāng": "pindu/qiang1.mp3",
+    "qiáng": "pindu/qiang2.mp3",
+    "qiǎng": "pindu/qiang3.mp3",
+    "qiàng": "pindu/qiang4.mp3",
+    "xiāng": "pindu/xiang1.mp3",
+    "xiáng": "pindu/xiang2.mp3",
+    "xiǎng": "pindu/xiang3.mp3",
+    "xiàng": "pindu/xiang4.mp3",
+    "xiōng": "pindu/xiong1.mp3",
+    "xióng": "pindu/xiong2.mp3",
+    "xiǒng": "pindu/xiong3.mp3",
+    "xiòng": "pindu/xiong4.mp3",
+    "jiōng": "pindu/jiong1.mp3",
+    "jióng": "pindu/jiong2.mp3",
+    "jiǒng": "pindu/jiong3.mp3",
+    "jiòng": "pindu/jiong4.mp3",
+    "guā": "pindu/gua1.mp3",
+    "guá": "pindu/gua2.mp3",
+    "guǎ": "pindu/gua3.mp3",
+    "guà": "pindu/gua4.mp3",
+    "kuā": "pindu/kua1.mp3",
+    "kuá": "pindu/kua2.mp3",
+    "kuǎ": "pindu/kua3.mp3",
+    "kuà": "pindu/kua4.mp3",
+    "zhuā": "pindu/zhua1.mp3",
+    "zhuá": "pindu/zhua2.mp3",
+    "zhuǎ": "pindu/zhua3.mp3",
+    "zhuà": "pindu/zhua4.mp3",
+    "shuā": "pindu/shua1.mp3",
+    "shuá": "pindu/shua2.mp3",
+    "shuǎ": "pindu/shua3.mp3",
+    "shuà": "pindu/shua4.mp3",
+    "guāi": "pindu/guai1.mp3",
+    "guái": "pindu/guai2.mp3",
+    "guǎi": "pindu/guai3.mp3",
+    "guài": "pindu/guai4.mp3",
+    "kuāi": "pindu/kuai1.mp3",
+    "kuái": "pindu/kuai2.mp3",
+    "kuǎi": "pindu/kuai3.mp3",
+    "kuài": "pindu/kuai4.mp3",
+    "huāi": "pindu/huai1.mp3",
+    "huái": "pindu/huai2.mp3",
+    "huǎi": "pindu/huai3.mp3",
+    "huài": "pindu/huai4.mp3",
+    "shuāi": "pindu/shuai1.mp3",
+    "shuái": "pindu/shuai2.mp3",
+    "shuǎi": "pindu/shuai3.mp3",
+    "shuài": "pindu/shuai4.mp3",
+    "duō": "pindu/duo1.mp3",
+    "duó": "pindu/duo2.mp3",
+    "duǒ": "pindu/duo3.mp3",
+    "duò": "pindu/duo4.mp3",
+    "tuō": "pindu/tuo1.mp3",
+    "tuó": "pindu/tuo2.mp3",
+    "tuǒ": "pindu/tuo3.mp3",
+    "tuò": "pindu/tuo4.mp3",
+    "nuō": "pindu/nuo1.mp3",
+    "nuó": "pindu/nuo2.mp3",
+    "nuǒ": "pindu/nuo3.mp3",
+    "nuò": "pindu/nuo4.mp3",
+    "luō": "pindu/luo1.mp3",
+    "luó": "pindu/luo2.mp3",
+    "luǒ": "pindu/luo3.mp3",
+    "luò": "pindu/luo4.mp3",
+    "zuō": "pindu/zuo1.mp3",
+    "zuó": "pindu/zuo2.mp3",
+    "zuǒ": "pindu/zuo3.mp3",
+    "zuò": "pindu/zuo4.mp3",
+    "cuō": "pindu/cuo1.mp3",
+    "cuó": "pindu/cuo2.mp3",
+    "cuǒ": "pindu/cuo3.mp3",
+    "cuò": "pindu/cuo4.mp3",
+    "suō": "pindu/suo1.mp3",
+    "suó": "pindu/suo2.mp3",
+    "suǒ": "pindu/suo3.mp3",
+    "suò": "pindu/suo4.mp3",
+    "zhuō": "pindu/zhuo1.mp3",
+    "zhuó": "pindu/zhuo2.mp3",
+    "zhuǒ": "pindu/zhuo3.mp3",
+    "zhuò": "pindu/zhuo4.mp3",
+    "chuō": "pindu/chuo1.mp3",
+    "chuó": "pindu/chuo2.mp3",
+    "chuǒ": "pindu/chuo3.mp3",
+    "chuò": "pindu/chuo4.mp3",
+    "shuō": "pindu/shuo1.mp3",
+    "shuó": "pindu/shuo2.mp3",
+    "shuǒ": "pindu/shuo3.mp3",
+    "shuò": "pindu/shuo4.mp3",
+    "ruō": "pindu/ruo1.mp3",
+    "ruó": "pindu/ruo2.mp3",
+    "ruǒ": "pindu/ruo3.mp3",
+    "ruò": "pindu/ruo4.mp3",
+    "guō": "pindu/guo1.mp3",
+    "guó": "pindu/guo2.mp3",
+    "guǒ": "pindu/guo3.mp3",
+    "guò": "pindu/guo4.mp3",
+    "kuō": "pindu/kuo1.mp3",
+    "kuó": "pindu/kuo2.mp3",
+    "kuǒ": "pindu/kuo3.mp3",
+    "kuò": "pindu/kuo4.mp3",
+    "zhuī": "pindu/zhui1.mp3",
+    "zhuí": "pindu/zhui2.mp3",
+    "zhuǐ": "pindu/zhui3.mp3",
+    "zhuì": "pindu/zhui4.mp3",
+    "chuī": "pindu/chui1.mp3",
+    "chuí": "pindu/chui2.mp3",
+    "chuǐ": "pindu/chui3.mp3",
+    "chuì": "pindu/chui4.mp3",
+    "cuī": "pindu/cui1.mp3",
+    "cuí": "pindu/cui2.mp3",
+    "cuǐ": "pindu/cui3.mp3",
+    "cuì": "pindu/cui4.mp3",
+    "suī": "pindu/sui1.mp3",
+    "suí": "pindu/sui2.mp3",
+    "suǐ": "pindu/sui3.mp3",
+    "suì": "pindu/sui4.mp3",
+    "ruī": "pindu/rui1.mp3",
+    "ruí": "pindu/rui2.mp3",
+    "ruǐ": "pindu/rui3.mp3",
+    "ruì": "pindu/rui4.mp3",
+    "duān": "pindu/duan1.mp3",
+    "duán": "pindu/duan2.mp3",
+    "duǎn": "pindu/duan3.mp3",
+    "duàn": "pindu/duan4.mp3",
+    "tuān": "pindu/tuan1.mp3",
+    "tuán": "pindu/tuan2.mp3",
+    "tuǎn": "pindu/tuan3.mp3",
+    "tuàn": "pindu/tuan4.mp3",
+    "nuān": "pindu/nuan1.mp3",
+    "nuán": "pindu/nuan2.mp3",
+    "nuǎn": "pindu/nuan3.mp3",
+    "nuàn": "pindu/nuan4.mp3",
+    "luān": "pindu/luan1.mp3",
+    "luán": "pindu/luan2.mp3",
+    "luǎn": "pindu/luan3.mp3",
+    "luàn": "pindu/luan4.mp3",
+    "guān": "pindu/guan1.mp3",
+    "guán": "pindu/guan2.mp3",
+    "guǎn": "pindu/guan3.mp3",
+    "guàn": "pindu/guan4.mp3",
+    "kuān": "pindu/kuan1.mp3",
+    "kuán": "pindu/kuan2.mp3",
+    "kuǎn": "pindu/kuan3.mp3",
+    "kuàn": "pindu/kuan4.mp3",
+    "huān": "pindu/huan1.mp3",
+    "huán": "pindu/huan2.mp3",
+    "huǎn": "pindu/huan3.mp3",
+    "huàn": "pindu/huan4.mp3",
+    "zhuān": "pindu/zhuan1.mp3",
+    "zhuán": "pindu/zhuan2.mp3",
+    "zhuǎn": "pindu/zhuan3.mp3",
+    "zhuàn": "pindu/zhuan4.mp3",
+    "chuān": "pindu/chuan1.mp3",
+    "chuán": "pindu/chuan2.mp3",
+    "chuǎn": "pindu/chuan3.mp3",
+    "chuàn": "pindu/chuan4.mp3",
+    "shuān": "pindu/shuan1.mp3",
+    "shuán": "pindu/shuan2.mp3",
+    "shuǎn": "pindu/shuan3.mp3",
+    "shuàn": "pindu/shuan4.mp3",
+    "suān": "pindu/suan1.mp3",
+    "suán": "pindu/suan2.mp3",
+    "suǎn": "pindu/suan3.mp3",
+    "suàn": "pindu/suan4.mp3",
+    "zuān": "pindu/zuan1.mp3",
+    "zuán": "pindu/zuan2.mp3",
+    "zuǎn": "pindu/zuan3.mp3",
+    "zuàn": "pindu/zuan4.mp3",
+    "cuān": "pindu/cuan1.mp3",
+    "cuán": "pindu/cuan2.mp3",
+    "cuǎn": "pindu/cuan3.mp3",
+    "cuàn": "pindu/cuan4.mp3",
+    "guāng": "pindu/guang1.mp3",
+    "guáng": "pindu/guang2.mp3",
+    "guǎng": "pindu/guang3.mp3",
+    "guàng": "pindu/guang4.mp3",
+    "kuāng": "pindu/kuang1.mp3",
+    "kuáng": "pindu/kuang2.mp3",
+    "kuǎng": "pindu/kuang3.mp3",
+    "kuàng": "pindu/kuang4.mp3",
+    "huāng": "pindu/huang1.mp3",
+    "huáng": "pindu/huang2.mp3",
+    "huǎng": "pindu/huang3.mp3",
+    "huàng": "pindu/huang4.mp3",
+    "zhuāng": "pindu/zhuang1.mp3",
+    "zhuáng": "pindu/zhuang2.mp3",
+    "zhuǎng": "pindu/zhuang3.mp3",
+    "zhuàng": "pindu/zhuang4.mp3",
+    "chuāng": "pindu/chuang1.mp3",
+    "chuáng": "pindu/chuang2.mp3",
+    "chuǎng": "pindu/chuang3.mp3",
+    "chuàng": "pindu/chuang4.mp3",
+    "shuāng": "pindu/shuang1.mp3",
+    "shuáng": "pindu/shuang2.mp3",
+    "shuǎng": "pindu/shuang3.mp3",
+    "shuàng": "pindu/shuang4.mp3",
+    "juān": "pindu/juan1.mp3",
+    "juán": "pindu/juan2.mp3",
+    "juǎn": "pindu/juan3.mp3",
+    "juàn": "pindu/juan4.mp3",
+    "quān": "pindu/quan1.mp3",
+    "quán": "pindu/quan2.mp3",
+    "quǎn": "pindu/quan3.mp3",
+    "quàn": "pindu/quan4.mp3",
+    "xuān": "pindu/xuan1.mp3",
+    "xuán": "pindu/xuan2.mp3",
+    "xuǎn": "pindu/xuan3.mp3",
+    "xuàn": "pindu/xuan4.mp3"
+  },
+  "byZh": {
+    "波": "shengmu/b.mp3",
+    "坡": "shengmu/p.mp3",
+    "摸": "shengmu/m.mp3",
+    "佛": "shengmu/f.mp3",
+    "得": "shengmu/d.mp3",
+    "特": "shengmu/t.mp3",
+    "讷": "shengmu/n.mp3",
+    "勒": "shengmu/l.mp3",
+    "哥": "pindu/ge1.mp3",
+    "科": "shengmu/k.mp3",
+    "喝": "pindu/he1.mp3",
+    "基": "shengmu/j.mp3",
+    "欺": "shengmu/q.mp3",
+    "希": "shengmu/x.mp3",
+    "知": "zhengti/zhi1.mp3",
+    "吃": "zhengti/chi1.mp3",
+    "诗": "zhengti/shi1.mp3",
+    "日": "zhengti/ri4.mp3",
+    "资": "shengmu/z.mp3",
+    "雌": "shengmu/c.mp3",
+    "思": "shengmu/s.mp3",
+    "医": "shengmu/y.mp3",
+    "乌": "zhengti/wu1.mp3",
+    "啊": "yunmu/a1.mp3",
+    "喔": "yunmu/o1.mp3",
+    "鹅": "yunmu/e2.mp3",
+    "衣": "zhengti/yi1.mp3",
+    "鱼": "zhengti/yu2.mp3",
+    "爱": "yunmu/ai4.mp3",
+    "诶": "yunmu/ei1.mp3",
+    "威": "yunmu/ui1.mp3",
+    "奥": "yunmu/ao4.mp3",
+    "欧": "yunmu/ou1.mp3",
+    "优": "yunmu/iu1.mp3",
+    "耶": "yunmu/ie1.mp3",
+    "约": "yunmu/üe1.mp3",
+    "耳": "yunmu/er3.mp3",
+    "安": "yunmu/an1.mp3",
+    "恩": "yunmu/en1.mp3",
+    "因": "yunmu/in1.mp3",
+    "温": "yunmu/un1.mp3",
+    "晕": "yunmu/ün1.mp3",
+    "昂": "yunmu/ang1.mp3",
+    "亨": "yunmu/eng1.mp3",
+    "英": "zhengti/ying1.mp3",
+    "嗡": "yunmu/ong1.mp3",
+    "字": "zhengti/zi4.mp3",
+    "次": "zhengti/ci4.mp3",
+    "四": "zhengti/si4.mp3",
+    "一": "zhengti/yi1.mp3",
+    "五": "zhengti/wu3.mp3",
+    "叶": "zhengti/ye4.mp3",
+    "月": "zhengti/yue4.mp3",
+    "元": "zhengti/yuan2.mp3",
+    "音": "zhengti/yin1.mp3",
+    "云": "zhengti/yun2.mp3",
+    "八": "pindu/ba1.mp3",
+    "爬": "pindu/pa2.mp3",
+    "妈": "pindu/ma1.mp3",
+    "发": "pindu/fa1.mp3",
+    "大": "pindu/da4.mp3",
+    "他": "pindu/ta1.mp3",
+    "拿": "pindu/na2.mp3",
+    "路": "pindu/lu4.mp3",
+    "可": "pindu/ke3.mp3",
+    "鸡": "pindu/ji1.mp3",
+    "七": "pindu/qi1.mp3",
+    "西": "pindu/xi1.mp3",
+    "居": "pindu/ju1.mp3",
+    "曲": "pindu/qu1.mp3",
+    "需": "pindu/xu1.mp3",
+    "擦": "pindu/ca1.mp3",
+    "洒": "pindu/sa3.mp3",
+    "茶": "pindu/cha2.mp3",
+    "沙": "pindu/sha1.mp3",
+    "雨": "zhengti/yu3.mp3",
+    "白": "pindu/bai2.mp3",
+    "黑": "pindu/hei1.mp3",
+    "水": "pindu/shui3.mp3",
+    "对": "pindu/dui4.mp3",
+    "猫": "pindu/mao1.mp3",
+    "狗": "pindu/gou3.mp3",
+    "牛": "pindu/niu2.mp3",
+    "刀": "pindu/dao1.mp3",
+    "姐": "pindu/jie3.mp3",
+    "雪": "pindu/xue3.mp3",
+    "爷": "zhengti/ye2.mp3",
+    "山": "pindu/shan1.mp3",
+    "门": "pindu/men2.mp3",
+    "林": "pindu/lin2.mp3",
+    "春": "pindu/chun1.mp3",
+    "天": "pindu/tian1.mp3",
+    "羊": "pindu/yang2.mp3",
+    "灯": "pindu/deng1.mp3",
+    "明": "pindu/ming2.mp3",
+    "中": "pindu/zhong1.mp3",
+    "是": "zhengti/shi4.mp3",
+    "纸": "zhengti/zhi3.mp3",
+    "上": "pindu/shang4.mp3",
+    "梦": "pindu/meng4.mp3",
+    "铃": "pindu/ling2.mp3",
+    "二": "yunmu/er4.mp3",
+    "三": "pindu/san1.mp3",
+    "六": "pindu/liu4.mp3",
+    "九": "pindu/jiu3.mp3",
+    "十": "zhengti/shi2.mp3",
+    "地": "pindu/di4.mp3",
+    "人": "pindu/ren2.mp3",
+    "你": "pindu/ni3.mp3",
+    "我": "pindu/wo3.mp3",
+    "小": "pindu/xiao3.mp3",
+    "下": "pindu/xia4.mp3",
+    "火": "pindu/huo3.mp3",
+    "石": "zhengti/shi2.mp3",
+    "田": "pindu/tian2.mp3",
+    "禾": "pindu/he2.mp3",
+    "马": "pindu/ma3.mp3",
+    "鸟": "pindu/niao3.mp3",
+    "虫": "pindu/chong2.mp3",
+    "风": "pindu/feng1.mp3",
+    "飞": "pindu/fei1.mp3",
+    "口": "pindu/kou3.mp3",
+    "目": "pindu/mu4.mp3",
+    "手": "pindu/shou3.mp3",
+    "足": "pindu/zu2.mp3",
+    "土": "pindu/tu3.mp3",
+    "兔": "pindu/tu4.mp3",
+    "河": "pindu/he2.mp3",
+    "花": "pindu/hua1.mp3",
+    "草": "pindu/cao3.mp3"
+  },
+  "categories": {
+    "shengmu": [
+      "b.mp3",
+      "c.mp3",
+      "ch.mp3",
+      "d.mp3",
+      "f.mp3",
+      "g.mp3",
+      "h.mp3",
+      "j.mp3",
+      "k.mp3",
+      "l.mp3",
+      "m.mp3",
+      "n.mp3",
+      "p.mp3",
+      "q.mp3",
+      "r.mp3",
+      "s.mp3",
+      "sh.mp3",
+      "t.mp3",
+      "w.mp3",
+      "x.mp3",
+      "y.mp3",
+      "z.mp3",
+      "zh.mp3"
+    ],
+    "yunmu": [
+      "a1.mp3",
+      "a2.mp3",
+      "a3.mp3",
+      "a4.mp3",
+      "ai1.mp3",
+      "ai2.mp3",
+      "ai3.mp3",
+      "ai4.mp3",
+      "an1.mp3",
+      "an2.mp3",
+      "an3.mp3",
+      "an4.mp3",
+      "ang1.mp3",
+      "ang2.mp3",
+      "ang3.mp3",
+      "ang4.mp3",
+      "ao1.mp3",
+      "ao2.mp3",
+      "ao3.mp3",
+      "ao4.mp3",
+      "e1.mp3",
+      "e2.mp3",
+      "e3.mp3",
+      "e4.mp3",
+      "ei1.mp3",
+      "ei2.mp3",
+      "ei3.mp3",
+      "ei4.mp3",
+      "en1.mp3",
+      "en2.mp3",
+      "en3.mp3",
+      "en4.mp3",
+      "eng1.mp3",
+      "eng2.mp3",
+      "eng3.mp3",
+      "eng4.mp3",
+      "er1.mp3",
+      "er2.mp3",
+      "er3.mp3",
+      "er4.mp3",
+      "i1.mp3",
+      "i2.mp3",
+      "i3.mp3",
+      "i4.mp3",
+      "ie1.mp3",
+      "ie2.mp3",
+      "ie3.mp3",
+      "ie4.mp3",
+      "in1.mp3",
+      "in2.mp3",
+      "in3.mp3",
+      "in4.mp3",
+      "ing1.mp3",
+      "ing2.mp3",
+      "ing3.mp3",
+      "ing4.mp3",
+      "iu1.mp3",
+      "iu2.mp3",
+      "iu3.mp3",
+      "iu4.mp3",
+      "o1.mp3",
+      "o2.mp3",
+      "o3.mp3",
+      "o4.mp3",
+      "ong1.mp3",
+      "ong2.mp3",
+      "ong3.mp3",
+      "ong4.mp3",
+      "ou1.mp3",
+      "ou2.mp3",
+      "ou3.mp3",
+      "ou4.mp3",
+      "u1.mp3",
+      "u2.mp3",
+      "u3.mp3",
+      "u4.mp3",
+      "ui1.mp3",
+      "ui2.mp3",
+      "ui3.mp3",
+      "ui4.mp3",
+      "un1.mp3",
+      "un2.mp3",
+      "un3.mp3",
+      "un4.mp3",
+      "ü1.mp3",
+      "ü2.mp3",
+      "ü3.mp3",
+      "ü4.mp3",
+      "üe1.mp3",
+      "üe2.mp3",
+      "üe3.mp3",
+      "üe4.mp3",
+      "ün1.mp3",
+      "ün2.mp3",
+      "ün3.mp3",
+      "ün4.mp3"
+    ],
+    "zhengti": [
+      "chi1.mp3",
+      "chi2.mp3",
+      "chi3.mp3",
+      "chi4.mp3",
+      "ci1.mp3",
+      "ci2.mp3",
+      "ci3.mp3",
+      "ci4.mp3",
+      "ri1.mp3",
+      "ri2.mp3",
+      "ri3.mp3",
+      "ri4.mp3",
+      "shi1.mp3",
+      "shi2.mp3",
+      "shi3.mp3",
+      "shi4.mp3",
+      "si1.mp3",
+      "si2.mp3",
+      "si3.mp3",
+      "si4.mp3",
+      "wu1.mp3",
+      "wu2.mp3",
+      "wu3.mp3",
+      "wu4.mp3",
+      "ye1.mp3",
+      "ye2.mp3",
+      "ye3.mp3",
+      "ye4.mp3",
+      "yi1.mp3",
+      "yi2.mp3",
+      "yi3.mp3",
+      "yi4.mp3",
+      "yin1.mp3",
+      "yin2.mp3",
+      "yin3.mp3",
+      "yin4.mp3",
+      "ying1.mp3",
+      "ying2.mp3",
+      "ying3.mp3",
+      "ying4.mp3",
+      "yu1.mp3",
+      "yu2.mp3",
+      "yu3.mp3",
+      "yu4.mp3",
+      "yuan1.mp3",
+      "yuan2.mp3",
+      "yuan3.mp3",
+      "yuan4.mp3",
+      "yue1.mp3",
+      "yue2.mp3",
+      "yue3.mp3",
+      "yue4.mp3",
+      "yun1.mp3",
+      "yun2.mp3",
+      "yun3.mp3",
+      "yun4.mp3",
+      "zhi1.mp3",
+      "zhi2.mp3",
+      "zhi3.mp3",
+      "zhi4.mp3",
+      "zi1.mp3",
+      "zi2.mp3",
+      "zi3.mp3",
+      "zi4.mp3"
+    ],
+    "pindu": [
+      "a1.mp3",
+      "a2.mp3",
+      "a3.mp3",
+      "a4.mp3",
+      "ba1.mp3",
+      "ba2.mp3",
+      "ba3.mp3",
+      "ba4.mp3",
+      "bai1.mp3",
+      "bai2.mp3",
+      "bai3.mp3",
+      "bai4.mp3",
+      "bian1.mp3",
+      "bian2.mp3",
+      "bian3.mp3",
+      "bian4.mp3",
+      "biao1.mp3",
+      "biao2.mp3",
+      "biao3.mp3",
+      "biao4.mp3",
+      "bo1.mp3",
+      "bo2.mp3",
+      "bo3.mp3",
+      "bo4.mp3",
+      "ca1.mp3",
+      "ca2.mp3",
+      "ca3.mp3",
+      "ca4.mp3",
+      "cao1.mp3",
+      "cao2.mp3",
+      "cao3.mp3",
+      "cao4.mp3",
+      "cha1.mp3",
+      "cha2.mp3",
+      "cha3.mp3",
+      "cha4.mp3",
+      "chi1.mp3",
+      "chi2.mp3",
+      "chi3.mp3",
+      "chi4.mp3",
+      "chong1.mp3",
+      "chong2.mp3",
+      "chong3.mp3",
+      "chong4.mp3",
+      "chuan1.mp3",
+      "chuan2.mp3",
+      "chuan3.mp3",
+      "chuan4.mp3",
+      "chuang1.mp3",
+      "chuang2.mp3",
+      "chuang3.mp3",
+      "chuang4.mp3",
+      "chui1.mp3",
+      "chui2.mp3",
+      "chui3.mp3",
+      "chui4.mp3",
+      "chun1.mp3",
+      "chun2.mp3",
+      "chun3.mp3",
+      "chun4.mp3",
+      "chuo1.mp3",
+      "chuo2.mp3",
+      "chuo3.mp3",
+      "chuo4.mp3",
+      "ci1.mp3",
+      "ci2.mp3",
+      "ci3.mp3",
+      "ci4.mp3",
+      "cuan1.mp3",
+      "cuan2.mp3",
+      "cuan3.mp3",
+      "cuan4.mp3",
+      "cui1.mp3",
+      "cui2.mp3",
+      "cui3.mp3",
+      "cui4.mp3",
+      "cuo1.mp3",
+      "cuo2.mp3",
+      "cuo3.mp3",
+      "cuo4.mp3",
+      "da1.mp3",
+      "da2.mp3",
+      "da3.mp3",
+      "da4.mp3",
+      "dao1.mp3",
+      "dao2.mp3",
+      "dao3.mp3",
+      "dao4.mp3",
+      "deng1.mp3",
+      "deng2.mp3",
+      "deng3.mp3",
+      "deng4.mp3",
+      "di1.mp3",
+      "di2.mp3",
+      "di3.mp3",
+      "di4.mp3",
+      "dian1.mp3",
+      "dian2.mp3",
+      "dian3.mp3",
+      "dian4.mp3",
+      "diao1.mp3",
+      "diao2.mp3",
+      "diao3.mp3",
+      "diao4.mp3",
+      "diu1.mp3",
+      "diu2.mp3",
+      "diu3.mp3",
+      "diu4.mp3",
+      "duan1.mp3",
+      "duan2.mp3",
+      "duan3.mp3",
+      "duan4.mp3",
+      "dui1.mp3",
+      "dui2.mp3",
+      "dui3.mp3",
+      "dui4.mp3",
+      "duo1.mp3",
+      "duo2.mp3",
+      "duo3.mp3",
+      "duo4.mp3",
+      "e1.mp3",
+      "e2.mp3",
+      "e3.mp3",
+      "e4.mp3",
+      "er1.mp3",
+      "er2.mp3",
+      "er3.mp3",
+      "er4.mp3",
+      "fa1.mp3",
+      "fa2.mp3",
+      "fa3.mp3",
+      "fa4.mp3",
+      "fei1.mp3",
+      "fei2.mp3",
+      "fei3.mp3",
+      "fei4.mp3",
+      "feng1.mp3",
+      "feng2.mp3",
+      "feng3.mp3",
+      "feng4.mp3",
+      "fo1.mp3",
+      "fo2.mp3",
+      "fo3.mp3",
+      "fo4.mp3",
+      "ge1.mp3",
+      "ge2.mp3",
+      "ge3.mp3",
+      "ge4.mp3",
+      "gou1.mp3",
+      "gou2.mp3",
+      "gou3.mp3",
+      "gou4.mp3",
+      "gua1.mp3",
+      "gua2.mp3",
+      "gua3.mp3",
+      "gua4.mp3",
+      "guai1.mp3",
+      "guai2.mp3",
+      "guai3.mp3",
+      "guai4.mp3",
+      "guan1.mp3",
+      "guan2.mp3",
+      "guan3.mp3",
+      "guan4.mp3",
+      "guang1.mp3",
+      "guang2.mp3",
+      "guang3.mp3",
+      "guang4.mp3",
+      "guo1.mp3",
+      "guo2.mp3",
+      "guo3.mp3",
+      "guo4.mp3",
+      "he1.mp3",
+      "he2.mp3",
+      "he3.mp3",
+      "he4.mp3",
+      "hei1.mp3",
+      "hei2.mp3",
+      "hei3.mp3",
+      "hei4.mp3",
+      "hua1.mp3",
+      "hua2.mp3",
+      "hua3.mp3",
+      "hua4.mp3",
+      "huai1.mp3",
+      "huai2.mp3",
+      "huai3.mp3",
+      "huai4.mp3",
+      "huan1.mp3",
+      "huan2.mp3",
+      "huan3.mp3",
+      "huan4.mp3",
+      "huang1.mp3",
+      "huang2.mp3",
+      "huang3.mp3",
+      "huang4.mp3",
+      "huo1.mp3",
+      "huo2.mp3",
+      "huo3.mp3",
+      "huo4.mp3",
+      "ji1.mp3",
+      "ji2.mp3",
+      "ji3.mp3",
+      "ji4.mp3",
+      "jia1.mp3",
+      "jia2.mp3",
+      "jia3.mp3",
+      "jia4.mp3",
+      "jian1.mp3",
+      "jian2.mp3",
+      "jian3.mp3",
+      "jian4.mp3",
+      "jiang1.mp3",
+      "jiang2.mp3",
+      "jiang3.mp3",
+      "jiang4.mp3",
+      "jiao1.mp3",
+      "jiao2.mp3",
+      "jiao3.mp3",
+      "jiao4.mp3",
+      "jie1.mp3",
+      "jie2.mp3",
+      "jie3.mp3",
+      "jie4.mp3",
+      "jiong1.mp3",
+      "jiong2.mp3",
+      "jiong3.mp3",
+      "jiong4.mp3",
+      "jiu1.mp3",
+      "jiu2.mp3",
+      "jiu3.mp3",
+      "jiu4.mp3",
+      "ju1.mp3",
+      "ju2.mp3",
+      "ju3.mp3",
+      "ju4.mp3",
+      "juan1.mp3",
+      "juan2.mp3",
+      "juan3.mp3",
+      "juan4.mp3",
+      "ke1.mp3",
+      "ke2.mp3",
+      "ke3.mp3",
+      "ke4.mp3",
+      "kou1.mp3",
+      "kou2.mp3",
+      "kou3.mp3",
+      "kou4.mp3",
+      "kua1.mp3",
+      "kua2.mp3",
+      "kua3.mp3",
+      "kua4.mp3",
+      "kuai1.mp3",
+      "kuai2.mp3",
+      "kuai3.mp3",
+      "kuai4.mp3",
+      "kuan1.mp3",
+      "kuan2.mp3",
+      "kuan3.mp3",
+      "kuan4.mp3",
+      "kuang1.mp3",
+      "kuang2.mp3",
+      "kuang3.mp3",
+      "kuang4.mp3",
+      "kuo1.mp3",
+      "kuo2.mp3",
+      "kuo3.mp3",
+      "kuo4.mp3",
+      "le1.mp3",
+      "le2.mp3",
+      "le3.mp3",
+      "le4.mp3",
+      "lian1.mp3",
+      "lian2.mp3",
+      "lian3.mp3",
+      "lian4.mp3",
+      "liang1.mp3",
+      "liang2.mp3",
+      "liang3.mp3",
+      "liang4.mp3",
+      "liao1.mp3",
+      "liao2.mp3",
+      "liao3.mp3",
+      "liao4.mp3",
+      "lin1.mp3",
+      "lin2.mp3",
+      "lin3.mp3",
+      "lin4.mp3",
+      "ling1.mp3",
+      "ling2.mp3",
+      "ling3.mp3",
+      "ling4.mp3",
+      "liu1.mp3",
+      "liu2.mp3",
+      "liu3.mp3",
+      "liu4.mp3",
+      "lu1.mp3",
+      "lu2.mp3",
+      "lu3.mp3",
+      "lu4.mp3",
+      "luan1.mp3",
+      "luan2.mp3",
+      "luan3.mp3",
+      "luan4.mp3",
+      "luo1.mp3",
+      "luo2.mp3",
+      "luo3.mp3",
+      "luo4.mp3",
+      "ma1.mp3",
+      "ma2.mp3",
+      "ma3.mp3",
+      "ma4.mp3",
+      "mao1.mp3",
+      "mao2.mp3",
+      "mao3.mp3",
+      "mao4.mp3",
+      "men1.mp3",
+      "men2.mp3",
+      "men3.mp3",
+      "men4.mp3",
+      "meng1.mp3",
+      "meng2.mp3",
+      "meng3.mp3",
+      "meng4.mp3",
+      "mian1.mp3",
+      "mian2.mp3",
+      "mian3.mp3",
+      "mian4.mp3",
+      "miao1.mp3",
+      "miao2.mp3",
+      "miao3.mp3",
+      "miao4.mp3",
+      "ming1.mp3",
+      "ming2.mp3",
+      "ming3.mp3",
+      "ming4.mp3",
+      "miu1.mp3",
+      "miu2.mp3",
+      "miu3.mp3",
+      "miu4.mp3",
+      "mo1.mp3",
+      "mo2.mp3",
+      "mo3.mp3",
+      "mo4.mp3",
+      "mu1.mp3",
+      "mu2.mp3",
+      "mu3.mp3",
+      "mu4.mp3",
+      "na1.mp3",
+      "na2.mp3",
+      "na3.mp3",
+      "na4.mp3",
+      "ne1.mp3",
+      "ne2.mp3",
+      "ne3.mp3",
+      "ne4.mp3",
+      "ni1.mp3",
+      "ni2.mp3",
+      "ni3.mp3",
+      "ni4.mp3",
+      "nian1.mp3",
+      "nian2.mp3",
+      "nian3.mp3",
+      "nian4.mp3",
+      "niao1.mp3",
+      "niao2.mp3",
+      "niao3.mp3",
+      "niao4.mp3",
+      "niu1.mp3",
+      "niu2.mp3",
+      "niu3.mp3",
+      "niu4.mp3",
+      "nuan1.mp3",
+      "nuan2.mp3",
+      "nuan3.mp3",
+      "nuan4.mp3",
+      "nuo1.mp3",
+      "nuo2.mp3",
+      "nuo3.mp3",
+      "nuo4.mp3",
+      "o1.mp3",
+      "o2.mp3",
+      "o3.mp3",
+      "o4.mp3",
+      "pa1.mp3",
+      "pa2.mp3",
+      "pa3.mp3",
+      "pa4.mp3",
+      "pian1.mp3",
+      "pian2.mp3",
+      "pian3.mp3",
+      "pian4.mp3",
+      "piao1.mp3",
+      "piao2.mp3",
+      "piao3.mp3",
+      "piao4.mp3",
+      "po1.mp3",
+      "po2.mp3",
+      "po3.mp3",
+      "po4.mp3",
+      "qi1.mp3",
+      "qi2.mp3",
+      "qi3.mp3",
+      "qi4.mp3",
+      "qia1.mp3",
+      "qia2.mp3",
+      "qia3.mp3",
+      "qia4.mp3",
+      "qian1.mp3",
+      "qian2.mp3",
+      "qian3.mp3",
+      "qian4.mp3",
+      "qiang1.mp3",
+      "qiang2.mp3",
+      "qiang3.mp3",
+      "qiang4.mp3",
+      "qiao1.mp3",
+      "qiao2.mp3",
+      "qiao3.mp3",
+      "qiao4.mp3",
+      "qiu1.mp3",
+      "qiu2.mp3",
+      "qiu3.mp3",
+      "qiu4.mp3",
+      "qu1.mp3",
+      "qu2.mp3",
+      "qu3.mp3",
+      "qu4.mp3",
+      "quan1.mp3",
+      "quan2.mp3",
+      "quan3.mp3",
+      "quan4.mp3",
+      "ren1.mp3",
+      "ren2.mp3",
+      "ren3.mp3",
+      "ren4.mp3",
+      "ri1.mp3",
+      "ri2.mp3",
+      "ri3.mp3",
+      "ri4.mp3",
+      "rui1.mp3",
+      "rui2.mp3",
+      "rui3.mp3",
+      "rui4.mp3",
+      "ruo1.mp3",
+      "ruo2.mp3",
+      "ruo3.mp3",
+      "ruo4.mp3",
+      "sa1.mp3",
+      "sa2.mp3",
+      "sa3.mp3",
+      "sa4.mp3",
+      "san1.mp3",
+      "san2.mp3",
+      "san3.mp3",
+      "san4.mp3",
+      "sha1.mp3",
+      "sha2.mp3",
+      "sha3.mp3",
+      "sha4.mp3",
+      "shan1.mp3",
+      "shan2.mp3",
+      "shan3.mp3",
+      "shan4.mp3",
+      "shang1.mp3",
+      "shang2.mp3",
+      "shang3.mp3",
+      "shang4.mp3",
+      "shi1.mp3",
+      "shi2.mp3",
+      "shi3.mp3",
+      "shi4.mp3",
+      "shou1.mp3",
+      "shou2.mp3",
+      "shou3.mp3",
+      "shou4.mp3",
+      "shua1.mp3",
+      "shua2.mp3",
+      "shua3.mp3",
+      "shua4.mp3",
+      "shuai1.mp3",
+      "shuai2.mp3",
+      "shuai3.mp3",
+      "shuai4.mp3",
+      "shuan1.mp3",
+      "shuan2.mp3",
+      "shuan3.mp3",
+      "shuan4.mp3",
+      "shuang1.mp3",
+      "shuang2.mp3",
+      "shuang3.mp3",
+      "shuang4.mp3",
+      "shui1.mp3",
+      "shui2.mp3",
+      "shui3.mp3",
+      "shui4.mp3",
+      "shuo1.mp3",
+      "shuo2.mp3",
+      "shuo3.mp3",
+      "shuo4.mp3",
+      "si1.mp3",
+      "si2.mp3",
+      "si3.mp3",
+      "si4.mp3",
+      "suan1.mp3",
+      "suan2.mp3",
+      "suan3.mp3",
+      "suan4.mp3",
+      "sui1.mp3",
+      "sui2.mp3",
+      "sui3.mp3",
+      "sui4.mp3",
+      "suo1.mp3",
+      "suo2.mp3",
+      "suo3.mp3",
+      "suo4.mp3",
+      "ta1.mp3",
+      "ta2.mp3",
+      "ta3.mp3",
+      "ta4.mp3",
+      "te1.mp3",
+      "te2.mp3",
+      "te3.mp3",
+      "te4.mp3",
+      "tian1.mp3",
+      "tian2.mp3",
+      "tian3.mp3",
+      "tian4.mp3",
+      "tiao1.mp3",
+      "tiao2.mp3",
+      "tiao3.mp3",
+      "tiao4.mp3",
+      "tu1.mp3",
+      "tu2.mp3",
+      "tu3.mp3",
+      "tu4.mp3",
+      "tuan1.mp3",
+      "tuan2.mp3",
+      "tuan3.mp3",
+      "tuan4.mp3",
+      "tuo1.mp3",
+      "tuo2.mp3",
+      "tuo3.mp3",
+      "tuo4.mp3",
+      "wo1.mp3",
+      "wo2.mp3",
+      "wo3.mp3",
+      "wo4.mp3",
+      "wu1.mp3",
+      "wu2.mp3",
+      "wu3.mp3",
+      "wu4.mp3",
+      "xi1.mp3",
+      "xi2.mp3",
+      "xi3.mp3",
+      "xi4.mp3",
+      "xia1.mp3",
+      "xia2.mp3",
+      "xia3.mp3",
+      "xia4.mp3",
+      "xian1.mp3",
+      "xian2.mp3",
+      "xian3.mp3",
+      "xian4.mp3",
+      "xiang1.mp3",
+      "xiang2.mp3",
+      "xiang3.mp3",
+      "xiang4.mp3",
+      "xiao1.mp3",
+      "xiao2.mp3",
+      "xiao3.mp3",
+      "xiao4.mp3",
+      "xiong1.mp3",
+      "xiong2.mp3",
+      "xiong3.mp3",
+      "xiong4.mp3",
+      "xiu1.mp3",
+      "xiu2.mp3",
+      "xiu3.mp3",
+      "xiu4.mp3",
+      "xu1.mp3",
+      "xu2.mp3",
+      "xu3.mp3",
+      "xu4.mp3",
+      "xuan1.mp3",
+      "xuan2.mp3",
+      "xuan3.mp3",
+      "xuan4.mp3",
+      "xue1.mp3",
+      "xue2.mp3",
+      "xue3.mp3",
+      "xue4.mp3",
+      "yang1.mp3",
+      "yang2.mp3",
+      "yang3.mp3",
+      "yang4.mp3",
+      "ye1.mp3",
+      "ye2.mp3",
+      "ye3.mp3",
+      "ye4.mp3",
+      "yi1.mp3",
+      "yi2.mp3",
+      "yi3.mp3",
+      "yi4.mp3",
+      "yu1.mp3",
+      "yu2.mp3",
+      "yu3.mp3",
+      "yu4.mp3",
+      "yue1.mp3",
+      "yue2.mp3",
+      "yue3.mp3",
+      "yue4.mp3",
+      "yun1.mp3",
+      "yun2.mp3",
+      "yun3.mp3",
+      "yun4.mp3",
+      "zhi1.mp3",
+      "zhi2.mp3",
+      "zhi3.mp3",
+      "zhi4.mp3",
+      "zhong1.mp3",
+      "zhong2.mp3",
+      "zhong3.mp3",
+      "zhong4.mp3",
+      "zhua1.mp3",
+      "zhua2.mp3",
+      "zhua3.mp3",
+      "zhua4.mp3",
+      "zhuan1.mp3",
+      "zhuan2.mp3",
+      "zhuan3.mp3",
+      "zhuan4.mp3",
+      "zhuang1.mp3",
+      "zhuang2.mp3",
+      "zhuang3.mp3",
+      "zhuang4.mp3",
+      "zhui1.mp3",
+      "zhui2.mp3",
+      "zhui3.mp3",
+      "zhui4.mp3",
+      "zhuo1.mp3",
+      "zhuo2.mp3",
+      "zhuo3.mp3",
+      "zhuo4.mp3",
+      "zi1.mp3",
+      "zi2.mp3",
+      "zi3.mp3",
+      "zi4.mp3",
+      "zu1.mp3",
+      "zu2.mp3",
+      "zu3.mp3",
+      "zu4.mp3",
+      "zuan1.mp3",
+      "zuan2.mp3",
+      "zuan3.mp3",
+      "zuan4.mp3",
+      "zuo1.mp3",
+      "zuo2.mp3",
+      "zuo3.mp3",
+      "zuo4.mp3"
+    ]
+  },
+  "toneTable": {
+    "a": {
+      "cats": [
+        "韵母",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "o": {
+      "cats": [
+        "韵母",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "e": {
+      "cats": [
+        "韵母",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "i": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "u": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ü": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ai": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ei": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ui": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ao": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ou": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "iu": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ie": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "üe": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "er": {
+      "cats": [
+        "韵母",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "an": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "en": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "in": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "un": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ün": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ang": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "eng": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ing": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ong": {
+      "cats": [
+        "韵母"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhi": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "chi": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shi": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ri": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zi": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ci": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "si": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yi": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "wu": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yu": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ye": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yue": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yuan": {
+      "cats": [
+        "整体认读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yin": {
+      "cats": [
+        "整体认读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yun": {
+      "cats": [
+        "整体认读",
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ying": {
+      "cats": [
+        "整体认读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ba": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "pa": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "ma": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        3,
+        2,
+        4
+      ]
+    },
+    "fa": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "da": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "ta": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "na": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "lu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "ge": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ke": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "he": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ji": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qi": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xi": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ju": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ca": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "sa": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "cha": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "sha": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "bai": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "hei": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "dui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "mao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "gou": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "niu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "dao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jie": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "xue": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "shan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "men": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "lin": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "chun": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "tian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "yang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "deng": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ming": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "zhong": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "meng": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "ling": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "san": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "liu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "jiu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "di": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "ren": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "ni": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "wo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "xiao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "xia": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "huo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "niao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "chong": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "feng": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "fei": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kou": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "mu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        4,
+        1,
+        2,
+        3
+      ]
+    },
+    "shou": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "zu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "tu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        4,
+        1,
+        2
+      ]
+    },
+    "hua": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "cao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        3,
+        1,
+        2,
+        4
+      ]
+    },
+    "bo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "po": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "mo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "fo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "le": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ne": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "te": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jia": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qia": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "biao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "piao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "miao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "diao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "tiao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "liao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jiao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qiao": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "diu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "miu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qiu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xiu": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "bian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "pian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "mian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "dian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "nian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "lian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xian": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "liang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jiang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "qiang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xiang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xiong": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jiong": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "gua": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kua": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhua": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shua": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "guai": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kuai": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "huai": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shuai": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "duo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "tuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "nuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "luo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "cuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "suo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "chuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "ruo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "guo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kuo": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "chui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "cui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "sui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "rui": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "duan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "tuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "nuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "luan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "guan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "huan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "chuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "suan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "cuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "guang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "kuang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "huang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "zhuang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "chuang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "shuang": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "juan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "quan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "xuan": {
+      "cats": [
+        "拼读"
+      ],
+      "tones": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  },
+  "generatedAt": "2026-08-28",
+  "missing": []
+}

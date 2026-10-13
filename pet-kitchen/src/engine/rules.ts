@@ -1,4 +1,4 @@
-import type { Subject } from '../types'
+import type { AttrKey, Subject } from '../types'
 
 // ============ PRD v0.4 定稿数值，集中在此，便于数值策划调整 ============
 
@@ -87,11 +87,13 @@ export const SUBJECT_LABEL: Record<Subject, string> = {
   math: '数学',
   chinese: '语文',
   english: '英语',
+  mixed: '综合',
 }
 export const ATTR_LABEL: Record<Subject, string> = {
   math: '数学力',
   chinese: '语文力',
   english: '英语力',
+  mixed: '综合力',
 }
 export const STAGE_TITLE = ['幼崽', '小兽', '灵兽', '瑞兽', '圣兽', '神兽']
 
@@ -100,6 +102,39 @@ export const FAST_CLEAR_MS: Record<Subject, number> = {
   math: 2 * 60_000,
   chinese: 5 * 60_000,
   english: 5 * 60_000,
+  mixed: 5 * 60_000,
+}
+
+/** 三科属性的键序（综合关摊成长时按这个顺序轮转） */
+export const ATTR_KEYS: AttrKey[] = ['math', 'chinese', 'english']
+
+/**
+ * 取某学科对应的属性值。
+ * 综合关没有自己的属性，用三科均值当它的「实力」—— 血量/提示次数等仍要有个数。
+ */
+export function attrOf(attrs: Partial<Record<AttrKey, number>>, s: Subject): number {
+  if (s !== 'mixed') return attrs[s] ?? 0
+  const sum = ATTR_KEYS.reduce((n, k) => n + (attrs[k] ?? 0), 0)
+  return Math.floor(sum / ATTR_KEYS.length)
+}
+
+/**
+ * 属性成长落地。综合关把 gain 轮转摊到三科（总量不变，避免三科各加一份变成刷属性漏洞）。
+ * 单科关就是把 gain 加到自己那一科，与旧行为完全一致。
+ */
+export function gainAttrs(
+  attrs: Record<AttrKey, number>,
+  s: Subject,
+  gain: number,
+): Record<AttrKey, number> {
+  if (gain <= 0) return attrs
+  if (s !== 'mixed') return { ...attrs, [s]: (attrs[s] ?? 0) + gain }
+  const next = { ...attrs }
+  for (let i = 0; i < gain; i++) {
+    const k = ATTR_KEYS[i % ATTR_KEYS.length]
+    next[k] = (next[k] ?? 0) + 1
+  }
+  return next
 }
 
 /**

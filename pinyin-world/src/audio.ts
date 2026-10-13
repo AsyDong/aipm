@@ -15,7 +15,9 @@ function stopAudio() {
 function playFile(file: string) {
   stopAudio()
   try {
-    const a = new Audio('/audio/' + file)
+    // 用 BASE_URL 拼相对路径：本应用既可能在根路径跑，也可能被 pet-kitchen
+    // 以子应用形式挂在 /pinyin-world/ 下（此时绝对路径 '/audio/...' 会 404）
+    const a = new Audio(import.meta.env.BASE_URL + 'audio/' + file)
     a.volume = Math.max(0, Math.min(1, save.settings.volume ?? 1))
     curAudio = a
     a.play().catch(() => { /* 浏览器拦截自动播放时静默 */ })

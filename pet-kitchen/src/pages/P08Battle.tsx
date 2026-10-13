@@ -4,10 +4,10 @@ import { useNav } from '../store/nav'
 import PetAvatar from '../components/PetAvatar'
 import { AnswerBox, AnswerPad, ChoicePad } from '../components/AnswerPad'
 import { toast } from '../components/ui'
-import { BOSS_META, MATH_LEVELS, LEVELS_BY_SUBJECT, levelById, specKey } from '../engine/questions'
+import { BOSS_META, MATH_LEVELS, levelById, levelsOf, pageOfLevel, specKey, subjectOfKind } from '../engine/questions'
 
 import {
-  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, baseHp, hintCount, FIRST_CLEAR_BONUS,
+  BATTLE_LIMIT_MIN, QUESTIONS_PER_LEVEL, WRONG_INJECT, ATTR_LABEL, attrOf, baseHp, hintCount, FIRST_CLEAR_BONUS,
   BOSS_MAX_HP, BOSS_SHIELD_AT, BOSS_RAGE_AT, BOSS_RAGE_SECONDS, STREAK_WRONG_MERCY, bossDamage,
 } from '../engine/rules'
 import { nowDay } from '../engine/time'
@@ -45,10 +45,14 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const sound = useStore((s) => s.settings.sound)
 
   const level = levelById(levelId) ?? MATH_LEVELS[0]
-  const attr = pet?.attrs[level.subject] ?? 0
+  const attr = attrOf(pet?.attrs ?? {}, level.subject)
   const maxHp = baseHp(attr)
   const isBoss = !!level.boss
   const boss = isBoss ? BOSS_META[level.id] : undefined
+
+  /** 综合关：跨科取材，错题也要跨科捞 */
+  const isMixed = level.section === 'mixed'
+  const injectLimit = level.wrongInject ?? WRONG_INJECT
 
   /**
    * 需要穿插的错题。传 spec 而不是题面，是为了让服务端（将来）能按规则重建题目、
@@ -57,10 +61,10 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const inject = useMemo(
     () =>
       wrong
-        .filter((w) => w.subject === level.subject && !w.mastered && w.nextReviewDay <= nowDay())
-        .slice(0, WRONG_INJECT)
+        .filter((w) => (isMixed || w.subject === level.subject) && !w.mastered && w.nextReviewDay <= nowDay())
+        .slice(0, injectLimit)
         .map((w) => w.spec),
-    [wrong, level.subject],
+    [wrong, level.subject, isMixed, injectLimit],
   )
   const injectKey = inject.map((s) => `${s.kind}:${s.a}${s.op}${s.b}${s.c ?? ''}`).join(',')
 
@@ -259,7 +263,9 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   const recordAttempt = (question: Question, answer: string | null, correct: boolean) => {
     enqueueOp('attempt', {
       day: nowDay(),
-      subject: level.subject,
+      // 综合关的练习题按自己的 kind 归科：答题流水要能还原「他数学弱还是英语弱」，
+      // 全记成 mixed 的话，服务端的薄弱点分析就白做了
+      subject: isMixed ? subjectOfKind(question.spec.kind) : level.subject,
       levelId: level.id,
       questionText: question.text,
       input: answer,
@@ -421,7 +427,8 @@ export default function P08Battle({ levelId }: { levelId: string }) {
   )
 
   if (result) {
-    const nextLevel = LEVELS_BY_SUBJECT[level.subject].find((l) => l.index === level.index + 1)
+    // 同一版块内往前推进；跟读关要送去 P18，不是 P08
+    const nextLevel = levelsOf(level).find((l) => l.index === level.index + 1)
     return (
       <div className="flex min-h-screen flex-col items-center px-6 pb-10 pt-14">
         <div className="animate-popin text-[54px]">{result.win ? '🎉' : '💪'}</div>
@@ -463,7 +470,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
         {result.win && (
           <div className="mt-5 w-full max-w-[340px] rounded-xl3 bg-white p-4 shadow-card">
             <Row label="积分" value={`+${result.points}`} tone="point" />
-            <Row label={ATTR_LABEL[level.subject]} value={`+${result.attr}`} tone="attr" />
+            <Row label={isMixed ? '三科属性' : ATTR_LABEL[level.subject]} value={`+${result.attr}`} tone="attr" />
             {missed.length > 0 ? (
               <button
                 className="flex w-full items-center justify-between border-b border-sky-50 py-2 last:border-0"
@@ -508,7 +515,7 @@ export default function P08Battle({ levelId }: { levelId: string }) {
           <button
             className="btn-main"
             disabled={!result.win || !nextLevel}
-            onClick={() => nextLevel && nav.go('play', nextLevel.id)}
+            onClick={() => nextLevel && nav.go(pageOfLevel(nextLevel), nextLevel.id)}
           >
             下 一 关
           </button>

@@ -1,7 +1,37 @@
 // ============ 萌宠打卡 · 领域模型（对应 PRD v0.4 第 6 节） ============
 
 export type PetSpecies = 'feifei' | 'dangkang' | 'tianguo'
-export type Subject = 'math' | 'chinese' | 'english'
+
+/**
+ * 属性维度：宠物**只有三科**属性（宠物面板 / 结算展示都按这三个来）。
+ * 它与 Subject 分开，是因为 2026-10-12 拆版块后多了「综合」——
+ * 综合关是跨科抽题，不该凭空长出一个「综合力」，所以属性仍只认三科。
+ */
+export type AttrKey = 'math' | 'chinese' | 'english'
+
+/**
+ * 关卡所属学科（写进 level_records.subject / attempts.subject）。
+ * `mixed` = 综合关：题目跨科抽，属性成长轮转摊到三科，见 rules.gainAttrs()。
+ */
+export type Subject = AttrKey | 'mixed'
+
+/**
+ * 闯关版块（2026-10-12 改版）：原来的三科 tab 变成 5 个版块。
+ * 拼音：原「拼音方块世界」应用已**整体搬进本应用**（React 重写，见 src/pinyin/、P20PinyinHub），
+ * 本应用自己的 C 系列拼音题退居历史存档（levelById 仍解析，见 PINYIN_LEVELS）。
+ */
+export type Section = 'pinyin' | 'math' | 'english' | 'literacy' | 'mixed'
+
+/** 英语版块下的两条线：课本（沪教牛津）/ 牛津树（剑桥 Power Up 闪卡） */
+export type EnglishTrack = 'textbook' | 'oxford'
+
+/**
+ * 关卡玩法：
+ * - quiz   选择题闯关 → P08Battle
+ * - read   跟读评分   → P18FollowRead
+ * - pinyin 拼音方块世界玩法（听音 / 看字 / 拼装）→ P24PinyinMap → P23PinyinGame
+ */
+export type PlayKind = 'quiz' | 'read' | 'pinyin'
 
 /** 任务类型：拍照/录音自动通过，主观需家长确认 */
 export type TaskType = 'photo' | 'audio' | 'subjective'
@@ -79,7 +109,7 @@ export interface Pet {
   satiety: number
   /** 当日已投喂份数（0 点重置） */
   fedToday: number
-  attrs: Record<Subject, number>
+  attrs: Record<AttrKey, number>
   /** Q26：确认领养后不可更改种类 */
   locked: boolean
   bornAt: number
@@ -207,6 +237,11 @@ export interface DailySnapshot {
   correctRate: number
   pointsEarned: number
   foodEarned: number
+  /**
+   * 当日拼音练习量（个音）。
+   * 家长报告要能回答「今天拼音练了 N 个音」（FE-09），跨日结算时随快照留存。
+   */
+  pinyin: number
 }
 
 export interface Settings {
@@ -270,6 +305,17 @@ export interface AppState {
   todayPoints: number
   todayFoodEarned: number
   todayTasksDone: number
+  /**
+   * 今天拼音练了多少个音（点读字母 / 答题 / 发音评测的条数累计）。
+   * 跨日结算时归零并记进当日快照 —— 家长报告靠它回答「今天拼音练了 N 个音」（FE-09）。
+   */
+  todayPinyin: number
+  /**
+   * 今天是否已经「因拼音打卡」计入连续打卡（FE-09）。
+   * 主应用 streak 的语义是「今天有没有学习」—— 完成任务与拼音打卡合并计数，
+   * 两个来源同一天只 +1，靠这个标记去重；跨日清零。
+   */
+  todayPinyinChecked: boolean
   wrongSolvedTotal: number
   /** 当天第一场 Boss 胜利的游戏日（每日 Boss 首胜 ×1.5 的判定依据），空串 = 今日还没赢过 */
   lastBossWinDay: string

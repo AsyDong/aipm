@@ -9,10 +9,10 @@ import {
   ATTR_GAIN_CAP, ATTR_PER_CORRECT, DAILY_BOSS_BONUS, DAILY_DECAY, EXP_PER_FOOD, FIRST_CLEAR_BONUS,
   FEED_LIMIT, FOOD_PER_SATIETY, MASTER_STREAK, REDEEM_TIMEOUT_DAYS,
   REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STREAK_30_FOOD,
-  STREAK_7_FOOD, stageOf, starsOf,
+  STREAK_7_FOOD, gainAttrs, stageOf, starsOf,
 } from '../engine/rules'
 import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
-import { levelById, specKey } from '../engine/questions'
+import { levelById, specKey, subjectOfKind } from '../engine/questions'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
 import {
@@ -114,6 +114,8 @@ const initialState: AppState = {
   todayPoints: 0,
   todayFoodEarned: 0,
   todayTasksDone: 0,
+  todayPinyin: 0,
+  todayPinyinChecked: false,
   wrongSolvedTotal: 0,
   lastBossWinDay: '',
 }
@@ -317,7 +319,10 @@ function settleDayOnce(s: AppState): Partial<AppState> {
   const fullToday = (pet?.satiety ?? 0) >= SATIETY_FULL
 
   const satiety = Math.max(0, (pet?.satiety ?? 0) - DAILY_DECAY)
-  const streak = s.todayTasksDone > 0 ? s.streak : 0
+  // 连击口径（FE-09）：完成每日任务、或拼音那边打了卡，任一发生今天就算「学过」；
+  // 两件事都没做 → 断签清零。合并计数保证「拼音打卡」也撑得住连击。
+  const studiedToday = s.todayTasksDone > 0 || s.todayPinyinChecked
+  const streak = studiedToday ? s.streak : 0
 
   const snapshot: DailySnapshot = {
     day: s.activeDay,
@@ -331,6 +336,7 @@ function settleDayOnce(s: AppState): Partial<AppState> {
     correctRate: s.todayTotal ? s.todayCorrect / s.todayTotal : 0,
     pointsEarned: s.todayPoints,
     foodEarned: s.todayFoodEarned,
+    pinyin: s.todayPinyin,
   }
 
   return {
@@ -347,6 +353,8 @@ function settleDayOnce(s: AppState): Partial<AppState> {
     todayPoints: 0,
     todayFoodEarned: 0,
     todayTasksDone: 0,
+    todayPinyin: 0,
+    todayPinyinChecked: false,
     snapshots: [...s.snapshots, snapshot].slice(-400),
   }
 }
@@ -370,6 +378,16 @@ interface Actions {
   /** 从服务端拉实体快照并合并。队列没排空（本地有没推完的改动）时直接跳过 */
   pullRemote: () => Promise<void>
   ensureDay: () => void
+  /**
+   * 拼音练习量 +n（FE-09）：点读字母 / 答题 / 发音评测各算一个音。
+   * 与闯关分开记账 —— 拼音小游戏是练习不是关卡，写进 levels 会让通关统计虚高。
+   */
+  notePinyinPractice: (n?: number) => void
+  /**
+   * 拼音那边的每日打卡（FE-09）：与主应用连击**合并计数**。
+   * 今天已经算过（无论来自每日任务还是拼音）则返回 false，不重复 +1。
+   */
+  notePinyinCheckIn: () => boolean
   /** 修改孩子档案（P13 的采集入口待加；在此之前只有默认值） */
   setChildProfile: (patch: Partial<ChildProfile>) => void
   adopt: (species: Pet['species']) => void
@@ -384,6 +402,8 @@ interface Actions {
   rejectTask: (taskId: string, reason: string) => void
   parentAdjustFood: (n: number, note: string) => void
   parentGrantPoints: (n: number, note: string) => void
+  /** 练习小游戏加分（拼音世界的听力/识字/拼装游戏，不进关卡体系） */
+  earnPoints: (n: number, note: string) => void
   finishBattle: (
     subject: Subject, levelId: string, correct: number, total: number, wrongQs: Question[], durationMs?: number,
     opts?: { failed?: boolean },
@@ -541,7 +561,9 @@ export const useStore = create<Store>()(
       const completeOne = (t: DailyTask) => {
         earnFood(t.foodValue, 'task', `完成「${t.name}」`)
         const s = get()
-        if (s.todayTasksDone !== 1) return
+        // 只在这天第一个任务完成时给连击 +1；
+        // 但今天若已经因「拼音打卡」加过连击（FE-09），就不再重复加
+        if (s.todayTasksDone !== 1 || s.todayPinyinChecked) return
         const streak = s.streak + 1
         set({ streak, longestStreak: Math.max(s.longestStreak, streak) })
         if (streak === 30) earnFood(STREAK_30_FOOD, 'streak30', '连续打卡 30 天，额外奖励 5 份')
@@ -906,6 +928,56 @@ export const useStore = create<Store>()(
           })
         },
 
+        /**
+         * 练习小游戏加分：与闯关共用积分账本，但**不写关卡记录**
+         *（听力/识字/拼装是练习，不是关卡，写进 levels 会让通关统计虚高）。
+         */
+        earnPoints: (n, note) => {
+          get().ensureDay()
+          const amount = Math.max(0, Math.floor(n))
+          if (!amount) return
+          const s = get()
+          const points = s.points + amount
+          set({
+            points,
+            todayPoints: s.todayPoints + amount,
+            pointLedger: recordLedger(s.pointLedger, 'point', amount, points, 'battle', note || '练习加分'),
+          })
+        },
+
+        /**
+         * 拼音练习量（FE-09）：只记「今天练了几个音」，不碰积分 / 关卡 ——
+         * 拼音的奖励早在 finishPinyinBattle 里走主应用结算过了，这里只为家长报告计数。
+         */
+        notePinyinPractice: (n = 1) => {
+          get().ensureDay()
+          const amount = Math.max(0, Math.floor(n))
+          if (!amount) return
+          set({ todayPinyin: get().todayPinyin + amount })
+        },
+
+        /**
+         * 拼音打卡 → 连击合并计数（FE-09）。
+         * 合并后的口径：完成任务 或 拼音打卡，任一条线都算「今天学过」，同一天只 +1。
+         *   - 孩子只在拼音里打卡（没做家务任务）也能续上连击；
+         *   - 两条线都走了也不会重复加（todayPinyinChecked 去重）。
+         */
+        notePinyinCheckIn: () => {
+          get().ensureDay()
+          const s = get()
+          if (s.todayPinyinChecked) return false
+          // 今天已经因「完成任务」加过连击 → 只打标记，不再 +1
+          if (s.todayTasksDone > 0) {
+            set({ todayPinyinChecked: true })
+            return false
+          }
+          const streak = s.streak + 1
+          set({ todayPinyinChecked: true, streak, longestStreak: Math.max(s.longestStreak, streak) })
+          if (streak === 30) earnFood(STREAK_30_FOOD, 'streak30', '连续打卡 30 天，额外奖励 5 份')
+          else if (streak === 7) earnFood(STREAK_7_FOOD, 'streak7', '连续打卡 7 天，额外奖励 1 份')
+          return true
+        },
+
         finishBattle: (subject, levelId, correct, total, wrongQs, durationMs, opts) => {
           get().ensureDay()
           const s = get()
@@ -919,6 +991,9 @@ export const useStore = create<Store>()(
           const today = nowDay()
           const wrong = s.wrong.slice()
           for (const q of wrongQs) {
+            // 综合关的题按自己的 kind 归科 —— 错题本是按学科筛的，
+            // 全塞进「mixed」就等于孩子再也翻不到这些错题了
+            const qSubject = subject === 'mixed' ? subjectOfKind(q.spec.kind) : subject
             const exist = wrong.find((w) => !w.mastered && specKey(w.spec) === specKey(q.spec))
             if (exist) {
               exist.wrongCount += 1
@@ -927,7 +1002,7 @@ export const useStore = create<Store>()(
             } else {
               wrong.push({
                 id: uid('w'),
-                subject,
+                subject: qSubject,
                 spec: q.spec,
                 text: q.text,
                 answer: q.answer,
@@ -984,7 +1059,7 @@ export const useStore = create<Store>()(
           levels.push(record)
 
           const nextPet = pet
-            ? { ...pet, attrs: { ...pet.attrs, [subject]: pet.attrs[subject] + attrGain } }
+            ? { ...pet, attrs: gainAttrs(pet.attrs, subject, attrGain) }
             : pet
           const newPoints = s.points + points
           set({

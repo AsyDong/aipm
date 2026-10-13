@@ -1,0 +1,21 @@
+{
+  "_说明": "复制成 server/xfyun.config.json 后填入自己的讯飞密钥。该文件已被 .gitignore 忽略，不会进仓库。也可以用环境变量 XFYUN_APP_ID / XFYUN_API_KEY / XFYUN_API_SECRET 代替（优先级更高）。",
+
+  "provider": "xfyun",
+
+  "xfyun": {
+    "app_id": "在讯飞开放平台控制台创建「语音评测」应用后拿到的 APPID",
+    "api_key": "同一个应用的 APIKey",
+    "api_secret": "同一个应用的 APISecret",
+
+    "_check_type": "打分门限（仅英文引擎支持）：hard / common / easy，缺省 common。越宽松越容易过，一年级建议 common 或 easy。",
+    "check_type": "common"
+  },
+
+  "_注意": [
+    "① 必须开通「语音评测」产品，且用的是 wss://ise-api.xfyun.cn/v2/open-ise 这条通用路径；",
+    "   网上常见的 ws-api.xf-yun.com/v1/private/xxxxx 是 suntone 等其它产品的私有路径，签名参数不同，混用必然握手失败。",
+    "② 密钥只留在服务端。讯飞官方明确不支持跨域，APIKey/APISecret 放进前端等于把额度送人刷。",
+    "③ 配好后用 GET /api/score/health 自查：credentials_ready 应为 true，source 会告诉你密钥是从 env 还是 json 读到的。"
+  ]
+}
