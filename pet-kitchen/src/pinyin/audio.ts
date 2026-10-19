@@ -3,6 +3,7 @@
 // 与 pinyin-world 的差异：去掉了对全局 store 的依赖，音量/语速改为模块级偏好（由设置页注入）。
 
 import manifest from './audio-manifest.json'
+import { speakSmart, stopSpeak } from '../utils/tts'
 
 /** 音频根路径：随 BASE_URL 变化，保证在任意部署前缀下都能取到 */
 const BASE = import.meta.env.BASE_URL || './'
@@ -23,9 +24,7 @@ function stopAudio() {
     try { curAudio.pause() } catch { /* noop */ }
     curAudio = null
   }
-  if ('speechSynthesis' in window) {
-    try { window.speechSynthesis.cancel() } catch { /* noop */ }
-  }
+  stopSpeak() // 掐掉 edge-tts / 浏览器 TTS（统一在 utils/tts 管理）
 }
 
 function playFile(file: string) {
@@ -49,39 +48,11 @@ function playRemote(file: string) {
   } catch { /* noop */ }
 }
 
-// ---------- 浏览器 TTS（兜底） ----------
-let voices: SpeechSynthesisVoice[] = []
-
-function pickVoice(): SpeechSynthesisVoice | undefined {
-  if (!('speechSynthesis' in window)) return undefined
-  if (!voices.length) voices = window.speechSynthesis.getVoices()
-  const zh = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith('zh'))
-  return (
-    zh.find((v) => /xiaoxiao|xiaoyan|yaoyao|huihui|female|女/i.test(v.name)) ||
-    zh.find((v) => /zh-CN/i.test(v.lang)) ||
-    zh[0]
-  )
-}
-
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = () => { voices = window.speechSynthesis.getVoices() }
-}
-
+// ---------- 网络 TTS（兜底）：edge-tts 统一嗓音，失败退回设备 TTS（见 utils/tts） ----------
 export const ttsSupported = 'speechSynthesis' in window
 
 function ttsSpeak(text: string, rate?: number) {
-  if (!ttsSupported) return
-  try {
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'zh-CN'
-    u.rate = rate ?? prefs.rate
-    u.volume = Math.max(0, Math.min(1, prefs.volume))
-    u.pitch = 1.05
-    const v = pickVoice()
-    if (v) u.voice = v
-    window.speechSynthesis.speak(u)
-  } catch { /* 忽略异常 */ }
+  void speakSmart(text, 'zh-CN', rate ?? prefs.rate, prefs.volume)
 }
 
 /** 逐段朗读拼音部件（拼装工坊用），不朗读对应汉字 */

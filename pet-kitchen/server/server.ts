@@ -12,6 +12,7 @@
 //   GET  /api/report                 成长报告（按孩子 + 天数查快照）
 //   GET  /api/score/health           跟读评分用的讯飞配置自检
 //   POST /api/score                  跟读评分（转发讯飞 ISE，见 server/xfyun.ts）
+//   GET  /api/tts                    语音合成（edge-tts 代理，全端统一嗓音，见 server/tts.ts）
 //
 // op → SQL 的分发在 server/ops.ts；本文件只管 HTTP、鉴权、PG 连接。
 // 支持的 op：
@@ -38,6 +39,7 @@ import {
   ALLOWED_CATEGORIES, DEFAULT_CHECK_TYPE, EXCEPT_MSG, XF_HOST, XF_PATH,
   credentialsReady, loadXfyunConfig, scoreWithXfyun, wavToPcm,
 } from './xfyun'
+import { TTS_LANGS, TTS_MAX_RATE, TTS_MAX_TEXT, TTS_MIN_RATE, synthSpeech } from './tts'
 
 const PORT = Number(process.env.PORT || 8787)
 const ENV_ID = process.env.TCB_ENV_ID || ''
@@ -258,6 +260,40 @@ const server = http.createServer(async (req, res) => {
         except_info: exceptInfo,
         except_msg: exceptInfo ? (EXCEPT_MSG[exceptInfo] ?? '') : '',
       })
+      return
+    }
+
+    // ---- 语音合成（全端统一嗓音；edge-tts 代理，缓存与嗓音说明见 server/tts.ts）----
+    if (req.method === 'GET' && url === '/api/tts') {
+      const q = new URLSearchParams((req.url ?? '').split('?')[1] ?? '')
+      const text = (q.get('text') ?? '').trim()
+      const lang = q.get('lang') ?? 'zh-CN'
+      const rate = Number(q.get('rate') ?? 0.85)
+      if (!text || text.length > TTS_MAX_TEXT) {
+        send(res, 400, { error: `text 为空或超过 ${TTS_MAX_TEXT} 字` })
+        return
+      }
+      if (!TTS_LANGS.includes(lang)) {
+        send(res, 400, { error: `lang 只支持 ${TTS_LANGS.join(' / ')}` })
+        return
+      }
+      if (!Number.isFinite(rate) || rate < TTS_MIN_RATE || rate > TTS_MAX_RATE) {
+        send(res, 400, { error: `rate 需在 ${TTS_MIN_RATE}~${TTS_MAX_RATE}` })
+        return
+      }
+      try {
+        const mp3 = await synthSpeech(text, lang, rate)
+        // 同一句的音频是确定的：客户端 Cache API 与浏览器缓存都能直接复用
+        res.writeHead(200, {
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': mp3.length,
+          'Cache-Control': 'public, max-age=86400',
+          ...CORS,
+        })
+        res.end(mp3)
+      } catch (e) {
+        send(res, 502, { error: `语音合成失败：${e instanceof Error ? e.message : String(e)}` })
+      }
       return
     }
 

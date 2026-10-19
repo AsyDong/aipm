@@ -15,6 +15,7 @@
 // ============================================================================
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { encodeWav } from '../src/utils/audio'
 import { MATH_LEVELS, buildLevelQuestions, variantsOf } from '../src/engine/questions'
 import { gradeLocally, needsModel } from '../src/engine/grading'
 import type { GenRequest, GradeRequest } from '../src/engine/provider/contract'
@@ -140,6 +141,26 @@ const server = createServer(async (req, res) => {
         credentials_ready: true,
         hint: '本地模拟评测（按词确定性打分，不调用讯飞、不产生计费）',
       })
+      return
+    }
+
+    // ---- 语音合成（模拟）：不连微软，正弦波「哔」一声 ----
+    // 音高随文本变化，能听出不同句子的区别；够验证「请求 → 缓存 → 播放」链路离线可跑。
+    if (req.method === 'GET' && url === '/api/tts') {
+      const text = (new URLSearchParams((req.url ?? '').split('?')[1] ?? '').get('text') ?? '').trim()
+      if (!text) { json(res, { error: '缺少 text' }, 400); return }
+      const rate = 16000
+      const n = Math.floor(rate * 0.6)
+      const samples = new Float32Array(n)
+      const freq = 440 + (text.length * 37) % 440
+      for (let i = 0; i < n; i++) {
+        const fade = Math.min(1, 8 * (1 - i / n)) // 尾巴淡出，免得爆音
+        samples[i] = Math.sin((2 * Math.PI * freq * i) / rate) * 0.3 * fade
+      }
+      const buf = Buffer.from(await encodeWav(samples, rate).arrayBuffer())
+      cors(res)
+      res.writeHead(200, { 'Content-Type': 'audio/wav', 'Content-Length': buf.length })
+      res.end(buf)
       return
     }
 
