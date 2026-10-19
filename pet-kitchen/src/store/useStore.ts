@@ -401,7 +401,8 @@ interface Actions {
   setName: (name: string) => void
   renamePet: (name: string) => void
   feed: (n: number) => FeedResult
-  submitTask: (taskId: string, mediaId?: string) => void
+  /** forcePending：录音设备不可用的音频任务走「家长现场确认」，没有佐证也必须家长点头 */
+  submitTask: (taskId: string, mediaId?: string, forcePending?: boolean) => void
   /** 口算等自动判分任务：做完即完成，不经家长确认 */
   completeQuiz: (taskId: string) => void
   approveTask: (taskId: string) => void
@@ -871,7 +872,7 @@ export const useStore = create<Store>()(
           return { ok: true, msg: `喂了 ${actual} 份，饱食度 +${actual * FOOD_PER_SATIETY}` }
         },
 
-        submitTask: (taskId, mediaId) => {
+        submitTask: (taskId, mediaId, forcePending) => {
           get().ensureDay()
           const s = get()
           const idx = s.daily.findIndex((t) => t.id === taskId)
@@ -880,7 +881,7 @@ export const useStore = create<Store>()(
           if (t.status === 'done' || t.status === 'pending') return
 
           const next = s.daily.slice()
-          if (t.type === 'subjective') {
+          if (t.type === 'subjective' || forcePending) {
             next[idx] = { ...t, status: 'pending', mediaId }
             set({ daily: next })
             recordDailyTask(next[idx])

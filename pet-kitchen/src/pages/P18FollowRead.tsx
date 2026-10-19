@@ -10,10 +10,11 @@ import { reviewItemsOf, weakWordsOf, wrongQuestionsOf } from '../engine/readwron
 import { nowDay } from '../engine/time'
 import { WRONG_INJECT } from '../engine/rules'
 import {
-  MAX_RECORD_MS, RECORD_CONSTRAINTS, blobToBase64, canRecord, newRid, pickMime, toWav16k,
+  MAX_RECORD_MS, blobToBase64, canRecord, getMicStream, micErrorHint, newRid, pickMime,
+  recordBlockReason, toWav16k,
 } from '../utils/audio'
 import { providerConfig } from '../engine/provider/config'
-import { speak } from '../utils/speech'
+import { speak, stopSpeak } from '../utils/speech'
 
 /**
  * 每关练几条。
@@ -76,6 +77,12 @@ export default function P18FollowRead({ levelId }: { levelId: string }) {
   const [apiHint, setApiHint] = useState('')
   const [hint, setHint] = useState('')
   const [result, setResult] = useState<BattleResult | null>(null)
+  /**
+   * 家长人工打分：设备录不了音（老 iPad / 权限被拒）或评分服务挂掉时的兜底。
+   * 家长听孩子读完点「👍 / 🔁」，进度照走。代价：没有逐词分析，
+   * 弱词收不进错题本 —— 能用引擎就别待在这个模式。
+   */
+  const [manual, setManual] = useState(() => !canRecord())
 
   const streamRef = useRef<MediaStream | null>(null)
   const recRef = useRef<MediaRecorder | null>(null)
@@ -182,15 +189,17 @@ export default function P18FollowRead({ levelId }: { levelId: string }) {
 
   const startRec = useCallback(async () => {
     if (!cur || phase === 'recording' || phase === 'scoring') return
-    if (!canRecord()) {
-      setHint('这个浏览器不支持录音，换个 Chrome / Safari 试试')
+    const blocked = recordBlockReason()
+    if (blocked) {
+      setHint(blocked)
       return
     }
+    stopSpeak() // 范本还在念就掐掉：iOS 上边放边录音频会话会打架
     let stream: MediaStream
     try {
-      stream = await navigator.mediaDevices.getUserMedia(RECORD_CONSTRAINTS)
-    } catch {
-      setHint('打不开麦克风：需要允许录音权限，且要用 http://127.0.0.1 打开（不是双击文件）')
+      stream = await getMicStream()
+    } catch (e) {
+      setHint(micErrorHint(e))
       return
     }
     streamRef.current = stream
@@ -275,6 +284,20 @@ export default function P18FollowRead({ levelId }: { levelId: string }) {
     setOutcome(null)
     setPhase('ready')
   }, [idx, items.length, done, passed, settle])
+
+  /** 家长打分：「读得好」按引擎 2 星计（过关口径），「再练练」只记条数 */
+  const manualJudge = useCallback(
+    (ok: boolean) => {
+      const doneN = done + 1
+      const passedN = passed + (ok ? 1 : 0)
+      setDone(doneN)
+      setPassed(passedN)
+      setOutcome(null)
+      if (idx + 1 >= items.length) settle(doneN, passedN)
+      else setIdx((i) => i + 1)
+    },
+    [done, passed, idx, items.length, settle],
+  )
 
   if (!level || !info || items.length === 0) {
     return (
@@ -430,16 +453,44 @@ export default function P18FollowRead({ levelId }: { levelId: string }) {
           </div>
         )}
 
-        {/* 话筒 */}
-        <button
-          onClick={phase === 'recording' ? stopRec : phase === 'scoring' ? undefined : startRec}
-          disabled={phase === 'scoring'}
-          className={`mx-auto mt-5 flex h-[84px] w-[84px] items-center justify-center rounded-full text-[13px] font-extrabold leading-tight text-white transition active:scale-95 ${
-            phase === 'recording' ? 'animate-pulse bg-danger' : phase === 'scoring' ? 'bg-slate-300' : 'bg-sky-400'
-          }`}
-        >
-          {phase === 'recording' ? <>正在<br />听你说</> : phase === 'scoring' ? <>评分<br />中…</> : outcome ? <>再读<br />一次</> : <>开始<br />跟读</>}
-        </button>
+        {/* 话筒 / 家长人工打分 */}
+        {manual ? (
+          <div className="mx-auto mt-5 w-full max-w-[300px]">
+            <div className="text-center text-[13px] font-extrabold text-ink">👂 家长听孩子读完，点一个：</div>
+            <div className="mt-2 flex gap-3">
+              <button className="btn-sub flex-1" onClick={() => manualJudge(false)}>🔁 再练练</button>
+              <button className="btn-main flex-1" onClick={() => manualJudge(true)}>👍 读得好</button>
+            </div>
+            {canRecord() && (
+              <button
+                className="mx-auto mt-2 block text-[12px] font-bold text-sky-500 underline"
+                onClick={() => setManual(false)}
+              >
+                麦克风能用了？切回录音评分
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={phase === 'recording' ? stopRec : phase === 'scoring' ? undefined : startRec}
+              disabled={phase === 'scoring'}
+              className={`mx-auto mt-5 flex h-[84px] w-[84px] items-center justify-center rounded-full text-[13px] font-extrabold leading-tight text-white transition active:scale-95 ${
+                phase === 'recording' ? 'animate-pulse bg-danger' : phase === 'scoring' ? 'bg-slate-300' : 'bg-sky-400'
+              }`}
+            >
+              {phase === 'recording' ? <>正在<br />听你说</> : phase === 'scoring' ? <>评分<br />中…</> : outcome ? <>再读<br />一次</> : <>开始<br />跟读</>}
+            </button>
+            {phase !== 'recording' && phase !== 'scoring' && (
+              <button
+                className="mx-auto mt-2 block text-[12px] font-bold text-muted underline"
+                onClick={() => setManual(true)}
+              >
+                不能录音或评分？家长打分
+              </button>
+            )}
+          </>
+        )}
 
         <div className="mt-3 min-h-[20px] text-center text-[13px] font-bold text-muted">{hint}</div>
       </div>
@@ -459,11 +510,15 @@ export default function P18FollowRead({ levelId }: { levelId: string }) {
       </div>
 
       <div className="mx-4 mt-3 text-center text-[12px] leading-relaxed text-muted">
-        {apiReady === false
-          ? `⚠ ${apiHint}`
-          : apiReady === true
-            ? '评分来自讯飞语音评测。读错、漏读、乱读都会被认出来 —— 拿到 3 颗星就是每个词都读到位了。'
-            : '正在检查评分服务…'}
+        {manual
+          ? canRecord()
+            ? '家长人工打分中：听孩子读完，读得好点「👍」，还差点「🔁」。'
+            : '⚠ 这台设备 / 浏览器录不了音，已切换为家长人工打分：听孩子读完点「👍 / 🔁」，进度照常。'
+          : apiReady === false
+            ? `⚠ ${apiHint}`
+            : apiReady === true
+              ? '评分来自讯飞语音评测。读错、漏读、乱读都会被认出来 —— 拿到 3 颗星就是每个词都读到位了。'
+              : '正在检查评分服务…'}
       </div>
     </div>
   )

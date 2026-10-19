@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNav } from '../store/nav'
 import { toast } from '../components/ui'
 import { compressImage, putMedia } from '../utils/media'
+import { canRecord, micErrorHint } from '../utils/audio'
 import { speak } from '../utils/speech'
 import { uid } from '../utils/id'
 import { useGeneratedQuestions } from '../hooks/useGeneratedQuestions'
@@ -36,6 +37,8 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
   const [recording, setRecording] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  /** 麦克风不可用（硬件/权限/浏览器不支持）：纯录音任务转为家长现场确认 */
+  const [micDead, setMicDead] = useState(false)
   const recRef = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
 
@@ -66,6 +69,7 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
 
   const showPhoto = task.type === 'photo' || task.type === 'subjective'
   const showAudio = task.type === 'audio' || task.type === 'subjective'
+  const micOk = canRecord() && !micDead
 
   const handlePhoto = async (file: File) => {
     try {
@@ -98,12 +102,19 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
       rec.start()
       setRecording(true)
       setTimeout(() => rec.state === 'recording' && rec.stop(), 60000)
-    } catch {
-      toast('请允许使用麦克风哦', 'warn')
+    } catch (e) {
+      setMicDead(true)
+      toast(micErrorHint(e), 'warn')
     }
   }
 
   const stopRec = () => recRef.current?.stop()
+
+  /** 录不了音的纯录音任务：家长在现场听完，点头后进待确认（与主观任务同一条审批链） */
+  const submitByParent = () => {
+    submitTask(task.id, undefined, true)
+    toast('提交啦，等爸爸妈妈确认')
+  }
 
   const submitAudio = async () => {
     if (!audioBlob) return
@@ -162,12 +173,21 @@ export default function P06TaskSubmit({ taskId }: { taskId: string }) {
               📷 拍 照
             </button>
           )}
-          {showAudio && (
+          {showAudio && micOk && (
             <button className={showPhoto ? 'btn-sub' : 'btn-main'} onClick={recording ? stopRec : startRec}>
               {recording ? '⏹ 停止录音' : '🎤 录 音'}
             </button>
           )}
+          {task.type === 'audio' && !micOk && (
+            <button className="btn-main" onClick={submitByParent}>👂 家长听完点这里</button>
+          )}
         </div>
+      )}
+
+      {task.type === 'audio' && !micOk && (
+        <p className="mt-3 text-center text-[13px] font-bold text-warn">
+          这台设备录不了音，换成家长现场听孩子完成，确认后照常发食物
+        </p>
       )}
 
       {recording && <div className="mt-4 text-center text-[14px] font-bold text-danger">● 录音中…最多 60 秒</div>}

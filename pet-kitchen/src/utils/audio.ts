@@ -45,6 +45,36 @@ export function pickMime(): string {
 export const canRecord = (): boolean =>
   typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof window.MediaRecorder !== 'undefined'
 
+/** 录音不可用的原因（null = 能用）。iPad 上最常见的死因是非安全上下文：
+ *  用 http://局域网IP 打开页面时浏览器直接不暴露麦克风，必须 https 或 127.0.0.1 */
+export function recordBlockReason(): string | null {
+  if (typeof window !== 'undefined' && window.isSecureContext === false)
+    return '这个网址不是 https，浏览器不肯给麦克风（要用 https 或 http://127.0.0.1 打开）'
+  if (!canRecord()) return '这个浏览器不支持录音'
+  return null
+}
+
+/** 拿麦克风：先按评分要求关三项「优化」；老设备约束过敏就退到最朴素的 { audio: true }
+ * （设备默认的回声消除会拉低一点分数，但好过录不了）。权限被拒不重试 —— 再试也是拒 */
+export async function getMicStream(): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getUserMedia(RECORD_CONSTRAINTS)
+  } catch (e) {
+    if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) throw e
+    return navigator.mediaDevices.getUserMedia({ audio: true })
+  }
+}
+
+/** getUserMedia 报错 → 家长看得懂的话 */
+export function micErrorHint(e: unknown): string {
+  const name = e instanceof DOMException ? e.name : ''
+  if (name === 'NotAllowedError' || name === 'SecurityError')
+    return '麦克风权限被拒了：在系统设置里允许这个网站用麦克风，再回来试'
+  if (name === 'NotFoundError') return '没找到麦克风设备'
+  if (name === 'NotReadableError') return '麦克风被别的应用占用了，关掉它们再试'
+  return '打不开麦克风，请检查权限后重试'
+}
+
 /** Float32 PCM → 16bit 单声道 WAV Blob */
 export function encodeWav(samples: Float32Array, rate: number): Blob {
   const buf = new ArrayBuffer(44 + samples.length * 2)
