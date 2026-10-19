@@ -13,6 +13,7 @@ import { genLevelQuestions, genTestQuestions, stripTone, setTone, isPinyinLearne
 import { specOf, toAppQuestion } from './src/pinyin/toApp'
 import { learnedLettersByDay } from './src/pinyin/plan'
 import { CHAR_BANK, FC_UNITS } from './src/data/courses'
+import { SHOP_ITEMS } from './src/data/content'
 import { READ_UNITS } from './src/data/readtext'
 import { alignScores } from './src/engine/follow'
 import {
@@ -486,22 +487,30 @@ console.log('== 12.5 Boss 对战（设计建议 v0.1 §4/§5：血量上限 / �
 
 console.log('== 13. 商店 & 家园布置 ==')
 {
+  // 本节自洽：先还原到「未拥有 tree + 积分不足」，价格以 data/content 档位为准
+  useStore.setState({ owned: s().owned.filter((i) => i !== 'tree'), points: 0 })
+  const price = SHOP_ITEMS.find((i) => i.id === 'tree')!.points
+  ok(s().buyItem('tree') === false, '积分不足时购买失败')
+  ok(s().points === 0, '被拒绝的购买不扣分')
   s().parentGrantPoints(500, '测试发放')
   const before = s().points
-  ok(s().buyItem('tree', 999999) === false, '积分不足时购买失败')
-  ok(s().buyItem('tree', 60), '购买小树成功')
+  ok(s().buyItem('tree'), '购买小树成功')
   ok(s().owned.includes('tree'), '进入已拥有列表')
-  ok(s().points === before - 60, `积分 ${before} → ${s().points}`)
+  ok(s().points === before - price, `积分按档位价 ${price} 扣除：${before} → ${s().points}`)
   // 重复购买：UI 已挡（按钮变「去布置」），store 也得兜底 —— 否则扣分而毫无获得
   const ptsAfterBuy = s().points
-  ok(s().buyItem('tree', 60) === false, '重复购买已拥有的装饰被拒绝')
+  ok(s().buyItem('tree') === false, '重复购买已拥有的装饰被拒绝')
   ok(s().points === ptsAfterBuy, '被拒绝的重复购买不扣分')
+  // 未拥有的装饰不能上墙：与 buyItem 同一道闸（store 是唯一事实来源）
+  const placedBefore = s().placed.length
+  s().placeItem('pond', 10, 10)
+  ok(s().placed.length === placedBefore, '未拥有的装饰上墙被拒绝')
   s().placeItem('tree', 30, 40)
-  ok(s().placed.length === 1, '放置到家园')
-  s().movePlaced(s().placed[0].uid, 60, 70)
-  ok(s().placed[0].x === 60 && s().placed[0].y === 70, '拖动生效')
-  s().removePlaced(s().placed[0].uid)
-  ok(s().placed.length === 0, '移除生效')
+  ok(s().placed.length === placedBefore + 1, '放置到家园')
+  s().movePlaced(s().placed[s().placed.length - 1].uid, 60, 70)
+  ok(s().placed[s().placed.length - 1].x === 60 && s().placed[s().placed.length - 1].y === 70, '拖动生效')
+  s().removePlaced(s().placed[s().placed.length - 1].uid)
+  ok(s().placed.length === placedBefore, '移除生效')
 }
 
 console.log('== 14. 现实奖品：冻结 → 审批 → 扣分 / 拒绝退款 ==')

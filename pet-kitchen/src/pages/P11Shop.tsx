@@ -53,7 +53,8 @@ export default function P11Shop() {
                     className="btn-chip mt-2 w-full"
                     disabled={short > 0}
                     onClick={() => {
-                      if (buyItem(it.id, it.points)) toast(`买到${it.name}啦，去布置吧`)
+                      if (buyItem(it.id)) toast(`买到${it.name}啦，去布置吧`)
+                      else toast('积分不够哦', 'warn')
                     }}
                   >
                     {short > 0 ? <span className="inline-flex items-center gap-0.5">还差 <Coin size={13} />{short}</span> : '购 买'}

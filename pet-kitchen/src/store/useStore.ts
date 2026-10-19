@@ -11,7 +11,7 @@ import {
   REVIEW_INTERVALS, SATIETY_FULL, SATIETY_MAX, STREAK_30_FOOD,
   STREAK_7_FOOD, gainAttrs, stageOf, starsOf,
 } from '../engine/rules'
-import { DEFAULT_PRIZES, defaultTemplates } from '../data/content'
+import { DEFAULT_PRIZES, SHOP_ITEMS, defaultTemplates } from '../data/content'
 import { levelById, specKey, subjectOfKind } from '../engine/questions'
 import { uid } from '../utils/id'
 import { pruneMedia } from '../utils/media'
@@ -415,7 +415,7 @@ interface Actions {
     opts?: { failed?: boolean },
   ) => BattleResult
   reviewWrong: (wrongId: string, ok: boolean) => void
-  buyItem: (itemId: string, cost: number) => boolean
+  buyItem: (itemId: string) => boolean
   placeItem: (itemId: string, x: number, y: number) => void
   movePlaced: (u: string, x: number, y: number) => void
   removePlaced: (u: string) => void
@@ -1132,23 +1132,28 @@ export const useStore = create<Store>()(
           if (updated) recordWrong(updated)
         },
 
-        buyItem: (itemId, cost) => {
+        buyItem: (itemId) => {
           const s = get()
           // 已拥有必须直接拒绝：商店 UI 已把按钮换成「去布置」，但 store 是唯一事实来源，
           // 少了这道闸就会「扣了分、列表里却什么也没多」—— 静默吞积分。
           if (s.owned.includes(itemId)) return false
-          if (s.points < cost) return false
-          const points = s.points - cost
+          // 价格同样以档位为准，不信任调用方传的数字（call site 的 points 只是展示值）
+          const item = SHOP_ITEMS.find((i) => i.id === itemId)
+          if (!item || s.points < item.points) return false
+          const points = s.points - item.points
           set({
             points,
-            owned: s.owned.includes(itemId) ? s.owned : [...s.owned, itemId],
-            pointLedger: recordLedger(s.pointLedger, 'point', -cost, points, 'spend', '购买装饰'),
+            owned: [...s.owned, itemId],
+            pointLedger: recordLedger(s.pointLedger, 'point', -item.points, points, 'spend', '购买装饰'),
           })
           return true
         },
 
-        placeItem: (itemId, x, y) =>
-          set((s) => ({ placed: [...s.placed, { uid: uid('pi'), itemId, x, y }] })),
+        placeItem: (itemId, x, y) => {
+          // 未拥有的装饰不允许上墙：与 buyItem 同一道闸，否则直接调用会凭空多出没买过的装饰。
+          if (!get().owned.includes(itemId)) return
+          set((s) => ({ placed: [...s.placed, { uid: uid('pi'), itemId, x, y }] }))
+        },
 
         movePlaced: (u, x, y) =>
           set((s) => ({ placed: s.placed.map((p) => (p.uid === u ? { ...p, x, y } : p)) })),
