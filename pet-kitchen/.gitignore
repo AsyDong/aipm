@@ -19,6 +19,7 @@ smoke.build.cjs
 server/server.build.cjs
 tools/mock-api.build.cjs
 tools/audit-math.build.cjs
+tools/dump-english-words.build.cjs
 
 # TypeScript 增量构建信息
 *.tsbuildinfo

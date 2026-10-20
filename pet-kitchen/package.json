@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "mock-api": "esbuild tools/mock-api.ts --bundle --platform=node --format=cjs --outfile=tools/mock-api.build.cjs --log-level=error && node tools/mock-api.build.cjs",
     "audit-math": "esbuild tools/audit-math.ts --bundle --platform=node --format=cjs --outfile=tools/audit-math.build.cjs --log-level=error && node tools/audit-math.build.cjs",
+    "rename-fc": "esbuild tools/rename-fc-images.ts --bundle --platform=node --format=cjs --outfile=tools/rename-fc-images.build.cjs --log-level=error && node tools/rename-fc-images.build.cjs && node -e \"require('fs').rmSync('tools/rename-fc-images.build.cjs',{force:true})\"",
+    "words": "esbuild tools/dump-english-words.ts --bundle --platform=node --format=cjs --outfile=tools/dump-english-words.build.cjs --log-level=error && node tools/dump-english-words.build.cjs",
     "smoke": "esbuild smoke.ts --bundle --platform=node --format=cjs --outfile=smoke.build.cjs --log-level=error && node -r ./smoke-shim.cjs smoke.build.cjs && node -e \"require('fs').rmSync('smoke.build.cjs',{force:true})\"",
     "verify": "npm run typecheck && npm run smoke && npm run build"
   },

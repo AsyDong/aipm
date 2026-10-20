@@ -406,13 +406,27 @@ for (const u of FC_UNITS) for (const w of u.words) FC_BY_NO.set(w.no, w)
 export const FC_NO_BY_WORD: Record<string, number> = {}
 for (const u of FC_UNITS) for (const w of u.words) if (!(w.en in FC_NO_BY_WORD)) FC_NO_BY_WORD[w.en] = w.no
 
+/** 卡号 → 图片文件名（图按单词命名存 img/fc/<单词>.jpg；同词多卡后出现的加 -2，如 orange 颜色/水果两张照片） */
+export const FC_FILE_BY_NO: Record<number, string> = {}
+{
+  const used = new Set<string>()
+  for (const u of FC_UNITS)
+    for (const w of u.words) {
+      let name = w.en.replace(/ /g, '-')
+      let n = 2
+      while (used.has(name)) name = `${w.en.replace(/ /g, '-')}-${n++}`
+      used.add(name)
+      FC_FILE_BY_NO[w.no] = name
+    }
+}
+
 // 闪卡词表并入 EN_ZH（放在 FC_NO_BY_WORD 之后：FC_UNITS 声明在这里才可见）
 for (const u of FC_UNITS) for (const w of u.words) if (!(w.en in EN_ZH)) EN_ZH[w.en] = w.zh
 
-/** 闪卡配图路径（public/img/fc/<编号>.jpg，PDF 切图） */
+/** 闪卡配图路径（public/img/fc/<单词>.jpg，PDF 切图改名；卡号 → 文件名见 FC_FILE_BY_NO） */
 export function fcImgSrc(no: number | string): string {
   const base = import.meta.env?.BASE_URL ?? '/'
-  return `${base}img/fc/${no}.jpg`
+  return `${base}img/fc/${FC_FILE_BY_NO[Number(no)] ?? no}.jpg`
 }
 
 /** 单词 → 配图：闪卡库优先（预备级词与教材词有重叠），回退 AI 生图 */
