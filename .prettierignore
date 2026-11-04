@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+dist
+node_modules
+playwright-report
+test-results
+Game Engine 技术详细设计文档.md
+分阶段开发任务书.md
