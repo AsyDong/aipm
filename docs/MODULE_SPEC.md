@@ -1,5 +1,20 @@
 # Module specification
 
+Phase 3 ownership:
+
+| Module         | Current responsibility                                                           |
+| -------------- | -------------------------------------------------------------------------------- |
+| apps/web       | English controls/overlays, explicit curriculum and demo fixtures, mounting       |
+| game-contracts | Shared definitions, ownership, tasks, events, lifecycle and bridge types         |
+| game-core      | Engine, registry, event bus, validation, RuleEngine and idempotent RewardManager |
+| learning-core  | ContentResolver and sequential/random task generation with shuffled candidates   |
+| game-runtime   | Adventure composition, InputManager, AudioManager, viewport/assets and bridge    |
+| game-scenes    | Fruit World visual lifecycle and orchard/woodland scenery                        |
+| game-mechanics | Tap selection through input and public scene-object contracts                    |
+| speech-core    | Reserved; no recording or live speech provider in this milestone                 |
+
+The historical Phase 0/1/2 notes below describe earlier checkpoints, not the current implementation scope.
+
 Phase 2: game-scenes owns FruitWorldScene (display only); runtime owns PhaserObjects, viewport, scoped AssetManager and standalone SceneManager. Runtime fetches same-origin assets and registers textures; React sees no Phaser objects.
 
 | Module         | Phase 0 responsibility                                  |

@@ -5,6 +5,9 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@english/game-core": "workspace:*",
+    "@english/game-mechanics": "workspace:*",
+    "@english/learning-core": "workspace:*",
     "@english/game-scenes": "workspace:*",
     "@english/contracts": "workspace:*",
     "phaser": "^3.90.0"

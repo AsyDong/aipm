@@ -56,6 +56,17 @@ export class AssetManager implements IAssetManager {
   async resolve(key: string) {
     return (await this.cache.get(key)?.loaded)?.asset;
   }
+  async reload(key: string) {
+    const entry = this.cache.get(key);
+    if (!entry || this.disposed) throw new Error(`Unknown asset: ${key}`);
+    const previous = entry.loaded;
+    entry.loaded = this.load(entry.original);
+    await previous.then(
+      (loaded) => loaded.dispose(),
+      () => {},
+    );
+    return (await entry.loaded).asset;
+  }
   async release(scope: string) {
     for (const entry of this.cache.values()) entry.scopes.delete(scope);
     await this.clearUnused();

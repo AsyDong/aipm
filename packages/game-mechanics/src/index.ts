@@ -1,2 +1,1 @@
-/** Reserved for the corresponding implementation phase. */
-export {};
+export { TapMechanic, tapMetadata } from './tap';

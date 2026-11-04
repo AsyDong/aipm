@@ -2,7 +2,7 @@
 
 An English-only listening adventure for beginners. The long-term learning goal is 500 listening words; this is not a claim that the current preview teaches or assesses those words.
 
-Phase 0 provides a React host, Phaser canvas and lifecycle-safe bridge. It does not implement a learning game yet.
+Phase 3 delivers Listen & Find: five listening rounds, randomized picture choices, replay, hints, friendly retries, pause/resume, stars and a session summary. The default collection is Power Up 0, Unit 3, printed page 28: apple, banana, grapes, orange and watermelon. An explicitly independent woodland sampler demonstrates content and scene reuse.
 
 ## Run
 
@@ -32,13 +32,15 @@ apps/web             React application (Vite)
 apps/admin           Reserved documentation only
 packages/game-contracts   Shared transport types
 packages/game-runtime     Phaser adapter and bridge
-packages/game-core        Phase 1 skeleton
-packages/game-scenes      Phase 2 skeleton
-packages/game-mechanics   Phase 3 skeleton
-packages/learning-core    Content model skeleton
+packages/game-core        Engine, events, registration, rules and rewards
+packages/game-scenes      Fruit World orchard/woodland visual plugin
+packages/game-mechanics   Content-independent Tap plugin
+packages/learning-core    Content ownership validation and task generation
 packages/speech-core      Future speech adapter skeleton
 tests/e2e                 Chromium and iPad WebKit checks
 docs                      Architecture, decisions and phase reports
 ```
 
-See docs/DEVELOPMENT_TASKS.md for milestone scope and docs/PHASE_0_REPORT.md for verification and limitations.
+See [Phase 3 report](docs/PHASE_3_REPORT.md) for verification, limitations and the child playtest checklist. Automated iPad WebKit checks do not replace physical iPad Safari testing. Session observations stay in memory and do not establish vocabulary mastery. ASR, pronunciation scoring, backend persistence and additional mechanics are outside this milestone.
+
+Word prompts are generated with Microsoft Edge TTS (`en-GB-SoniaNeural`, rate `-10%`) and served locally. Normal gameplay needs no speech-service credentials or live synthesis. To regenerate missing MP3s, install `edge-tts` in a Python environment and run `python scripts/generate-prompts.py`. Textbook files and original recordings remain external.
