@@ -1,5 +1,74 @@
 import Phaser from 'phaser';
 import type { BootstrapRuntimePort } from '@english/contracts';
+import { FruitWorldScene } from '@english/game-scenes';
+import { createViewport } from './viewport';
+
+export function createFruitPreview(
+  parent: HTMLElement,
+  port: BootstrapRuntimePort,
+  onError: (error: unknown) => void,
+) {
+  const viewport = createViewport(parent);
+  let disposed = false;
+  let scenePlugin: FruitWorldScene | undefined;
+  let off = () => {};
+  void viewport.ready
+    .then(async ({ scene, objects }) => {
+      if (disposed) return;
+      scenePlugin = new FruitWorldScene(scene);
+      scenePlugin.createBackdrop({});
+      const candidates = ['apple', 'banana', 'orange'].map((text) => ({
+        id: text,
+        text,
+        curriculumId: 'demo',
+        unitId: 'fruit',
+        assets: { image: text, audio: text },
+        source: {
+          kind: 'DEMO' as const,
+          reference: 'Independent scene preview',
+        },
+      }));
+      await viewport.preload(
+        {
+          scope: 'preview',
+          assets: candidates.map((content) => ({
+            key: content.id,
+            type: 'IMAGE',
+            url: `/images/${content.id}.svg`,
+            version: '1.0.0',
+          })),
+        },
+        scene,
+      );
+      if (disposed) return;
+      objects.show({
+        id: 'preview',
+        curriculumId: 'demo',
+        unitId: 'fruit',
+        target: candidates[0]!,
+        candidates,
+      });
+      off = port.onCommand((command) => {
+        if (command.type === 'PAUSE') scenePlugin?.pause();
+        else scenePlugin?.resume();
+        port.publish({
+          type: 'STATE_CHANGED',
+          state: command.type === 'PAUSE' ? 'PAUSED' : 'RUNNING',
+        });
+      });
+      port.publish({ type: 'READY' });
+      port.publish({ type: 'STATE_CHANGED', state: 'RUNNING' });
+    })
+    .catch((error) => {
+      if (!disposed) onError(error);
+    });
+  return () => {
+    disposed = true;
+    off();
+    scenePlugin?.destroy();
+    void viewport.destroy();
+  };
+}
 
 /** A neutral moving canvas verifies the host integration; it is not a game scene plugin. */
 export function createPhaserBootstrap(

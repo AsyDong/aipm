@@ -10,8 +10,8 @@ export function mountBootstrapRuntime(
   let cleanup: (() => void) | undefined;
 
   void import('./phaser-bootstrap')
-    .then(({ createPhaserBootstrap }) => {
-      if (!disposed) cleanup = createPhaserBootstrap(parent, port);
+    .then(({ createFruitPreview }) => {
+      if (!disposed) cleanup = createFruitPreview(parent, port, onError);
     })
     .catch((error: unknown) => {
       if (!disposed) onError(error);

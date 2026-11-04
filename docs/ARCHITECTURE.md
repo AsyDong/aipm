@@ -1,5 +1,7 @@
 # Architecture
 
+Phase 2 adds a standalone Fruit World visual plugin, public object operations and runtime viewport adapter. Scenes import contracts and Phaser only. Scoped AssetManager deduplicates loads and disposes object URLs; viewport owns texture registration and canvas destruction.
+
 The design baseline is the two original documents at the repository root. The first milestone is Phase 0–3, with a review after each phase.
 
 Dependencies: React host → runtime → contracts. Phase 0 core, scene, mechanic, learning and speech packages are skeletons. game-core remains independent of Phaser. React receives no Phaser references.

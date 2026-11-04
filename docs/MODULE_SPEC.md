@@ -1,5 +1,7 @@
 # Module specification
 
+Phase 2: game-scenes owns FruitWorldScene (display only); runtime owns PhaserObjects, viewport, scoped AssetManager and standalone SceneManager. Runtime fetches same-origin assets and registers textures; React sees no Phaser objects.
+
 | Module         | Phase 0 responsibility                                  |
 | -------------- | ------------------------------------------------------- |
 | apps/web       | English-only application, controls, lifecycle ownership |

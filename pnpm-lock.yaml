@@ -85,11 +85,21 @@ importers:
       '@english/contracts':
         specifier: workspace:*
         version: link:../game-contracts
+      '@english/game-scenes':
+        specifier: workspace:*
+        version: link:../game-scenes
       phaser:
         specifier: ^3.90.0
         version: 3.90.0
 
-  packages/game-scenes: {}
+  packages/game-scenes:
+    dependencies:
+      '@english/contracts':
+        specifier: workspace:*
+        version: link:../game-contracts
+      phaser:
+        specifier: ^3.90.0
+        version: 3.90.0
 
   packages/learning-core: {}
 

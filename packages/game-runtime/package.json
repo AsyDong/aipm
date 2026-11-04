@@ -5,6 +5,7 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@english/game-scenes": "workspace:*",
     "@english/contracts": "workspace:*",
     "phaser": "^3.90.0"
   }
