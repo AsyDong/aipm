@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://english-adventure.local/game-definition.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "schemaVersion",
+    "name",
+    "scene",
+    "mechanic",
+    "content",
+    "input",
+    "rules",
+    "reward"
+  ],
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/version" },
+    "schemaVersion": { "const": "1.0.0" },
+    "description": { "type": "string" },
+    "scene": { "$ref": "#/$defs/plugin" },
+    "mechanic": { "$ref": "#/$defs/plugin" },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["curriculumId", "unitId", "items"],
+      "properties": {
+        "curriculumId": { "$ref": "#/$defs/id" },
+        "unitId": { "$ref": "#/$defs/id" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contentId"],
+            "properties": {
+              "contentId": { "$ref": "#/$defs/id" },
+              "assetOverrides": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["TOUCH", "MOUSE", "VOICE", "CAMERA"] }
+        },
+        "settings": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "swipeThreshold": { "type": "number", "minimum": 1 },
+            "voiceTimeoutMs": { "type": "integer", "minimum": 1000 },
+            "gestureEnabled": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowRetry"],
+      "properties": {
+        "rounds": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "allowRetry": { "type": "boolean" },
+        "maxAttempts": { "type": "integer", "minimum": 1 },
+        "timeLimitMs": { "type": ["integer", "null"], "minimum": 1000 },
+        "hintPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "afterAttempts": { "type": "integer", "minimum": 0 },
+            "hintLevel": { "type": "integer", "minimum": 1, "maximum": 3 }
+          }
+        },
+        "progression": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": { "mode": { "enum": ["SEQUENTIAL", "RANDOM"] } }
+        }
+      }
+    },
+    "reward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "successReward"],
+      "properties": {
+        "type": { "enum": ["STAR", "COLLECTIBLE", "BADGE"] },
+        "successReward": { "type": "integer", "minimum": 0 },
+        "completionBonus": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "difficulty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["optionCount"],
+      "properties": {
+        "optionCount": { "type": "integer", "minimum": 2, "maximum": 6 }
+      }
+    },
+    "metadata": { "type": "object" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "config"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/version" },
+        "config": { "type": "object" }
+      }
+    }
+  }
+}

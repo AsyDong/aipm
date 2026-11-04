@@ -1,5 +1,6 @@
 /** Phase 0 transport only. Learning and plugin contracts are defined in Phase 1. */
 export type Unsubscribe = () => void;
+export * from './game';
 
 export type BootstrapCommand = { type: 'PAUSE' } | { type: 'RESUME' };
 export type BootstrapState = 'READY' | 'RUNNING' | 'PAUSED' | 'DESTROYED';

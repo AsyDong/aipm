@@ -1,6 +1,6 @@
 # Confirmed scope and decisions
 
-First milestone: Phase 0 → Phase 1 → Phase 2 → Phase 3. Each phase ends with verification, documentation, a game-branch commit and a review stop. Phase 0/1 run sequentially; freeze contracts before parallel scene, speech or mechanic work.
+First milestone: Phase 0 → Phase 1 → Phase 2 → Phase 3. Each phase ends with verification, documentation and a game-branch commit. The user subsequently authorized autonomous progression through Phase 3, with self-review at each checkpoint and human review at the milestone. Phase 0/1 run sequentially; freeze contracts before parallel scene, speech or mechanic work. Use browser-skill for actual UI observation.
 
 - Audience: beginner children; long-term goal of 500 listening words.
 - Devices: prioritize iPad Safari and desktop browsers.

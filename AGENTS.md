@@ -1,7 +1,7 @@
 # Project rules
 
 - Preserve the two original Chinese design documents and unrelated user changes.
-- Implement only the current phase. Stop after each phase for review.
+- Implement Phase 1, 2 and 3 sequentially with independent checkpoints and commits. The user authorized autonomous progression; stop for review at the Phase 3 milestone.
 - First milestone: Phase 0 → Phase 1 → Phase 2 → Phase 3.
 - Complete Phase 0 and Phase 1 sequentially. Freeze shared contracts before parallel plugin work.
 - Core and learning-core must not depend on Phaser or React.

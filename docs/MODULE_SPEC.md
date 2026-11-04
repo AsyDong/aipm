@@ -12,4 +12,4 @@
 | learning-core  | Skeleton; curriculum-independent learning models        |
 | speech-core    | Skeleton; future ASR/TTS adapters                       |
 
-The bootstrap bridge is explicitly temporary and does not pretend to implement the full GameBridge or GameEngine contract. GameSummary and full learning/plugin types will be implemented together in Phase 1.
+Phase 1 adds GameSummary, GameContext, task/content/object interfaces and typed events in contracts, and engine/event bus/registry in core. The bootstrap bridge remains compatible and separate. No Phaser/React dependency enters core. Full GameCommand/GameMessage interfaces reserve gameplay communication for Phase 3.

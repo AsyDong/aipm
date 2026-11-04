@@ -8,4 +8,4 @@ Phase 0 creates a temporary neutral canvas in the runtime, not a scene plugin or
 
 No remote plugins, dependency injection container, script execution, backend or camera support is introduced.
 
-Phase 1 will freeze typed event payloads, plugin lifecycle, configuration schemas, session/restart semantics and public object interaction contracts before any parallel plugin implementation.
+Phase 1 freezes typed event payloads, plugin lifecycle, configuration schemas, session/restart semantics and public object interaction contracts. See game-contracts/src/game.ts. Core validates local registration and lifecycle; runtime owns content/resource readiness. Each restart allocates a new session. The user authorized autonomous checkpoint progression through Phase 3.

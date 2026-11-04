@@ -5,3 +5,5 @@ Phase 0 unit tests cover directional communication, unsubscribe, listener except
 Run commands are in README.md. Browser downloads require network access. Emulation does not certify real iPad Safari, memory behavior or learning effectiveness. A real iPad session remains required before Phase 3 acceptance.
 
 Future Listen & Find acceptance includes first choices without hints, replay/hint counts, randomized positions and whether a child voluntarily continues. Observations do not establish language mastery. The user can arrange child playtesting.
+
+Phase 1 tests cover event reentrancy and error isolation, config/plugin/version/capability rejection, lifecycle transitions, new session on restart, partial-initialization cleanup and architectural dependencies. Tests ran red before implementation, then green.
