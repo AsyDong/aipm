@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
   workers: 3,
+  // Real prompts and guide lines play at their natural speed; five rounds take ~20 s.
+  timeout: 60000,
   expect: { timeout: 15000 },
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },
   projects: [
@@ -19,7 +21,8 @@ export default defineConfig({
     {
       name: 'ipad-webkit',
       use: {
-        ...devices['iPad (gen 7)'],
+        // The game is landscape-only on tablets and phones; an upright window shows a notice.
+        ...devices['iPad (gen 7) landscape'],
         launchOptions: process.env.WEBKIT_EXECUTABLE_PATH
           ? { executablePath: process.env.WEBKIT_EXECUTABLE_PATH }
           : {},

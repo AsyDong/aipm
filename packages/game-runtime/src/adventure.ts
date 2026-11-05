@@ -2,6 +2,8 @@ import type {
   GameCommand,
   GameContext,
   GameDefinition,
+  IAnswerPort,
+  UnrecognizedReason,
   GameMessage,
   GameViewState,
   IGameBridge,
@@ -14,21 +16,28 @@ import {
   RuleEngine,
   RewardManager,
   TaskRunner,
+  GameFailure,
 } from '@english/game-core';
 import { ContentResolver, createTasks } from '@english/learning-core';
-import { TapMechanic, tapMetadata } from '@english/game-mechanics';
-import { FruitWorldScene, fruitWorldMetadata } from '@english/game-scenes';
+import { pluginCatalog } from './plugin-catalog';
 import { createViewport } from './viewport';
 import { InputManager } from './input';
 import { createMouseAdapter, createTouchAdapter } from './pointer-adapters';
 import { AudioManager } from './audio';
 import { validateAdventure } from './validate-adventure';
 
-/** Short spoken cues; optional, so a missing cue never blocks the game. */
-const FEEDBACK = {
-  success: '/audio/success.mp3',
-  again: '/audio/again.mp3',
-  complete: '/audio/complete.mp3',
+/**
+ * The guide's spoken lines, by the state they belong to. Optional: a missing
+ * file is skipped and the on-screen line still says it. Files come from
+ * apps/web/src/data/guide.json via scripts/generate-prompts.py.
+ */
+const GUIDE_AUDIO = {
+  hello: '/audio/guide/hello.mp3',
+  right: '/audio/guide/right.mp3',
+  wrong: '/audio/guide/wrong.mp3',
+  hint: '/audio/guide/hint.mp3',
+  notHeard: '/audio/guide/not_heard.mp3',
+  done: '/audio/guide/done.mp3',
 };
 
 export function createAdventure(
@@ -72,7 +81,7 @@ export function createAdventure(
     for (const handler of subscribers)
       handler({
         type: 'ERROR',
-        code: 'RUNTIME_ERROR',
+        code: cause instanceof GameFailure ? cause.code : 'RUNTIME_ERROR',
         message:
           cause instanceof Error ? cause.message : 'Unable to load adventure',
       });
@@ -88,6 +97,7 @@ export function createAdventure(
       return;
     const token = ++revision;
     const generation = epoch;
+    sayChain++;
     locked = true;
     state.busy = true;
     input.disable();
@@ -125,15 +135,18 @@ export function createAdventure(
       }
     }
   }
-  /** Short feedback cues never block play; a failed cue is simply skipped. */
-  function cue(key: string) {
-    void audio.play(key).catch(() => {});
+  /** A spoken guide line. It never blocks play and gives way to the next sound. */
+  function say(key: string) {
+    void audio.say(key);
   }
   let pendingTasks: LearningTask[] = [];
+  /** Bumped whenever something else takes the speaker, cancelling a pending "Yes! It is ..." chain. */
+  let sayChain = 0;
   function showRound() {
     if (!runner) return;
     state.round = runner.round;
     state.feedback = 'LISTEN';
+    delete state.word;
     void playPrompt(false);
   }
   /** First round of a session: the engine is already started, so plugins listen. */
@@ -154,34 +167,51 @@ export function createAdventure(
       { stars: summary.stars, collectibles: 0 },
       'rewards',
     );
-    cue(FEEDBACK.complete);
+    say(GUIDE_AUDIO.done);
     publish();
   }
-  function answer(objectId: string, contentId: string, taskId: string) {
-    if (
-      locked ||
-      !context ||
-      !runner ||
-      !engine ||
-      engine.getState() !== 'RUNNING' ||
-      runner.current()?.id !== taskId
-    )
-      return;
-    const result = runner.submit(contentId);
-    context.objects.feedback(objectId, result.correct ? 'CORRECT' : 'RETRY');
-    if (!result.correct) {
-      state.feedback = 'RETRY';
-      cue(FEEDBACK.again);
+  /** Every mechanic reports answers here; the runtime decides when they count. */
+  const answers: IAnswerPort = {
+    isOpen: () => !locked && engine?.getState() === 'RUNNING',
+    submit(contentId, objectId) {
+      if (!answers.isOpen() || !context || !runner) return;
+      const result = runner.submit(contentId);
+      if (objectId)
+        context.objects.feedback(
+          objectId,
+          result.correct ? 'CORRECT' : 'RETRY',
+        );
+      if (!result.correct) {
+        state.feedback = 'RETRY';
+        say(GUIDE_AUDIO.wrong);
+        publish();
+        return;
+      }
+      locked = true;
+      input.disable();
+      state.feedback = 'CORRECT';
+      const word = runner.current()?.target.text;
+      if (word) state.word = word;
+      // "Yes! It is" ... then the word itself, so the child hears the whole sentence.
+      // The chain belongs to this answer only: Next, pause, restart or leaving drop it,
+      // otherwise the word would cut off the next prompt on a single-player device.
+      const mine = ++sayChain;
+      void audio.say(GUIDE_AUDIO.right).then(() => {
+        const target = runner?.current()?.target.assets.audio;
+        if (mine === sayChain && target && !disposed) void audio.say(target);
+      });
       publish();
-      return;
-    }
-    locked = true;
-    input.disable();
-    state.feedback = 'CORRECT';
-    cue(FEEDBACK.success);
-    publish();
-    // Next is deliberate: children control the listening pace and feedback cannot race pauses.
-  }
+      // Next is deliberate: children control the listening pace and feedback cannot race pauses.
+    },
+    /** "Not heard" is never a wrong answer: nothing is counted and nothing is lost. */
+    unrecognized(reason: UnrecognizedReason) {
+      if (!answers.isOpen() || !runner) return;
+      runner.unrecognized(reason);
+      state.feedback = 'NOT_HEARD';
+      say(GUIDE_AUDIO.notHeard);
+      publish();
+    },
+  };
   const ready = viewport.ready
     .then(async ({ scene, objects }) => {
       if (disposed) return;
@@ -207,7 +237,7 @@ export function createAdventure(
         .preload(
           {
             scope: 'cues',
-            assets: Object.values(FEEDBACK).map((url) => ({
+            assets: Object.values(GUIDE_AUDIO).map((url) => ({
               key: url,
               type: 'AUDIO' as const,
               url,
@@ -219,14 +249,24 @@ export function createAdventure(
         .catch(() => {});
       if (disposed) return;
       const manager = new PluginManager();
-      manager.register({
-        metadata: fruitWorldMetadata,
-        create: () => new FruitWorldScene(scene),
-      });
-      manager.register({
-        metadata: tapMetadata,
-        create: () => new TapMechanic(),
-      });
+      for (const registration of pluginCatalog(scene))
+        manager.register(registration);
+      const validation = manager.validate(definition);
+      if (!validation.valid)
+        throw new GameFailure(
+          'CONFIG_INVALID',
+          'runtime',
+          validation.errors.join('; '),
+        );
+      for (const spec of [definition.scene, definition.mechanic]) {
+        const extra = manager.get(spec.id)?.assets?.(spec.config) ?? [];
+        if (extra.length)
+          await viewport.preload(
+            { scope: `plugin:${spec.id}`, assets: extra },
+            scene,
+          );
+      }
+      if (disposed) return;
       engine = new GameEngine(manager, (base) => {
         rules.initialize(definition.rules);
         rewards.reset();
@@ -252,22 +292,15 @@ export function createAdventure(
           assets: viewport.assets,
           objects,
           tasks: runner,
+          answers,
           content: resolver,
           rules,
           rewards,
           logger: { error: console.error },
         };
-        const off = base.eventBus.on('OBJECT_SELECTED', (event) =>
-          answer(
-            event.payload.objectId,
-            event.payload.contentId,
-            event.payload.taskId,
-          ),
-        );
         return {
           context,
           dispose: () => {
-            off();
             input.disable();
             audio.stopAll();
             objects.clear();
@@ -299,6 +332,7 @@ export function createAdventure(
       case 'PAUSE':
         if (engine.getState() !== 'RUNNING') return;
         revision++;
+        sayChain++;
         audio.stopAll();
         input.disable();
         state.busy = false;
@@ -317,6 +351,7 @@ export function createAdventure(
       case 'NEXT':
         if (engine.getState() !== 'RUNNING' || state.feedback !== 'CORRECT')
           return;
+        sayChain++;
         if (runner?.next()) showRound();
         else finish();
         break;
@@ -327,12 +362,14 @@ export function createAdventure(
         const object = context.objects.findByContent(target);
         if (object) context.objects.feedback(object.objectId, 'HINT');
         state.feedback = 'HINT';
+        say(GUIDE_AUDIO.hint);
         publish();
         break;
       }
       case 'RESTART':
         epoch++;
         revision++;
+        sayChain++;
         audio.stopAll();
         locked = true;
         await engine.restart();
@@ -341,6 +378,26 @@ export function createAdventure(
         break;
       case 'SET_VOLUME':
         audio.setVolume(command.value);
+        break;
+      case 'SAY':
+        // Same-origin urls only; AssetManager enforces that on load.
+        if (command.url.startsWith('/audio/guide/')) {
+          await viewport.assets
+            .preload({
+              scope: 'cues',
+              assets: [
+                {
+                  key: command.url,
+                  type: 'AUDIO' as const,
+                  url: command.url,
+                  version: '1.0.0',
+                },
+              ],
+            })
+            .catch(() => {});
+          if (command.wait) await audio.say(command.url);
+          else say(command.url);
+        }
         break;
       case 'DESTROY':
         destroy();
@@ -363,7 +420,9 @@ export function createAdventure(
     send(command) {
       if (disposed) return;
       if (
-        ['START', 'REPLAY', 'RESUME', 'RESTART', 'NEXT'].includes(command.type)
+        ['START', 'REPLAY', 'RESUME', 'RESTART', 'NEXT', 'SAY'].includes(
+          command.type,
+        )
       )
         audio.unlock();
       serial = serial.then(() => execute(command)).catch(error);

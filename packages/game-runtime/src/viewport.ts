@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AssetManager, loadBrowserAsset } from './assets';
 import { PhaserObjects } from './objects';
+import { WORLD_HEIGHT, WORLD_WIDTH } from '@english/contracts';
 import type { AssetManifest } from '@english/contracts';
 
 export function createViewport(parent: HTMLElement) {
@@ -20,14 +21,21 @@ export function createViewport(parent: HTMLElement) {
   const game = new Phaser.Game({
     type: Phaser.CANVAS,
     parent,
-    width: 960,
-    height: 540,
-    backgroundColor: '#263e37',
+    width: WORLD_WIDTH,
+    height: WORLD_HEIGHT,
+    backgroundColor: '#86d3f0',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     scene: ViewportScene,
     audio: { noAudio: true },
     banner: false,
   });
+  // Phaser re-fits on window resize only; phones rotating (or a layout change around
+  // the canvas) can leave it at the old size, so refit on every layout change.
+  const refit = () => requestAnimationFrame(() => game.scale.refresh());
+  const watcher = new ResizeObserver(refit);
+  watcher.observe(parent);
+  addEventListener('orientationchange', refit);
+  addEventListener('resize', refit);
   const assets = new AssetManager(loadBrowserAsset);
   let objects: PhaserObjects | undefined;
   return {
@@ -62,6 +70,9 @@ export function createViewport(parent: HTMLElement) {
     async destroy() {
       if (disposed) return;
       disposed = true;
+      watcher.disconnect();
+      removeEventListener('orientationchange', refit);
+      removeEventListener('resize', refit);
       objects?.clear();
       game.destroy(true);
       game.canvas?.remove();

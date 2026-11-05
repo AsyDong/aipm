@@ -25,8 +25,7 @@ export class RuleEngine implements IRuleEngine {
   evaluate(answer: PlayerAnswer) {
     if (!this.task || answer.taskId !== this.task.id || this.solved)
       throw new Error('Stale or completed task');
-    if (!this.task.candidates.some((item) => item.id === answer.contentId))
-      throw new Error('Invalid candidate');
+    // An answer outside the candidates (e.g. a spoken word) is simply wrong, not an error.
     this.attempts++;
     const correct = answer.contentId === this.task.target.id;
     this.solved = correct;

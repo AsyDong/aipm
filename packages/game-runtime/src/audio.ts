@@ -1,4 +1,4 @@
-import type { IAudioManager } from '@english/contracts';
+import type { AudioSessionMode, IAudioManager } from '@english/contracts';
 import { AssetManager } from './assets';
 
 /** Resume synchronously from a user gesture; decode prompts before playback. */
@@ -13,8 +13,17 @@ export class AudioManager implements IAudioManager {
   private fallback: HTMLAudioElement | undefined;
   private fallbackCancel: (() => void) | undefined;
   private unlocking: Promise<void> | undefined;
+  private session: AudioSessionMode = 'playback';
   private failed = new Set<string>();
   constructor(private assets: AssetManager) {}
+  /** Playing prompts needs 'playback'; recording needs 'play-and-record' (iOS 16.4+). */
+  setSession(mode: AudioSessionMode) {
+    this.session = mode;
+    const session = (
+      navigator as Navigator & { audioSession?: { type: string } }
+    ).audioSession;
+    if (session) session.type = mode;
+  }
   unlock() {
     if (this.disposed) return;
     if (typeof AudioContext === 'undefined') {
@@ -22,10 +31,7 @@ export class AudioManager implements IAudioManager {
       return;
     }
     // iOS 16.4+: without this, the ringer switch silences Web Audio entirely.
-    const session = (
-      navigator as Navigator & { audioSession?: { type: string } }
-    ).audioSession;
-    if (session) session.type = 'playback';
+    this.setSession(this.session);
     this.context ??= new AudioContext();
     if (!this.gain) {
       this.gain = this.context.createGain();
@@ -45,6 +51,14 @@ export class AudioManager implements IAudioManager {
     } catch (error) {
       if (!this.disposed) this.failed.add(key);
       throw error;
+    }
+  }
+  /** Guide lines are optional flavour: a missing or blocked line is skipped silently. */
+  async say(key: string) {
+    try {
+      await this.play(key);
+    } catch {
+      /* the on-screen line still says it */
     }
   }
   private async playLoaded(key: string) {

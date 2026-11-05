@@ -1,0 +1,35 @@
+{
+  "title": "Fruit Island",
+  "levels": [
+    {
+      "id": "market",
+      "title": "Fruit Market",
+      "subtitle": "Unit 3 · Food shopping",
+      "game": "powerup0-listen-find",
+      "x": 57,
+      "y": 74
+    },
+    {
+      "id": "woodland",
+      "title": "Woodland",
+      "subtitle": "Demo words",
+      "game": "fruit-sampler",
+      "x": 84,
+      "y": 50
+    },
+    {
+      "id": "lighthouse",
+      "title": "Lighthouse",
+      "locked": true,
+      "x": 15,
+      "y": 63
+    },
+    {
+      "id": "waterfall",
+      "title": "Waterfall",
+      "locked": true,
+      "x": 51,
+      "y": 33
+    }
+  ]
+}

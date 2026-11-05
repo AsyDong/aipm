@@ -1,2 +1,7 @@
 export { FruitWorldScene } from './fruit-world';
-export { fruitWorldMetadata } from './metadata';
+export {
+  fruitWorldAssets,
+  fruitWorldBackground,
+  fruitWorldShelf,
+  fruitWorldMetadata,
+} from './metadata';

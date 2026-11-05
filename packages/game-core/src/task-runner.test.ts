@@ -45,6 +45,7 @@ function setup() {
     'ANSWER_INCORRECT',
     'REWARD_GRANTED',
     'HINT_REQUESTED',
+    'VOICE_FAILED',
   ] as const)
     bus.on(type, () => seen.push(type));
   const runner = new TaskRunner(
@@ -98,4 +99,25 @@ it('does not pay twice for repeated answers and restarts cleanly', () => {
   runner.next();
   expect(runner.finish(0).stars).toBe(4);
   expect(() => runner.start([])).toThrow();
+});
+
+it('treats an unreadable answer as neither wrong nor right: no attempt, no penalty, no hint unlocked', () => {
+  const { runner, seen } = setup();
+  runner.start(tasks);
+  runner.unrecognized('NO_SPEECH');
+  runner.unrecognized('LOW_CONFIDENCE');
+  expect(seen.filter((t) => t === 'VOICE_FAILED')).toHaveLength(2);
+  expect(seen).not.toContain('ANSWER_INCORRECT');
+  expect(runner.hint()).toBeUndefined(); // still zero attempts
+  const result = runner.submit('a');
+  expect(result).toMatchObject({ correct: true, attempts: 1 });
+});
+
+it('counts a spoken word outside the candidates as a wrong answer, not an exception', () => {
+  const { runner } = setup();
+  runner.start(tasks);
+  expect(runner.submit('not-a-candidate')).toMatchObject({
+    correct: false,
+    attempts: 1,
+  });
 });

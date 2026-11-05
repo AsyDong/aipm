@@ -2,7 +2,7 @@
 
 An English-only listening adventure for beginners. The long-term learning goal is 500 listening words; this is not a claim that the current preview teaches or assesses those words.
 
-Phase 3 delivers Listen & Find: five listening rounds, randomized picture choices, replay, hints, friendly retries, pause/resume, stars and a session summary. The default collection is Power Up 0, Unit 3, printed page 28: apple, banana, grapes, orange and watermelon. An explicitly independent woodland sampler demonstrates content and scene reuse.
+Phase 3.2 turns it into a small game world: a Fruit Island map with one level per unit, a monkey guide who talks in short English lines, a market scene where fruit drops onto a counter, and stars kept on the map (this device only). Listen & Find is the first level type: five listening rounds, randomized picture choices, replay, hints, friendly retries, pause/resume, stars and a session summary. The default collection is Power Up 0, Unit 3, printed page 28: apple, banana, grapes, orange and watermelon. An explicitly independent woodland sampler demonstrates content and scene reuse.
 
 ## Run
 
@@ -51,4 +51,4 @@ docs                      Architecture, decisions and phase reports
 
 See [Phase 3 report](docs/PHASE_3_REPORT.md) for verification, limitations and the child playtest checklist. Automated iPad WebKit checks do not replace physical iPad Safari testing. Session observations stay in memory and do not establish vocabulary mastery. ASR, pronunciation scoring, backend persistence and additional mechanics are outside this milestone.
 
-Word prompts are generated with Microsoft Edge TTS (`en-GB-SoniaNeural`, rate `-10%`) and served locally. Normal gameplay needs no speech-service credentials or live synthesis. To regenerate missing MP3s, install `edge-tts` in a Python environment and run `python scripts/generate-prompts.py`. Textbook files and original recordings remain external.
+The monkey guide speaks every line (child British voice via Edge TTS, files in `apps/web/public/audio/guide`). Hold phones and small tablets sideways; upright they show a notice. Artwork (island map, market and forest backdrops, fruit, monkey) was generated with Seedream (Volcengine) for this project; see `scripts/process-art.py` for how raw output becomes game assets. Third-party design references stay local and are not committed. Word prompts are generated with Microsoft Edge TTS (`en-GB-SoniaNeural`, rate `-10%`) and served locally. Normal gameplay needs no speech-service credentials or live synthesis. To regenerate missing MP3s, install `edge-tts` in a Python environment and run `python scripts/generate-prompts.py`. Textbook files and original recordings remain external.

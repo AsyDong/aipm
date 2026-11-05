@@ -1,0 +1,13 @@
+{
+  "HELLO": { "text": "Hello! I sell fruit. Can you help me?" },
+  "LISTEN": { "text": "Listen…" },
+  "ASK": { "text": "Which one is it?" },
+  "RIGHT": { "text": "Yes! It is {word}!", "say": "Yes! It is" },
+  "WRONG": { "text": "Hmm, not that one. Listen again!" },
+  "HINT": { "text": "Look at the gold circle!" },
+  "NOT_HEARD": { "text": "I did not hear that. Try again!" },
+  "AUDIO_ERROR": { "text": "Tap Listen to hear the word." },
+  "BREAK": { "text": "Take a break. I will wait." },
+  "DONE": { "text": "We did it! Great job!" },
+  "MAP": { "text": "Welcome to Fruit Island! Pick a place to play." }
+}

@@ -1,3 +1,6 @@
+/** Logical size of the game canvas; every scene and mechanic works in these units. */
+export const WORLD_WIDTH = 1280;
+export const WORLD_HEIGHT = 720;
 export type GameLifecycleState =
   | 'CREATED'
   | 'INITIALIZING'
@@ -157,6 +160,8 @@ export interface EventPayloadMap {
   ANSWER_CORRECT: { taskId: string; contentId: string; attempts: number };
   ANSWER_INCORRECT: { taskId: string; contentId: string; attempts: number };
   HINT_REQUESTED: { taskId: string; level: number };
+  /** The child's answer could not be read (e.g. no speech). Not a wrong answer: no attempt is counted. */
+  VOICE_FAILED: { taskId: string; reason: UnrecognizedReason };
   REWARD_GRANTED: {
     rewardType: RewardDefinition['type'];
     amount: number;
@@ -215,8 +220,13 @@ export interface IInputManager {
   subscribe(handler: (event: InputEvent) => void): () => void;
   dispatch(event: InputEvent): void;
 }
+/** 'playback' for prompts; 'play-and-record' while the microphone is open (iOS routes audio differently). */
+export type AudioSessionMode = 'playback' | 'play-and-record';
 export interface IAudioManager {
   play(key: string): Promise<void>;
+  /** Plays a short line over nothing else; resolves when it ends. Failures never throw. */
+  say(key: string): Promise<void>;
+  setSession(mode: AudioSessionMode): void;
   stopAll(): void;
   setVolume(value: number): void;
   destroy(): Promise<void>;
@@ -228,6 +238,8 @@ export interface SceneItem {
   image: string;
 }
 export interface ISceneObjects {
+  /** The scene says where its counter is: horizontal centre and the surface fruit stands on. */
+  setShelf(centerX: number, baseY: number): void;
   show(items: SceneItem[]): void;
   hitTest(x: number, y: number): SceneObject | undefined;
   findByContent(contentId: string): SceneObject | undefined;
@@ -240,6 +252,17 @@ export interface IContentResolver {
 /** Read-only view of the running task sequence for plugins. */
 export interface ITaskView {
   current(): LearningTask | undefined;
+}
+export type UnrecognizedReason = 'NO_SPEECH' | 'LOW_CONFIDENCE' | 'ERROR';
+/**
+ * The single way a mechanic reports what the child did. The runtime decides
+ * whether answers are open (e.g. after the prompt), so mechanics stay simple.
+ */
+export interface IAnswerPort {
+  /** False while a prompt is playing or the game is paused; submissions are then ignored. */
+  isOpen(): boolean;
+  submit(contentId: string, objectId?: string): void;
+  unrecognized(reason: UnrecognizedReason): void;
 }
 export interface IRuleEngine {
   initialize(config: RuleDefinition): void;
@@ -266,6 +289,7 @@ export interface GameContext {
   readonly audio: IAudioManager;
   readonly objects: ISceneObjects;
   readonly tasks: ITaskView;
+  readonly answers: IAnswerPort;
   readonly content: IContentResolver;
   readonly rules: IRuleEngine;
   readonly rewards: IRewardManager;
@@ -296,6 +320,8 @@ export interface PluginMetadata {
 export interface PluginRegistration {
   metadata: PluginMetadata;
   create(): IPlugin;
+  /** Files the plugin needs for this config; preloaded before the game can start. */
+  assets?(config: Record<string, unknown>): AssetReference[];
 }
 export interface EngineBaseContext {
   gameId: string;
@@ -320,14 +346,19 @@ export type GameCommand =
         | 'HINT'
         | 'NEXT';
     }
-  | { type: 'SET_VOLUME'; value: number };
+  | { type: 'SET_VOLUME'; value: number }
+  /** Speak a short guide line (an audio url the host owns). With wait, later commands queue until it ends. */
+  | { type: 'SAY'; url: string; wait?: boolean };
 export interface GameViewState {
   lifecycle: GameLifecycleState;
   round: number;
   total: number;
   stars: number;
-  feedback: 'LISTEN' | 'RETRY' | 'CORRECT' | 'HINT' | 'AUDIO_ERROR';
+  feedback:
+    'LISTEN' | 'RETRY' | 'CORRECT' | 'HINT' | 'AUDIO_ERROR' | 'NOT_HEARD';
   busy: boolean;
+  /** Only set once the task is solved, so the answer is never leaked earlier. */
+  word?: string;
   summary?: GameSummary;
 }
 export type GameMessage =

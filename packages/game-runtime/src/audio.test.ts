@@ -57,3 +57,19 @@ it('uses the iOS playback session and fails instead of hanging when playback nev
   await vi.advanceTimersByTimeAsync(10_000);
   expect(await result).toBe('Audio timed out');
 });
+
+it('switches the iOS audio session between playback and play-and-record', () => {
+  const session = { type: 'auto' };
+  vi.stubGlobal('navigator', { audioSession: session });
+  const audio = new AudioManager({} as unknown as AssetManager);
+  audio.setSession('play-and-record');
+  expect(session.type).toBe('play-and-record');
+  audio.setSession('playback');
+  expect(session.type).toBe('playback');
+});
+
+it('does not fail where audioSession is unsupported', () => {
+  vi.stubGlobal('navigator', {});
+  const audio = new AudioManager({} as unknown as AssetManager);
+  expect(() => audio.setSession('play-and-record')).not.toThrow();
+});

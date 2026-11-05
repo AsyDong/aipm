@@ -9,6 +9,7 @@ import type {
 import { EventBus } from './events';
 import { PluginManager } from './plugins';
 import { uuid } from './ids';
+import { GameFailure } from './errors';
 
 export class GameEngine implements IGameEngine {
   private lifecycle: GameLifecycleState = 'CREATED';
@@ -42,7 +43,12 @@ export class GameEngine implements IGameEngine {
     const work = async () => {
       try {
         const validation = this.manager.validate(definition);
-        if (!validation.valid) throw new Error(validation.errors.join('; '));
+        if (!validation.valid)
+          throw new GameFailure(
+            'CONFIG_INVALID',
+            'core',
+            validation.errors.join('; '),
+          );
         const readState = () => this.lifecycle;
         const base = {
           gameId: definition.id,

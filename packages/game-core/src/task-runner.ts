@@ -7,6 +7,7 @@ import type {
   IRuleEngine,
   ITaskView,
   LearningTask,
+  UnrecognizedReason,
 } from '@english/contracts';
 
 /**
@@ -83,6 +84,12 @@ export class TaskRunner implements ITaskView {
       );
     }
     return result;
+  }
+  /** The answer could not be read: tell listeners, count nothing, penalise nothing. */
+  unrecognized(reason: UnrecognizedReason) {
+    const task = this.current();
+    if (task)
+      this.bus.emit('VOICE_FAILED', { taskId: task.id, reason }, 'learning');
   }
   /** Returns the target content id to highlight, or undefined if no hint is allowed yet. */
   hint() {

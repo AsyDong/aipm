@@ -35,11 +35,13 @@ function setup() {
   let handler: (e: InputEvent) => void = () => {};
   const unsubscribe = vi.fn();
   const shown: SceneItem[][] = [];
+  const submit = vi.fn();
   const hit: { value?: SceneObject } = {};
   const context = {
     eventBus: bus,
     state: { lifecycle: 'RUNNING' },
     tasks: { current: () => task },
+    answers: { isOpen: () => true, submit, unrecognized: vi.fn() },
     input: {
       subscribe: (h: (e: InputEvent) => void) => {
         handler = h;
@@ -59,6 +61,7 @@ function setup() {
   return {
     bus,
     tap,
+    submit,
     handler: (e: InputEvent) => handler(e),
     unsubscribe,
     shown,
@@ -96,6 +99,7 @@ it('shows candidates without revealing the answer, and reports a selection witho
   };
   t.handler(tapAt);
   expect(t.selected).toHaveBeenCalledTimes(1);
+  expect(t.submit).toHaveBeenCalledWith('y', 't:1'); // reported, not judged
   expect(t.selected.mock.calls[0]?.[0].payload).toEqual({
     objectId: 't:1',
     contentId: 'y',
@@ -126,6 +130,7 @@ it('ignores taps that miss, swipes, and input while paused; unsubscribes on dest
   t.tap.resume();
   t.handler(tapAt);
   expect(t.selected).toHaveBeenCalledTimes(1);
+  expect(t.submit).toHaveBeenCalledTimes(1);
   t.tap.destroy();
   expect(t.unsubscribe).toHaveBeenCalledTimes(1);
   t.bus.emit('TASK_PRESENTED', {

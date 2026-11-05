@@ -3,7 +3,7 @@ import { validateAdventure } from './validate-adventure';
 import { definitionFor } from '../../../apps/web/src/content';
 
 it('rejects reserved options that the current adventure cannot execute', () => {
-  const definition = definitionFor('CURRICULUM');
+  const definition = definitionFor('powerup0-listen-find');
   expect(() => validateAdventure(definition)).not.toThrow();
   expect(() =>
     validateAdventure({

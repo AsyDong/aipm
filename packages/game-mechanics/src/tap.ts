@@ -63,7 +63,7 @@ export class TapMechanic implements IMechanicPlugin {
       'tap',
     );
     const object = context.objects.hitTest(event.x, event.y);
-    if (object)
+    if (object) {
       context.eventBus.emit(
         'OBJECT_SELECTED',
         {
@@ -73,6 +73,8 @@ export class TapMechanic implements IMechanicPlugin {
         },
         'tap',
       );
+      context.answers.submit(object.contentId, object.objectId);
+    }
   }
   destroy() {
     for (const off of this.offs.splice(0)) off();
