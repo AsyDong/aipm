@@ -8,7 +8,7 @@ export const fruitWorldMetadata: PluginMetadata = {
   apiVersion: '1.0.0',
   type: 'SCENE',
   requiredCapabilities: [],
-  capabilities: ['OBJECTS', 'ANIMATION', 'HIT_TEST'],
+  capabilities: ['OBJECTS', 'ANIMATION', 'HIT_TEST', 'SLICE'],
   configSchema: {
     type: 'object',
     additionalProperties: false,

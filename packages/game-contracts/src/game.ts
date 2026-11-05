@@ -259,6 +259,8 @@ export interface ISceneObjects {
   hitTest(x: number, y: number): SceneObject | undefined;
   findByContent(contentId: string): SceneObject | undefined;
   feedback(objectId: string, kind: 'CORRECT' | 'RETRY' | 'HINT'): void;
+  /** Optional capability: visually split an object without evaluating its content. */
+  slice?(objectId: string): void;
   clear(): void;
 }
 export interface IContentResolver {

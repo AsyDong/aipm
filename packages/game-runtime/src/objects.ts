@@ -5,6 +5,8 @@ interface Slot {
   model: SceneObject;
   container: Phaser.GameObjects.Container;
   plate: Phaser.GameObjects.Ellipse;
+  image: string;
+  cut: boolean;
 }
 
 /** Places fruit on the counter, animates feedback, and answers hit tests. */
@@ -43,7 +45,13 @@ export class PhaserObjects implements ISceneObjects {
         width: size + 20,
         height: size + 40,
       };
-      this.slots.push({ model, container, plate });
+      this.slots.push({
+        model,
+        container,
+        plate,
+        image: item.image,
+        cut: false,
+      });
       // Drop in with a bounce, then bob gently while waiting.
       this.scene.tweens.add({
         targets: container,
@@ -74,10 +82,41 @@ export class PhaserObjects implements ISceneObjects {
   findByContent(contentId: string) {
     return this.slots.find(({ model }) => model.contentId === contentId)?.model;
   }
+  slice(objectId: string) {
+    const slot = this.slots.find(({ model }) => model.objectId === objectId);
+    if (!slot || slot.cut) return;
+    slot.cut = true;
+    const { container, image } = slot;
+    this.scene.tweens.killTweensOf(container);
+    container.removeAll(true);
+    container.setScale(1).setAlpha(1);
+    const size = slot.model.width - 20;
+    const source = this.scene.textures.get(image).getSourceImage();
+    for (const side of [-1, 1]) {
+      const half = this.scene.add.image(0, 0, image).setDisplaySize(size, size);
+      half.setCrop(
+        side < 0 ? 0 : source.width / 2,
+        0,
+        source.width / 2,
+        source.height,
+      );
+      container.add(half);
+      this.scene.tweens.add({
+        targets: half,
+        x: side * 65,
+        y: 100,
+        angle: side * 35,
+        alpha: 0,
+        duration: 600,
+        ease: 'Cubic.easeIn',
+      });
+    }
+  }
   feedback(objectId: string, kind: 'CORRECT' | 'RETRY' | 'HINT') {
     const slot = this.slots.find(({ model }) => model.objectId === objectId);
     if (!slot) return;
     const { container, plate, model } = slot;
+    if (slot.cut && kind !== 'CORRECT') return;
     if (kind === 'HINT') {
       // A bright gold plate under the right fruit: kind and visible, never scolding.
       plate.setFillStyle(0xffd21f, 1);
@@ -129,6 +168,7 @@ export class PhaserObjects implements ISceneObjects {
   }
   clear() {
     for (const { container, plate } of this.slots) {
+      this.scene.tweens.killTweensOf(container.list);
       this.scene.tweens.killTweensOf(container);
       container.destroy(true);
       plate.destroy();
