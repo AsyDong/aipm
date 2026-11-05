@@ -232,6 +232,11 @@ test('an upright phone gets a "turn sideways" notice and the game pauses', async
     timeout: 15000,
   });
   await page.setViewportSize({ width: 390, height: 780 }); // turned upright mid-game
+  // Wait for the portrait event to be delivered before rotating back (WebKit coalesces resizes).
+  await expect(
+    page.getByText('Turn your phone sideways to play!'),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Break time' })).toBeVisible();
   await page.setViewportSize({ width: 780, height: 390 }); // and back
   await expect(page.getByRole('heading', { name: 'Break time' })).toBeVisible();
   // Everything fits in the sideways window once the canvas has re-fitted: nothing scrolls.

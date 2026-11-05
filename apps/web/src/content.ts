@@ -16,6 +16,13 @@ export const allContent = parseContents(contentData);
 const games: Record<string, GameDefinition> = {
   'powerup0-listen-find': curriculumGame as GameDefinition,
   'fruit-sampler': demoGame as GameDefinition,
+  'powerup0-voice-match': {
+    ...curriculumGame,
+    id: 'powerup0-voice-match',
+    name: 'Listen & Say',
+    mechanic: { id: 'voice-match', version: '1.0.0', config: {} },
+    input: { allowed: ['VOICE'] },
+  } as GameDefinition,
 };
 export function definitionFor(gameId: string): GameDefinition {
   const game = games[gameId];

@@ -25,6 +25,12 @@ import { InputManager } from './input';
 import { createMouseAdapter, createTouchAdapter } from './pointer-adapters';
 import { AudioManager } from './audio';
 import { validateAdventure } from './validate-adventure';
+import {
+  HttpSpeechRecognizer,
+  SpeechService,
+  VoiceRecorder,
+} from '@english/speech-core';
+import { VoiceCapture } from './voice-capture';
 
 /**
  * The guide's spoken lines, by the state they belong to. Optional: a missing
@@ -69,6 +75,20 @@ export function createAdventure(
     feedback: 'LISTEN',
     busy: true,
   };
+  const voice =
+    definition.mechanic.id === 'voice-match'
+      ? new VoiceCapture(
+          new VoiceRecorder(),
+          new SpeechService(new HttpSpeechRecognizer()),
+          input,
+          audio,
+          (value) => {
+            state.voice = value;
+            publish();
+          },
+        )
+      : undefined;
+  if (voice) state.voice = { status: 'IDLE' };
   function publish() {
     if (disposed) return;
     state.lifecycle = engine?.getState() ?? state.lifecycle;
@@ -95,6 +115,7 @@ export function createAdventure(
     const task = runner?.current();
     if (!task || disposed || !context || engine?.getState() !== 'RUNNING')
       return;
+    voice?.cancel();
     const token = ++revision;
     const generation = epoch;
     sayChain++;
@@ -301,6 +322,7 @@ export function createAdventure(
         return {
           context,
           dispose: () => {
+            voice?.cancel();
             input.disable();
             audio.stopAll();
             objects.clear();
@@ -333,6 +355,7 @@ export function createAdventure(
         if (engine.getState() !== 'RUNNING') return;
         revision++;
         sayChain++;
+        voice?.cancel();
         audio.stopAll();
         input.disable();
         state.busy = false;
@@ -357,6 +380,7 @@ export function createAdventure(
         break;
       case 'HINT': {
         if (!context || locked || engine.getState() !== 'RUNNING') return;
+        voice?.cancel();
         const target = runner?.hint();
         if (!target) return;
         const object = context.objects.findByContent(target);
@@ -370,6 +394,7 @@ export function createAdventure(
         epoch++;
         revision++;
         sayChain++;
+        voice?.cancel();
         audio.stopAll();
         locked = true;
         await engine.restart();
@@ -378,6 +403,17 @@ export function createAdventure(
         break;
       case 'SET_VOLUME':
         audio.setVolume(command.value);
+        break;
+      case 'VOICE_START': {
+        const task = runner?.current();
+        if (voice && task && context && answers.isOpen()) {
+          sayChain++;
+          voice.start({ taskId: task.id, sessionId: context.sessionId });
+        }
+        break;
+      }
+      case 'VOICE_STOP':
+        voice?.stop();
         break;
       case 'SAY':
         // Same-origin urls only; AssetManager enforces that on load.
@@ -407,6 +443,7 @@ export function createAdventure(
   function destroy() {
     if (disposed) return;
     disposed = true;
+    voice?.cancel();
     epoch++;
     revision++;
     subscribers.clear();

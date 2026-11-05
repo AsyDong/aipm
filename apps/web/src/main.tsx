@@ -128,6 +128,32 @@ function Level({
   const paused = state.lifecycle === 'PAUSED';
   const completed = state.lifecycle === 'COMPLETED';
   const correct = state.feedback === 'CORRECT';
+  const voiceBusy = !!state.voice && state.voice.status !== 'IDLE';
+  const voiceMessages = {
+    NO_SPEECH: 'I did not hear a word. Tap Record to try again.',
+    LOW_CONFIDENCE: 'Let’s try that word again. Tap Record.',
+    TIMEOUT: 'That took too long. Tap Record to try again.',
+    PERMISSION_DENIED:
+      'Ask a grown-up to allow the microphone, then try again.',
+    UNSUPPORTED:
+      'The microphone is not available here. Ask a grown-up for help.',
+    ERROR: 'I could not hear you this time. Tap Record to try again.',
+  };
+  const voiceLine =
+    state.voice?.status === 'REQUESTING'
+      ? 'Allow the microphone to say the word.'
+      : state.voice?.status === 'RECORDING'
+        ? 'Say the word! Tap Done when you finish.'
+        : state.voice?.status === 'RECOGNIZING'
+          ? 'Let me listen…'
+          : state.voice?.failure
+            ? voiceMessages[state.voice.failure]
+            : state.voice &&
+                !state.busy &&
+                !correct &&
+                state.feedback === 'LISTEN'
+              ? 'Tap Record and say the word!'
+              : undefined;
   const portrait = usePortraitPhone();
   // Turning the phone upright pauses the game instead of hiding it behind a notice.
   useEffect(() => {
@@ -190,9 +216,17 @@ function Level({
           className="canvas-host"
           ref={host}
           data-testid="game-host"
-          aria-label="Fruit on the counter. Listen, then tap one."
+          aria-label={
+            state.voice
+              ? 'Fruit on the counter. Listen, then record your voice.'
+              : 'Fruit on the counter. Listen, then tap one.'
+          }
         />
-        <Guide>{guideText(guideKey(state, !!error), state.word)}</Guide>
+        <Guide>
+          {active && voiceLine
+            ? voiceLine
+            : guideText(guideKey(state, !!error), state.word)}
+        </Guide>
         {(ready ||
           paused ||
           completed ||
@@ -257,7 +291,11 @@ function Level({
             ) : ready ? (
               <>
                 <h2>{level.title}</h2>
-                <p>Listen to the word. Tap the fruit.</p>
+                <p>
+                  {state.voice
+                    ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
+                    : 'Listen to the word. Tap the fruit.'}
+                </p>
                 <button
                   className="big-btn"
                   onClick={() => {
@@ -293,11 +331,31 @@ function Level({
             </button>
             <button
               className="big-btn alt"
-              disabled={state.busy || correct}
+              disabled={state.busy || correct || voiceBusy}
               onClick={() => send({ type: 'HINT' })}
             >
               <BulbIcon /> Hint
             </button>
+            {state.voice && !correct && (
+              <button
+                className="big-btn"
+                disabled={
+                  state.busy ||
+                  state.voice.status === 'REQUESTING' ||
+                  state.voice.status === 'RECOGNIZING'
+                }
+                onClick={() =>
+                  send({
+                    type:
+                      state.voice?.status === 'RECORDING'
+                        ? 'VOICE_STOP'
+                        : 'VOICE_START',
+                  })
+                }
+              >
+                {state.voice.status === 'RECORDING' ? 'Done' : 'Record'}
+              </button>
+            )}
             {correct ? (
               <button
                 className="big-btn nudge"
@@ -308,7 +366,7 @@ function Level({
             ) : (
               <button
                 className="big-btn"
-                disabled={state.busy}
+                disabled={state.busy || voiceBusy}
                 onClick={() => send({ type: 'REPLAY' })}
               >
                 <SpeakerIcon /> Listen

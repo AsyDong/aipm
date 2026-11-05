@@ -18,6 +18,14 @@
       "y": 50
     },
     {
+      "id": "voice-market",
+      "title": "Talking Market",
+      "subtitle": "Listen & Say",
+      "game": "powerup0-voice-match",
+      "x": 31,
+      "y": 84
+    },
+    {
       "id": "lighthouse",
       "title": "Lighthouse",
       "locked": true,

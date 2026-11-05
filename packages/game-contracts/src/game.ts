@@ -106,7 +106,17 @@ export interface SwipeInputEvent {
   points: { x: number; y: number; timestamp: number }[];
   timestamp: number;
 }
-export type InputEvent = TapInputEvent | SwipeInputEvent;
+export interface VoiceInputEvent {
+  type: 'VOICE';
+  source: 'VOICE';
+  taskId: string;
+  sessionId: string;
+  text?: string;
+  confidence?: number;
+  failure?: UnrecognizedReason;
+  timestamp: number;
+}
+export type InputEvent = TapInputEvent | SwipeInputEvent | VoiceInputEvent;
 /** Turns one raw device API into standard InputEvents; owned by InputManager. */
 export interface IInputAdapter {
   readonly sources: InputSource[];
@@ -253,7 +263,13 @@ export interface IContentResolver {
 export interface ITaskView {
   current(): LearningTask | undefined;
 }
-export type UnrecognizedReason = 'NO_SPEECH' | 'LOW_CONFIDENCE' | 'ERROR';
+export type UnrecognizedReason =
+  | 'NO_SPEECH'
+  | 'LOW_CONFIDENCE'
+  | 'TIMEOUT'
+  | 'PERMISSION_DENIED'
+  | 'UNSUPPORTED'
+  | 'ERROR';
 /**
  * The single way a mechanic reports what the child did. The runtime decides
  * whether answers are open (e.g. after the prompt), so mechanics stay simple.
@@ -344,7 +360,9 @@ export type GameCommand =
         | 'DESTROY'
         | 'REPLAY'
         | 'HINT'
-        | 'NEXT';
+        | 'NEXT'
+        | 'VOICE_START'
+        | 'VOICE_STOP';
     }
   | { type: 'SET_VOLUME'; value: number }
   /** Speak a short guide line (an audio url the host owns). With wait, later commands queue until it ends. */
@@ -357,6 +375,10 @@ export interface GameViewState {
   feedback:
     'LISTEN' | 'RETRY' | 'CORRECT' | 'HINT' | 'AUDIO_ERROR' | 'NOT_HEARD';
   busy: boolean;
+  voice?: {
+    status: 'IDLE' | 'REQUESTING' | 'RECORDING' | 'RECOGNIZING';
+    failure?: UnrecognizedReason;
+  };
   /** Only set once the task is solved, so the answer is never leaked earlier. */
   word?: string;
   summary?: GameSummary;

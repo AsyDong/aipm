@@ -1,6 +1,8 @@
 # Architecture
 
-Current milestone: Phase 3 playable Listen & Find. Phase 0 and 1 froze the foundation before scene and mechanic implementation; autonomous checkpoints end with human review at Phase 3.
+Current milestone: Phase 4 Speech Core and Voice Match, authorized after Phase 3.2. Phase 4 sections have independent verified commits; stop before Phase 5. Phase 0 and 1 froze the foundation before scene and mechanic implementation.
+
+Phase 4: Record/Done commands travel through the bridge to runtime-owned VoiceCapture. VoiceRecorder negotiates browser encoding and releases microphone tracks; SpeechService bounds the independently injected ASR adapter. HttpSpeechRecognizer uploads only encoded audio and language to a same-origin backend (not implemented here). The runtime dispatches a task/session-scoped VOICE fact through InputManager; the locally registered VoiceMatch mechanic maps text to a content ID and reports through IAnswerPort. Pause/replay/restart/disposal cancel capture and discard stale results. Audio session routing returns to playback before feedback. TTS remains independent and generated prompts remain compatible. See SPEECH_PROVIDER.md for the deployment boundary.
 
 v3.2: the host shows a world map (apps/web/src/data/world.json, one pin per level, each pin names a game JSON). The monkey guide speaks through GameViewState (feedback, word) so React never reads task data early; the scene gives its counter position to the object layer (setShelf). Mechanics report answers only through IAnswerPort (submit / unrecognized); the runtime decides when answers are open, so a spoken "not heard" is never counted as wrong. The runtime picks plugins from a local catalog by id (plugin-catalog.ts) and preloads each plugin's own assets before the game can start. Audio session mode (playback vs play-and-record) is switchable for the microphone phase.
 

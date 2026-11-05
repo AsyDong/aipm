@@ -8,6 +8,17 @@ import type {
 const finite = (value: number) => Number.isFinite(value);
 
 function valid(event: InputEvent) {
+  if (event.type === 'VOICE')
+    return (
+      event.source === 'VOICE' &&
+      !!event.taskId &&
+      !!event.sessionId &&
+      (event.failure !== undefined || typeof event.text === 'string') &&
+      (event.confidence === undefined ||
+        (finite(event.confidence) &&
+          event.confidence >= 0 &&
+          event.confidence <= 1))
+    );
   if (event.type === 'TAP') return finite(event.x) && finite(event.y);
   return (
     event.points.length > 0 &&

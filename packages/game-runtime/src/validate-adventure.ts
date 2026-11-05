@@ -12,14 +12,16 @@ export function validateAdventure(definition: GameDefinition) {
     );
   if (definition.reward.type !== 'STAR')
     throw new Error('This adventure supports star rewards only');
+  const voice = definition.mechanic.id === 'voice-match';
   if (
-    definition.input.allowed.some(
-      (source) => source !== 'TOUCH' && source !== 'MOUSE',
+    definition.input.allowed.some((source) =>
+      voice ? source !== 'VOICE' : source !== 'TOUCH' && source !== 'MOUSE',
     ) ||
+    (voice && !definition.input.allowed.includes('VOICE')) ||
     definition.input.settings
   )
     throw new Error(
-      'This adventure supports mouse and touch input without device settings',
+      'This adventure requires matching mechanic input without device settings',
     );
   if ((definition.rules.hintPolicy?.hintLevel ?? 1) !== 1)
     throw new Error('This adventure supports hint level 1 only');

@@ -30,7 +30,9 @@ export class VoiceRecorder implements IVoiceRecorder {
       throw new SpeechFailure('UNSUPPORTED');
     const session = new AbortController();
     this.session = session;
-    const cancel = () => this.cancel();
+    const cancel = () => {
+      if (this.session === session) this.cancel();
+    };
     signal.addEventListener('abort', cancel, { once: true });
     this.cleanup = () => signal.removeEventListener('abort', cancel);
     if (signal.aborted) this.cancel();
@@ -66,11 +68,12 @@ export class VoiceRecorder implements IVoiceRecorder {
       }
       const previousCleanup = this.cleanup;
       const timer: { id?: ReturnType<typeof setTimeout> } = {};
-      this.cleanup = () => {
+      const cleanup = () => {
         clearTimeout(timer.id);
         stream.getTracks().forEach((track) => track.stop());
         previousCleanup();
       };
+      this.cleanup = cleanup;
       const mimeType = FORMATS.find((format) =>
         MediaRecorder.isTypeSupported(format),
       );
@@ -88,10 +91,10 @@ export class VoiceRecorder implements IVoiceRecorder {
         };
         recorder.onerror = () => {
           reject(new SpeechFailure('SERVICE_ERROR'));
-          this.cancel();
+          if (this.session === session) this.cancel();
         };
         recorder.onstop = () => {
-          this.cleanup();
+          cleanup();
           if (session.signal.aborted) return;
           const blob = new Blob(chunks, { type: recorder.mimeType });
           chunks.length = 0;
@@ -106,7 +109,7 @@ export class VoiceRecorder implements IVoiceRecorder {
         if (recorder.state !== 'inactive') recorder.stop();
       }, this.maxDurationMs);
     } catch (error) {
-      this.cancel();
+      if (this.session === session) this.cancel();
       throw error instanceof SpeechFailure
         ? error
         : new SpeechFailure('SERVICE_ERROR');
@@ -116,11 +119,12 @@ export class VoiceRecorder implements IVoiceRecorder {
   async stop() {
     if (!this.result || !this.recorder) throw new SpeechFailure('NO_SPEECH');
     const result = this.result;
+    const session = this.session!;
     if (this.recorder.state !== 'inactive') this.recorder.stop();
     try {
-      return await result;
+      return await speechOperation(session.signal, 2000, () => result);
     } finally {
-      this.cancel();
+      if (this.session === session) this.cancel();
     }
   }
 

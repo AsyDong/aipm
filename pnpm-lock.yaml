@@ -107,6 +107,9 @@ importers:
       '@english/learning-core':
         specifier: workspace:*
         version: link:../learning-core
+      '@english/speech-core':
+        specifier: workspace:*
+        version: link:../speech-core
       phaser:
         specifier: ^3.90.0
         version: 3.90.0
@@ -126,7 +129,11 @@ importers:
         specifier: workspace:*
         version: link:../game-contracts
 
-  packages/speech-core: {}
+  packages/speech-core:
+    dependencies:
+      '@english/contracts':
+        specifier: workspace:*
+        version: link:../game-contracts
 
 packages:
 

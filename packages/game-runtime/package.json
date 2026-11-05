@@ -5,6 +5,7 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@english/speech-core": "workspace:*",
     "@english/game-core": "workspace:*",
     "@english/game-mechanics": "workspace:*",
     "@english/learning-core": "workspace:*",
