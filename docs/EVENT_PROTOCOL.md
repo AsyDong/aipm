@@ -1,5 +1,7 @@
 # Event protocol
 
+v3.1: TaskRunner (game-core) now emits TASK_PRESENTED, ANSWER_SUBMITTED, ANSWER_CORRECT/INCORRECT, REWARD_GRANTED and HINT_REQUESTED; Tap emits INPUT_RECEIVED and OBJECT_SELECTED; runtime emits AUDIO_PLAYED and GAME_REWARD_SUMMARY. InputEvent is a TAP | SWIPE union produced only by input adapters.
+
 Phase 3 implements the typed EventPayloadMap from game-contracts. Runtime presents TASK_PRESENTED with task/content/curriculum/unit ownership, then emits AUDIO_PLAYED only after successful playback. Input passes through InputManager; Tap emits OBJECT_SELECTED with object/content/task IDs. Runtime emits ANSWER_SUBMITTED, evaluates via RuleEngine and emits ANSWER_CORRECT or ANSWER_INCORRECT. Correct answers grant one REWARD_GRANTED per task; explicit Next/Finish advances and ultimately emits GAME_COMPLETED and GAME_REWARD_SUMMARY. HINT_REQUESTED records the task and hint level. Replay is identified by AUDIO_PLAYED.audioType.
 
 The gameplay bridge accepts START, PAUSE, RESUME, RESTART, DESTROY, REPLAY, HINT, NEXT and SET_VOLUME. It returns STATE_CHANGED with GameViewState or ERROR. Its exact shape is defined in game-contracts/src/game.ts; the original bootstrap bridge remains separately available for compatibility. View state does not expose the target answer. Events and session summaries are not persisted in Phase 3.

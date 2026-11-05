@@ -1,0 +1,119 @@
+[
+  {
+    "id": "powerup0-unit3-apple",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "apple",
+    "assets": {
+      "image": "/images/apple.svg",
+      "audio": "/audio/apple.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 1",
+      "page": "28"
+    }
+  },
+  {
+    "id": "powerup0-unit3-banana",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "banana",
+    "assets": {
+      "image": "/images/banana.svg",
+      "audio": "/audio/banana.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 1",
+      "page": "28"
+    }
+  },
+  {
+    "id": "powerup0-unit3-grapes",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "grapes",
+    "assets": {
+      "image": "/images/grapes.svg",
+      "audio": "/audio/grapes.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 1",
+      "page": "28"
+    }
+  },
+  {
+    "id": "powerup0-unit3-orange",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "orange",
+    "assets": {
+      "image": "/images/orange.svg",
+      "audio": "/audio/orange.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 1",
+      "page": "28"
+    }
+  },
+  {
+    "id": "powerup0-unit3-watermelon",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "watermelon",
+    "assets": {
+      "image": "/images/watermelon.svg",
+      "audio": "/audio/watermelon.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 1",
+      "page": "28"
+    }
+  },
+  {
+    "id": "demo-pear",
+    "curriculumId": "demo",
+    "unitId": "fruit-sampler",
+    "text": "pear",
+    "assets": {
+      "image": "/images/pear.svg",
+      "audio": "/audio/pear.mp3"
+    },
+    "source": {
+      "kind": "DEMO",
+      "reference": "Independent content-reuse fixture, not official textbook content"
+    }
+  },
+  {
+    "id": "demo-apple",
+    "curriculumId": "demo",
+    "unitId": "fruit-sampler",
+    "text": "apple",
+    "assets": {
+      "image": "/images/apple.svg",
+      "audio": "/audio/apple.mp3"
+    },
+    "source": {
+      "kind": "DEMO",
+      "reference": "Independent content-reuse fixture, not official textbook content"
+    }
+  },
+  {
+    "id": "demo-orange",
+    "curriculumId": "demo",
+    "unitId": "fruit-sampler",
+    "text": "orange",
+    "assets": {
+      "image": "/images/orange.svg",
+      "audio": "/audio/orange.mp3"
+    },
+    "source": {
+      "kind": "DEMO",
+      "reference": "Independent content-reuse fixture, not official textbook content"
+    }
+  }
+]

@@ -1,9 +1,5 @@
 import Phaser from 'phaser';
-import type {
-  ISceneObjects,
-  LearningTask,
-  SceneObject,
-} from '@english/contracts';
+import type { ISceneObjects, SceneItem, SceneObject } from '@english/contracts';
 
 export class PhaserObjects implements ISceneObjects {
   private objects: {
@@ -12,14 +8,14 @@ export class PhaserObjects implements ISceneObjects {
     frame: Phaser.GameObjects.Rectangle;
   }[] = [];
   constructor(private scene: Phaser.Scene) {}
-  show(task: LearningTask) {
+  show(items: SceneItem[]) {
     this.clear();
-    const count = task.candidates.length;
+    const count = items.length;
     const width = count <= 3 ? 220 : 180;
     const gap = count <= 3 ? 34 : 24;
     const cols = Math.min(count, 3);
     const rows = Math.ceil(count / cols);
-    task.candidates.forEach((content, index) => {
+    items.forEach((item, index) => {
       const row = Math.floor(index / cols);
       const columns = Math.min(cols, count - row * cols);
       const x = 480 + ((index % cols) - (columns - 1) / 2) * (width + gap);
@@ -27,7 +23,7 @@ export class PhaserObjects implements ISceneObjects {
       const frame = this.scene.add
         .rectangle(0, 0, width, 190, 0xfbf5e7)
         .setStrokeStyle(2, 0xd4d6ba);
-      const image = this.scene.add.image(0, -8, content.assets.image);
+      const image = this.scene.add.image(0, -8, item.image);
       image.setDisplaySize(140, 140);
       const marker = this.scene.add
         .text(0, 77, '●', {
@@ -38,8 +34,8 @@ export class PhaserObjects implements ISceneObjects {
         .setOrigin(0.5);
       const container = this.scene.add.container(x, y, [frame, image, marker]);
       const model = {
-        objectId: `${task.id}:${index}`,
-        contentId: content.id,
+        objectId: item.objectId,
+        contentId: item.contentId,
         x,
         y,
         width,
@@ -98,7 +94,7 @@ export class PhaserObjects implements ISceneObjects {
       }
     }
   }
-  findContent(contentId: string) {
+  findByContent(contentId: string) {
     return this.objects.find((object) => object.model.contentId === contentId)
       ?.model;
   }

@@ -1,1 +1,2 @@
-export { FruitWorldScene, fruitWorldMetadata } from './fruit-world';
+export { FruitWorldScene } from './fruit-world';
+export { fruitWorldMetadata } from './metadata';

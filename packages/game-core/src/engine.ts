@@ -8,6 +8,7 @@ import type {
 } from '@english/contracts';
 import { EventBus } from './events';
 import { PluginManager } from './plugins';
+import { uuid } from './ids';
 
 export class GameEngine implements IGameEngine {
   private lifecycle: GameLifecycleState = 'CREATED';
@@ -45,7 +46,7 @@ export class GameEngine implements IGameEngine {
         const readState = () => this.lifecycle;
         const base = {
           gameId: definition.id,
-          sessionId: crypto.randomUUID(),
+          sessionId: uuid(),
           definition,
           eventBus: new EventBus(definition.id, ''),
           state: {

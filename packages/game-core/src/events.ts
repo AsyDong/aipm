@@ -4,6 +4,7 @@ import type {
   GameEventType,
   IEventBus,
 } from '@english/contracts';
+import { uuid } from './ids';
 
 export class EventBus implements IEventBus {
   private listeners = new Map<GameEventType, Set<(event: GameEvent) => void>>();
@@ -37,7 +38,7 @@ export class EventBus implements IEventBus {
     source = 'core',
   ) {
     const event: GameEvent<K> = {
-      eventId: crypto.randomUUID(),
+      eventId: uuid(),
       type,
       gameId: this.gameId,
       sessionId: this.sessionId,

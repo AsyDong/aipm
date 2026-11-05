@@ -1,6 +1,8 @@
 # Game configuration schema
 
-Phase 3 executes GameDefinition through the adventure runtime. apps/web/src/content.ts provides the current definitions and explicit content provenance. Candidate count defaults to 3; targets support sequential or random progression and candidate positions are shuffled each round. The runtime requires at least two resolved content items.
+v3.1: levels and vocabulary are JSON files (apps/web/src/data/*.json), validated at load (parseContents) and by the schema before a game starts. The mechanic config schema is packages/game-mechanics/src/tap.schema.json. Adding a word or level needs no TypeScript change.
+
+Phase 3 executes GameDefinition through the adventure runtime. Candidate count defaults to 3; targets support sequential or random progression and candidate positions are shuffled each round. The runtime requires at least two resolved content items.
 
 The general schema reserves later features. validateAdventure explicitly rejects limited/no retries, time limits, non-STAR rewards, voice/camera input, device settings and hint levels other than 1. Current support is unlimited gentle retries, mouse/touch, level-1 hints and star rewards. Unsupported options fail rather than silently changing behavior. Root/plugin schemas, exact versions, capabilities, content ownership and required assets are checked before the Start control appears.
 

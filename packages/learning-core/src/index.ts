@@ -1,1 +1,6 @@
-export { ContentResolver, createTasks, shuffle } from './content';
+export {
+  ContentResolver,
+  createTasks,
+  parseContents,
+  shuffle,
+} from './content';

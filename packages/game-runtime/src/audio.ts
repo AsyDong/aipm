@@ -21,6 +21,11 @@ export class AudioManager implements IAudioManager {
       this.fallback ??= new Audio();
       return;
     }
+    // iOS 16.4+: without this, the ringer switch silences Web Audio entirely.
+    const session = (
+      navigator as Navigator & { audioSession?: { type: string } }
+    ).audioSession;
+    if (session) session.type = 'playback';
     this.context ??= new AudioContext();
     if (!this.gain) {
       this.gain = this.context.createGain();
@@ -112,16 +117,33 @@ export class AudioManager implements IAudioManager {
     source.buffer = decoded;
     source.connect(this.gain!);
     this.source = source;
-    await new Promise<void>((resolve) => {
-      const finish = () => {
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timer);
         source.onended = null;
         source.disconnect();
         if (this.source === source) {
           this.source = undefined;
           this.cancel = undefined;
         }
+      };
+      const finish = () => {
+        cleanup();
         resolve();
       };
+      // A suspended/interrupted context never fires onended; fail so Listen can retry.
+      const timer = setTimeout(
+        () => {
+          try {
+            source.stop();
+          } catch {
+            /* already stopped */
+          }
+          cleanup();
+          reject(new Error('Audio timed out'));
+        },
+        decoded.duration * 1000 + 3000,
+      );
       this.cancel = finish;
       source.onended = finish;
       source.start();

@@ -41,13 +41,13 @@ export function createFruitPreview(
         scene,
       );
       if (disposed) return;
-      objects.show({
-        id: 'preview',
-        curriculumId: 'demo',
-        unitId: 'fruit',
-        target: candidates[0]!,
-        candidates,
-      });
+      objects.show(
+        candidates.map((content, index) => ({
+          objectId: `preview:${index}`,
+          contentId: content.id,
+          image: content.assets.image,
+        })),
+      );
       off = port.onCommand((command) => {
         if (command.type === 'PAUSE') scenePlugin?.pause();
         else scenePlugin?.resume();

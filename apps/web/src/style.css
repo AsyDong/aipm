@@ -259,7 +259,7 @@ canvas {
   background: #719865;
 }
 button {
-  min-height: 46px;
+  min-height: 48px;
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 10px 20px;
@@ -498,8 +498,17 @@ footer p {
     display: none;
   }
 }
+.nudge {
+  animation: nudge 1.6s ease-in-out infinite;
+}
+@keyframes nudge {
+  50% {
+    box-shadow: 0 0 0 6px #e8c77e55;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .loading-orbit {
+  .loading-orbit,
+  .nudge {
     animation: none;
   }
 }

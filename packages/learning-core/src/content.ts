@@ -59,11 +59,37 @@ export function createTasks(
       random,
     ).slice(0, optionCount - 1);
     return {
-      id: crypto.randomUUID(),
+      // Unique within a session; deterministic ids keep tests and replays reproducible.
+      id: `task-${index + 1}:${target.id}`,
       curriculumId: target.curriculumId,
       unitId: target.unitId,
       target,
       candidates: shuffle([target, ...distractors], random),
     };
+  });
+}
+
+type Dict = Record<string, unknown>;
+const isDict = (value: unknown): value is Dict =>
+  typeof value === 'object' && value !== null;
+const text = (value: unknown) => typeof value === 'string' && value.length > 0;
+
+/** Validates untrusted content data (e.g. a JSON file) before it reaches the game. */
+export function parseContents(raw: unknown): LearningContent[] {
+  if (!Array.isArray(raw)) throw new Error('Content must be an array');
+  return raw.map((item: unknown, i) => {
+    const assets = isDict(item) ? item.assets : undefined;
+    const source = isDict(item) ? item.source : undefined;
+    const ok =
+      isDict(item) &&
+      [item.id, item.curriculumId, item.unitId, item.text].every(text) &&
+      isDict(assets) &&
+      text(assets.image) &&
+      text(assets.audio) &&
+      isDict(source) &&
+      text(source.reference) &&
+      (source.kind === 'CURRICULUM' || source.kind === 'DEMO');
+    if (!ok) throw new Error(`Invalid content entry #${i}`);
+    return item as unknown as LearningContent;
   });
 }

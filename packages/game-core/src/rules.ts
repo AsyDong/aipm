@@ -34,11 +34,16 @@ export class RuleEngine implements IRuleEngine {
       correct,
       attempts: this.attempts,
       completed: correct,
-      hintAvailable: Boolean(
-        this.config.hintPolicy?.enabled &&
-        this.attempts >= (this.config.hintPolicy.afterAttempts ?? 1),
-      ),
+      hintAvailable: this.canHint(),
     };
+  }
+  canHint() {
+    const policy = this.config.hintPolicy;
+    return Boolean(
+      policy?.enabled &&
+      !this.solved &&
+      this.attempts >= (policy.afterAttempts ?? 1),
+    );
   }
   nextRound() {
     if (!this.solved) throw new Error('Task not complete');

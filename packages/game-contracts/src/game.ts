@@ -89,12 +89,26 @@ export interface SceneObject {
   width: number;
   height: number;
 }
-export interface InputEvent {
+export interface TapInputEvent {
   type: 'TAP';
   source: InputSource;
   x: number;
   y: number;
   timestamp: number;
+}
+/** Reserved for Slice: points are in game-world coordinates, never DOM events. */
+export interface SwipeInputEvent {
+  type: 'SWIPE';
+  source: InputSource;
+  points: { x: number; y: number; timestamp: number }[];
+  timestamp: number;
+}
+export type InputEvent = TapInputEvent | SwipeInputEvent;
+/** Turns one raw device API into standard InputEvents; owned by InputManager. */
+export interface IInputAdapter {
+  readonly sources: InputSource[];
+  start(emit: (event: InputEvent) => void): void;
+  stop(): void;
 }
 export interface PlayerAnswer {
   taskId: string;
@@ -194,6 +208,8 @@ export interface IAssetManager {
   clearUnused(): Promise<void>;
 }
 export interface IInputManager {
+  /** Starts the adapter; returns a function that stops and removes it. */
+  registerAdapter(adapter: IInputAdapter): () => void;
   enable(sources: InputSource[]): void;
   disable(): void;
   subscribe(handler: (event: InputEvent) => void): () => void;
@@ -205,19 +221,31 @@ export interface IAudioManager {
   setVolume(value: number): void;
   destroy(): Promise<void>;
 }
+/** What a scene needs to draw one object. It never learns which item is the answer. */
+export interface SceneItem {
+  objectId: string;
+  contentId: string;
+  image: string;
+}
 export interface ISceneObjects {
-  show(task: LearningTask): void;
+  show(items: SceneItem[]): void;
   hitTest(x: number, y: number): SceneObject | undefined;
+  findByContent(contentId: string): SceneObject | undefined;
   feedback(objectId: string, kind: 'CORRECT' | 'RETRY' | 'HINT'): void;
   clear(): void;
 }
 export interface IContentResolver {
   resolve(definition: ContentDefinition): Promise<LearningContent[]>;
 }
+/** Read-only view of the running task sequence for plugins. */
+export interface ITaskView {
+  current(): LearningTask | undefined;
+}
 export interface IRuleEngine {
   initialize(config: RuleDefinition): void;
   setTask(task: LearningTask): void;
   evaluate(answer: PlayerAnswer): EvaluationResult;
+  canHint(): boolean;
   nextRound(): void;
   isCompleted(): boolean;
   reset(): void;
@@ -237,6 +265,7 @@ export interface GameContext {
   readonly assets: IAssetManager;
   readonly audio: IAudioManager;
   readonly objects: ISceneObjects;
+  readonly tasks: ITaskView;
   readonly content: IContentResolver;
   readonly rules: IRuleEngine;
   readonly rewards: IRewardManager;

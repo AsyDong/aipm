@@ -70,7 +70,7 @@ function GameContainer({ mode }: { mode: 'CURRICULUM' | 'DEMO' }) {
   const feedback = paused
     ? 'Take your time.'
     : ready
-      ? 'Ready for a little discovery?'
+      ? 'Ready? Tap Let’s play.'
       : state.feedback === 'AUDIO_ERROR'
         ? 'Tap Listen to hear the word.'
         : correct
@@ -78,7 +78,7 @@ function GameContainer({ mode }: { mode: 'CURRICULUM' | 'DEMO' }) {
           : state.feedback === 'RETRY'
             ? 'Listen again. Have another go.'
             : state.feedback === 'HINT'
-              ? 'Follow the golden glow.'
+              ? 'Tap the picture with the gold border.'
               : state.busy
                 ? 'Listen closely…'
                 : 'Find what you hear.';
@@ -133,9 +133,9 @@ function GameContainer({ mode }: { mode: 'CURRICULUM' | 'DEMO' }) {
             ) : completed ? (
               <>
                 <span className="overlay-symbol">✦</span>
-                <p className="eyebrow">ADVENTURE COMPLETE</p>
+                <p className="eyebrow">ALL DONE</p>
                 <h2>Great listening.</h2>
-                <p>Five little discoveries. A world to explore.</p>
+                <p>You found {state.total} fruits.</p>
                 <div
                   className="result-stars"
                   aria-label={`${state.stars} stars earned`}
@@ -170,24 +170,24 @@ function GameContainer({ mode }: { mode: 'CURRICULUM' | 'DEMO' }) {
                   <SpeakerIcon />
                 </span>
                 <p className="eyebrow">LISTEN & FIND</p>
-                <h2>Follow your ears.</h2>
-                <p>Listen. Find the fruit. Tap to choose.</p>
+                <h2>Listen, then tap.</h2>
+                <p>Hear the word. Find the fruit. Tap it.</p>
                 <div className="how-to" aria-hidden="true">
                   <span>① Listen</span>
-                  <span>② Find</span>
-                  <span>③ Discover</span>
+                  <span>② Tap the fruit</span>
+                  <span>③ Get a star</span>
                 </div>
                 <button
                   className="primary"
                   onClick={() => bridge.current?.send({ type: 'START' })}
                 >
-                  Let’s explore <span>→</span>
+                  Let’s play <span>→</span>
                 </button>
               </>
             ) : (
               <>
                 <span className="loading-orbit" />
-                <p>Getting your adventure ready…</p>
+                <p>Getting ready…</p>
               </>
             )}
           </div>
@@ -235,7 +235,7 @@ function GameContainer({ mode }: { mode: 'CURRICULUM' | 'DEMO' }) {
               </button>
               {correct ? (
                 <button
-                  className="primary compact"
+                  className="primary compact nudge"
                   onClick={() => bridge.current?.send({ type: 'NEXT' })}
                 >
                   {state.round === state.total ? 'Finish' : 'Next'}{' '}
@@ -298,18 +298,19 @@ function App() {
       </header>
       <div className="intro">
         <div>
-          <p className="eyebrow">YOUR NEXT DISCOVERY</p>
+          <p className="eyebrow">LISTENING GAME</p>
           <h1>
             Listen. Find.
             <br />
-            <em>Let curiosity lead.</em>
+            <em>Hear a word, tap the picture.</em>
           </h1>
         </div>
         <div className="intro-note">
           <span className="sketch-star">✳</span>
           <p>
-            No rush. Just your ears,
-            <br />a little curiosity, and you.
+            No timer. No hurry.
+            <br />
+            Listen again any time.
           </p>
         </div>
       </div>

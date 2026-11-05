@@ -13,6 +13,14 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+## Publish over HTTPS
+
+`pnpm build` writes a static site to `apps/web/dist`; serve it from any static host over HTTPS. Browsers expose secure-context APIs (`crypto.randomUUID`, and later the microphone for Voice Match) only on HTTPS or localhost. Plain-HTTP LAN pages are not secure contexts; the game now runs there too, but the microphone will not.
+
+- Serve `index.html` with `Cache-Control: no-cache`; the hashed files under `assets/` can be cached for a year (Phaser is its own chunk, so app upgrades do not re-download it).
+- Same-origin only: images and audio load from `/images` and `/audio` on the same host.
+- To test on a real iPad before publishing, use an HTTPS tunnel or a local certificate (for example mkcert) rather than a bare LAN IP.
+
 ## Verify
 
 ```sh

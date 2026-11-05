@@ -50,6 +50,9 @@ importers:
       '@english/contracts':
         specifier: workspace:*
         version: link:../../packages/game-contracts
+      '@english/learning-core':
+        specifier: workspace:*
+        version: link:../../packages/learning-core
       '@english/runtime':
         specifier: workspace:*
         version: link:../../packages/game-runtime

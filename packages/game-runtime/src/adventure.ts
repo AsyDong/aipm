@@ -3,7 +3,6 @@ import type {
   GameContext,
   GameDefinition,
   GameMessage,
-  GameSummary,
   GameViewState,
   IGameBridge,
   LearningContent,
@@ -14,14 +13,23 @@ import {
   PluginManager,
   RuleEngine,
   RewardManager,
+  TaskRunner,
 } from '@english/game-core';
 import { ContentResolver, createTasks } from '@english/learning-core';
 import { TapMechanic, tapMetadata } from '@english/game-mechanics';
 import { FruitWorldScene, fruitWorldMetadata } from '@english/game-scenes';
 import { createViewport } from './viewport';
 import { InputManager } from './input';
+import { createMouseAdapter, createTouchAdapter } from './pointer-adapters';
 import { AudioManager } from './audio';
 import { validateAdventure } from './validate-adventure';
+
+/** Short spoken cues; optional, so a missing cue never blocks the game. */
+const FEEDBACK = {
+  success: '/audio/success.mp3',
+  again: '/audio/again.mp3',
+  complete: '/audio/complete.mp3',
+};
 
 export function createAdventure(
   parent: HTMLElement,
@@ -38,17 +46,10 @@ export function createAdventure(
   let disposed = false;
   let engine: GameEngine | undefined;
   let context: GameContext | undefined;
-  let mechanic: TapMechanic | undefined;
-  let tasks: LearningTask[] = [];
-  let index = 0;
+  let runner: TaskRunner | undefined;
   let locked = true;
   let epoch = 0;
   let startedAt = 0;
-  let firstTryCorrect = 0;
-  let replays = 0;
-  let hints = 0;
-  let attempts = 0;
-  let hinted = false;
   let revision = 0;
   let serial = Promise.resolve();
   const state: GameViewState = {
@@ -82,7 +83,7 @@ export function createAdventure(
     else input.disable();
   }
   async function playPrompt(replay: boolean) {
-    const task = tasks[index];
+    const task = runner?.current();
     if (!task || disposed || !context || engine?.getState() !== 'RUNNING')
       return;
     const token = ++revision;
@@ -110,7 +111,7 @@ export function createAdventure(
         },
         'audio',
       );
-      if (replay) replays++;
+      if (replay) runner?.replayed();
       locked = false;
     } catch {
       if (token !== revision || generation !== epoch || disposed) return;
@@ -124,44 +125,27 @@ export function createAdventure(
       }
     }
   }
-  function present() {
-    const task = tasks[index];
-    if (!task || !context || !mechanic) return;
-    rules.setTask(task);
-    attempts = 0;
-    hinted = false;
-    mechanic.present(task);
-    state.round = index + 1;
+  /** Short feedback cues never block play; a failed cue is simply skipped. */
+  function cue(key: string) {
+    void audio.play(key).catch(() => {});
+  }
+  let pendingTasks: LearningTask[] = [];
+  function showRound() {
+    if (!runner) return;
+    state.round = runner.round;
     state.feedback = 'LISTEN';
-    context.eventBus.emit(
-      'TASK_PRESENTED',
-      {
-        taskId: task.id,
-        contentId: task.target.id,
-        curriculumId: task.curriculumId,
-        unitId: task.unitId,
-      },
-      'learning',
-    );
     void playPrompt(false);
   }
+  /** First round of a session: the engine is already started, so plugins listen. */
+  function begin() {
+    runner?.start(pendingTasks);
+    showRound();
+  }
   function finish() {
-    if (!engine || !context) return;
+    if (!engine || !context || !runner) return;
     locked = true;
     input.disable();
-    const bonus = definition.reward.completionBonus ?? 0;
-    if (bonus)
-      rewards.grant('completion', { type: 'STAR', successReward: bonus });
-    const summary: GameSummary = {
-      sessionId: context.sessionId,
-      completed: index,
-      total: tasks.length,
-      stars: rewards.getSummary().stars,
-      firstTryCorrect,
-      replays,
-      hints,
-      durationMs: Date.now() - startedAt,
-    };
+    const summary = runner.finish(Date.now() - startedAt);
     state.summary = summary;
     state.busy = false;
     engine.complete(summary.durationMs);
@@ -170,45 +154,31 @@ export function createAdventure(
       { stars: summary.stars, collectibles: 0 },
       'rewards',
     );
+    cue(FEEDBACK.complete);
     publish();
   }
   function answer(objectId: string, contentId: string, taskId: string) {
     if (
       locked ||
       !context ||
+      !runner ||
       !engine ||
       engine.getState() !== 'RUNNING' ||
-      tasks[index]?.id !== taskId
+      runner.current()?.id !== taskId
     )
       return;
-    context.eventBus.emit(
-      'ANSWER_SUBMITTED',
-      { taskId, contentId },
-      'learning',
-    );
-    const result = rules.evaluate({ taskId, contentId });
-    attempts = result.attempts;
+    const result = runner.submit(contentId);
     context.objects.feedback(objectId, result.correct ? 'CORRECT' : 'RETRY');
-    context.eventBus.emit(
-      result.correct ? 'ANSWER_CORRECT' : 'ANSWER_INCORRECT',
-      { taskId, contentId, attempts: result.attempts },
-      'rules',
-    );
     if (!result.correct) {
       state.feedback = 'RETRY';
+      cue(FEEDBACK.again);
       publish();
       return;
     }
     locked = true;
     input.disable();
     state.feedback = 'CORRECT';
-    if (result.attempts === 1 && !hinted) firstTryCorrect++;
-    const amount = rewards.grant(taskId, definition.reward);
-    context.eventBus.emit(
-      'REWARD_GRANTED',
-      { taskId, rewardType: definition.reward.type, amount },
-      'rewards',
-    );
+    cue(FEEDBACK.success);
     publish();
     // Next is deliberate: children control the listening pace and feedback cannot race pauses.
   }
@@ -233,6 +203,21 @@ export function createAdventure(
       ]);
       await viewport.preload({ scope: 'session', assets }, scene);
       if (disposed) return;
+      await viewport
+        .preload(
+          {
+            scope: 'cues',
+            assets: Object.values(FEEDBACK).map((url) => ({
+              key: url,
+              type: 'AUDIO' as const,
+              url,
+              version: '1.0.0',
+            })),
+          },
+          scene,
+        )
+        .catch(() => {});
+      if (disposed) return;
       const manager = new PluginManager();
       manager.register({
         metadata: fruitWorldMetadata,
@@ -240,25 +225,25 @@ export function createAdventure(
       });
       manager.register({
         metadata: tapMetadata,
-        create: () => {
-          mechanic = new TapMechanic();
-          return mechanic;
-        },
+        create: () => new TapMechanic(),
       });
       engine = new GameEngine(manager, (base) => {
         rules.initialize(definition.rules);
         rewards.reset();
-        tasks = createTasks(
+        pendingTasks = createTasks(
           resolved,
           definition.rules.rounds ?? resolved.length,
           definition.difficulty?.optionCount ?? 3,
           Math.random,
           definition.rules.progression?.mode ?? 'SEQUENTIAL',
         );
-        index = 0;
-        firstTryCorrect = 0;
-        replays = 0;
-        hints = 0;
+        runner = new TaskRunner(
+          base.eventBus,
+          rules,
+          rewards,
+          definition,
+          base.sessionId,
+        );
         delete state.summary;
         context = {
           ...base,
@@ -266,6 +251,7 @@ export function createAdventure(
           audio,
           assets: viewport.assets,
           objects,
+          tasks: runner,
           content: resolver,
           rules,
           rewards,
@@ -288,22 +274,8 @@ export function createAdventure(
           },
         };
       });
-      const pointerHandler = (pointer: Phaser.Input.Pointer) => {
-        if (locked || engine?.getState() !== 'RUNNING') return;
-        context?.eventBus.emit(
-          'INPUT_RECEIVED',
-          { inputType: 'TAP', source: pointer.wasTouch ? 'TOUCH' : 'MOUSE' },
-          'input',
-        );
-        input.dispatch({
-          type: 'TAP',
-          source: pointer.wasTouch ? 'TOUCH' : 'MOUSE',
-          x: pointer.worldX,
-          y: pointer.worldY,
-          timestamp: Date.now(),
-        });
-      };
-      scene.input.on('pointerup', pointerHandler);
+      input.registerAdapter(createTouchAdapter(scene));
+      input.registerAdapter(createMouseAdapter(scene));
       await engine.initialize(definition);
       if (disposed) {
         await engine.destroy();
@@ -322,7 +294,7 @@ export function createAdventure(
         if (engine.getState() !== 'READY') return;
         startedAt = Date.now();
         await engine.start();
-        present();
+        begin();
         break;
       case 'PAUSE':
         if (engine.getState() !== 'RUNNING') return;
@@ -345,32 +317,16 @@ export function createAdventure(
       case 'NEXT':
         if (engine.getState() !== 'RUNNING' || state.feedback !== 'CORRECT')
           return;
-        rules.nextRound();
-        index++;
-        if (index >= tasks.length) finish();
-        else present();
+        if (runner?.next()) showRound();
+        else finish();
         break;
       case 'HINT': {
-        const task = tasks[index];
-        if (
-          locked ||
-          !context ||
-          !task ||
-          engine.getState() !== 'RUNNING' ||
-          !definition.rules.hintPolicy?.enabled
-        )
-          return;
-        if (attempts < (definition.rules.hintPolicy.afterAttempts ?? 1)) return;
-        const object = objectsForTarget(task);
-        if (object) context.objects.feedback(object, 'HINT');
-        hints++;
-        hinted = true;
+        if (!context || locked || engine.getState() !== 'RUNNING') return;
+        const target = runner?.hint();
+        if (!target) return;
+        const object = context.objects.findByContent(target);
+        if (object) context.objects.feedback(object.objectId, 'HINT');
         state.feedback = 'HINT';
-        context.eventBus.emit(
-          'HINT_REQUESTED',
-          { taskId: task.id, level: 1 },
-          'learning',
-        );
         publish();
         break;
       }
@@ -381,7 +337,7 @@ export function createAdventure(
         locked = true;
         await engine.restart();
         startedAt = Date.now();
-        present();
+        begin();
         break;
       case 'SET_VOLUME':
         audio.setVolume(command.value);
@@ -390,12 +346,6 @@ export function createAdventure(
         destroy();
         break;
     }
-  }
-  function objectsForTarget(task: LearningTask) {
-    const i = task.candidates.findIndex(
-      (content) => content.id === task.target.id,
-    );
-    return i < 0 ? undefined : `${task.id}:${i}`;
   }
   function destroy() {
     if (disposed) return;

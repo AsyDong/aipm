@@ -1,24 +1,5 @@
 import Phaser from 'phaser';
-import type {
-  GameContext,
-  IScenePlugin,
-  PluginMetadata,
-} from '@english/contracts';
-
-export const fruitWorldMetadata: PluginMetadata = {
-  id: 'fruit-world',
-  name: 'Fruit World',
-  version: '1.0.0',
-  apiVersion: '1.0.0',
-  type: 'SCENE',
-  requiredCapabilities: [],
-  capabilities: ['OBJECTS', 'ANIMATION', 'HIT_TEST'],
-  configSchema: {
-    type: 'object',
-    additionalProperties: false,
-    properties: { theme: { enum: ['ORCHARD', 'FOREST'] } },
-  },
-};
+import type { GameContext, IScenePlugin } from '@english/contracts';
 
 export class FruitWorldScene implements IScenePlugin {
   private background: Phaser.GameObjects.Container | undefined;

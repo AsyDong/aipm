@@ -5,6 +5,7 @@ import type {
   LearningTask,
   PluginMetadata,
 } from '@english/contracts';
+import schema from './tap.schema.json';
 
 export const tapMetadata: PluginMetadata = {
   id: 'tap',
@@ -14,24 +15,27 @@ export const tapMetadata: PluginMetadata = {
   type: 'MECHANIC',
   requiredCapabilities: ['OBJECTS', 'HIT_TEST'],
   capabilities: ['TAP'],
-  configSchema: {
-    type: 'object',
-    additionalProperties: false,
-    properties: { selectionMode: { const: 'SINGLE' } },
-  },
+  configSchema: schema,
 };
+
+/**
+ * Shows each presented task's candidates and turns taps into OBJECT_SELECTED.
+ * It never judges answers and never names curriculum content.
+ */
 export class TapMechanic implements IMechanicPlugin {
   private context: GameContext | undefined;
-  private task: LearningTask | undefined;
-  private off = () => {};
+  private offs: (() => void)[] = [];
   private enabled = false;
   initialize(context: GameContext) {
     this.context = context;
-    this.off = context.input.subscribe((event) => this.handleInput(event));
+    this.offs.push(
+      context.input.subscribe((event) => this.handleInput(event)),
+      context.eventBus.on('TASK_PRESENTED', () => this.present()),
+    );
   }
-  present(task: LearningTask) {
-    this.task = task;
-    this.context?.objects.show(task);
+  private present() {
+    const task = this.context?.tasks.current();
+    if (task) this.context?.objects.show(itemsOf(task));
   }
   start() {
     this.enabled = true;
@@ -44,13 +48,20 @@ export class TapMechanic implements IMechanicPlugin {
   }
   handleInput(event: InputEvent) {
     const context = this.context;
+    const task = context?.tasks.current();
     if (
+      event.type !== 'TAP' ||
       !this.enabled ||
       !context ||
-      !this.task ||
+      !task ||
       context.state.lifecycle !== 'RUNNING'
     )
       return;
+    context.eventBus.emit(
+      'INPUT_RECEIVED',
+      { inputType: 'TAP', source: event.source },
+      'tap',
+    );
     const object = context.objects.hitTest(event.x, event.y);
     if (object)
       context.eventBus.emit(
@@ -58,15 +69,22 @@ export class TapMechanic implements IMechanicPlugin {
         {
           objectId: object.objectId,
           contentId: object.contentId,
-          taskId: this.task.id,
+          taskId: task.id,
         },
         'tap',
       );
   }
   destroy() {
-    this.off();
+    for (const off of this.offs.splice(0)) off();
     this.enabled = false;
     this.context = undefined;
-    this.task = undefined;
   }
+}
+
+function itemsOf(task: LearningTask) {
+  return task.candidates.map((content, index) => ({
+    objectId: `${task.id}:${index}`,
+    contentId: content.id,
+    image: content.assets.image,
+  }));
 }

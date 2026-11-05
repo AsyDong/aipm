@@ -2,10 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function start(page: Page) {
   await page.goto('/');
-  await expect(
-    page.getByRole('button', { name: 'Let’s explore' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Let’s explore' }).click();
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
+  await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText('Find what you hear.', {
     timeout: 15000,
   });
@@ -89,13 +87,13 @@ test('pause/resume, replays, content replacement and repeated disposal', async (
       .first()
       .click();
     await expect(
-      page.getByRole('button', { name: 'Let’s explore' }),
+      page.getByRole('button', { name: 'Let’s play' }),
     ).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(1);
   }
   await page.getByRole('button', { name: 'Try the sampler' }).click();
   await expect(page.getByText('WOODLAND SAMPLER')).toBeVisible();
-  await page.getByRole('button', { name: 'Let’s explore' }).click();
+  await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText('Find what you hear.');
   await hintedChoice(page);
 });
@@ -108,9 +106,7 @@ test('missing asset cannot start a game', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Let’s try that again.' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Let’s explore' })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
 });
 
 test('unplayable audio keeps selection locked and can recover by replay', async ({
@@ -124,7 +120,7 @@ test('unplayable audio keeps selection locked and can recover by replay', async 
     }),
   );
   await page.goto('/');
-  await page.getByRole('button', { name: 'Let’s explore' }).click();
+  await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText(
     'Tap Listen to hear the word.',
   );
@@ -182,4 +178,18 @@ test('wrong choice can retry without losing stars and layout fits the viewport',
     path: testInfo.outputPath('gameplay.png'),
     fullPage: true,
   });
+});
+
+test('starts and plays where crypto.randomUUID is unavailable (plain-HTTP LAN)', async ({
+  page,
+}) => {
+  // Regression: LAN http:// pages are not secure contexts, so Safari/Chrome omit it.
+  await page.addInitScript(() => {
+    Object.defineProperty(Crypto.prototype, 'randomUUID', { value: undefined });
+  });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await start(page);
+  await hintedChoice(page);
+  expect(errors).toEqual([]);
 });

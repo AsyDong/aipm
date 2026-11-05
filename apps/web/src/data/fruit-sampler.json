@@ -1,0 +1,59 @@
+{
+  "id": "fruit-sampler",
+  "version": "1.0.0",
+  "schemaVersion": "1.0.0",
+  "name": "Listen & Find",
+  "scene": {
+    "id": "fruit-world",
+    "version": "1.0.0",
+    "config": {
+      "theme": "FOREST"
+    }
+  },
+  "mechanic": {
+    "id": "tap",
+    "version": "1.0.0",
+    "config": {
+      "selectionMode": "SINGLE"
+    }
+  },
+  "content": {
+    "curriculumId": "demo",
+    "unitId": "fruit-sampler",
+    "items": [
+      {
+        "contentId": "demo-pear"
+      },
+      {
+        "contentId": "demo-apple"
+      },
+      {
+        "contentId": "demo-orange"
+      }
+    ]
+  },
+  "input": {
+    "allowed": ["MOUSE", "TOUCH"]
+  },
+  "rules": {
+    "rounds": 5,
+    "allowRetry": true,
+    "timeLimitMs": null,
+    "hintPolicy": {
+      "enabled": true,
+      "afterAttempts": 0,
+      "hintLevel": 1
+    },
+    "progression": {
+      "mode": "RANDOM"
+    }
+  },
+  "reward": {
+    "type": "STAR",
+    "successReward": 1,
+    "completionBonus": 1
+  },
+  "difficulty": {
+    "optionCount": 3
+  }
+}

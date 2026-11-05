@@ -1,12 +1,31 @@
 import type {
+  IInputAdapter,
   IInputManager,
   InputEvent,
   InputSource,
 } from '@english/contracts';
 
+const finite = (value: number) => Number.isFinite(value);
+
+function valid(event: InputEvent) {
+  if (event.type === 'TAP') return finite(event.x) && finite(event.y);
+  return (
+    event.points.length > 0 &&
+    event.points.every((point) => finite(point.x) && finite(point.y))
+  );
+}
+
 export class InputManager implements IInputManager {
   private allowed = new Set<InputSource>();
   private handlers = new Set<(event: InputEvent) => void>();
+  private adapters = new Set<IInputAdapter>();
+  registerAdapter(adapter: IInputAdapter) {
+    this.adapters.add(adapter);
+    adapter.start((event) => this.dispatch(event));
+    return () => {
+      if (this.adapters.delete(adapter)) adapter.stop();
+    };
+  }
   enable(sources: InputSource[]) {
     this.allowed = new Set(sources);
   }
@@ -20,16 +39,13 @@ export class InputManager implements IInputManager {
     };
   }
   dispatch(event: InputEvent) {
-    if (
-      !this.allowed.has(event.source) ||
-      !Number.isFinite(event.x) ||
-      !Number.isFinite(event.y)
-    )
-      return;
+    if (!this.allowed.has(event.source) || !valid(event)) return;
     for (const handler of [...this.handlers]) handler(event);
   }
   destroy() {
     this.disable();
+    for (const adapter of this.adapters) adapter.stop();
+    this.adapters.clear();
     this.handlers.clear();
   }
 }
