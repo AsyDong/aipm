@@ -21,8 +21,11 @@ function valid(event: InputEvent) {
     );
   if (event.type === 'TAP') return finite(event.x) && finite(event.y);
   return (
-    event.points.length > 0 &&
-    event.points.every((point) => finite(point.x) && finite(point.y))
+    event.points.length >= 2 &&
+    event.points.length <= 128 &&
+    event.points.every(
+      (point) => finite(point.x) && finite(point.y) && finite(point.timestamp),
+    )
   );
 }
 
@@ -38,9 +41,11 @@ export class InputManager implements IInputManager {
     };
   }
   enable(sources: InputSource[]) {
+    for (const adapter of this.adapters) adapter.reset?.();
     this.allowed = new Set(sources);
   }
   disable() {
+    for (const adapter of this.adapters) adapter.reset?.();
     this.allowed.clear();
   }
   subscribe(handler: (event: InputEvent) => void) {

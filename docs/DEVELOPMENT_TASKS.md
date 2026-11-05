@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+Phase 5 continuation: the user authorized proceeding to the next chapter after the real-ASR follow-up. Implement Slice as three independently verified commits (input/configuration, mechanic/rendering/audio, playable level/regression), then stop at the task book's Phase 5 milestone. See PHASE_5_REPORT.md.
+
 Phase 4 follow-up: the user supplied the local volcengine-media skill for ASR/image capabilities and authorized GitHub access through the local 7890 proxy. Add the local ASR gateway as a separate verified checkpoint (6.5); keep existing art unless an asset gap requires generation. Credentials stay in the skill's external secrets file. The prior four section commits were successfully pushed through the proxy.
 
 2026-11-05 continuation: the user authorized starting Phase 4 after assessing the current implementation, with one verified commit per section (6.1–6.4). The earlier Phase 3 stop is superseded for Phase 4. Stop after Phase 4; do not start Phase 5. See PHASE_4_REPORT.md.

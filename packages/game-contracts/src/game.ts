@@ -99,7 +99,10 @@ export interface TapInputEvent {
   y: number;
   timestamp: number;
 }
-/** Reserved for Slice: points are in game-world coordinates, never DOM events. */
+export interface SliceConfig {
+  minDistance?: number;
+}
+/** A completed gesture in game-world coordinates, never DOM events. */
 export interface SwipeInputEvent {
   type: 'SWIPE';
   source: InputSource;
@@ -122,6 +125,8 @@ export interface IInputAdapter {
   readonly sources: InputSource[];
   start(emit: (event: InputEvent) => void): void;
   stop(): void;
+  /** Drops a gesture begun before a prompt, pause or other input boundary. */
+  reset?(): void;
 }
 export interface PlayerAnswer {
   taskId: string;

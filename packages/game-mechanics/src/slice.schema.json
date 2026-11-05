@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SliceConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "minDistance": { "type": "number", "minimum": 12, "maximum": 100 }
+  }
+}
