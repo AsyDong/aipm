@@ -98,3 +98,18 @@ it('ignores stale tasks/sessions, paused input and input after disposal', () => 
   t.send(t.event);
   expect(t.answers.submit).toHaveBeenCalledTimes(1);
 });
+
+it('accepts normalized words without confidence, rejects phrases, and ignores silence markers', () => {
+  const t = setup();
+  const withoutConfidence = { ...t.event };
+  delete withoutConfidence.confidence;
+  t.send({ ...withoutConfidence, text: '“ＨＥＬＬＯ!”' });
+  expect(t.answers.submit).toHaveBeenLastCalledWith('x', 'o');
+  t.send({ ...t.event, text: '[BLANK_AUDIO]' });
+  expect(t.answers.unrecognized).toHaveBeenLastCalledWith('NO_SPEECH');
+  for (const text of ['hello world', 'hel.lo', 'hellos', 'x']) {
+    t.send({ ...t.event, text });
+    expect(t.answers.submit).toHaveBeenLastCalledWith('', 'o');
+  }
+  expect(t.answers.submit).toHaveBeenCalledTimes(5);
+});

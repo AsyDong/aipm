@@ -10,13 +10,13 @@ Data flow (v3.1): the host loads GameDefinition and LearningContent from JSON (a
 
 Runtime composes the engine, local Fruit World/Tap factories, viewport, input and audio managers. Core, contracts and learning-core remain independent of React and Phaser. The scene does not evaluate answers; the mechanic contains no textbook vocabulary. Runtime gates selection until prompt playback completes and ignores stale asynchronous playback after pause, restart or disposal. Restart creates a new session and resets observations/rewards. Page hiding pauses the game.
 
-Edge TTS is a build-time asset-generation utility. Playback uses Web Audio with a same-origin HTML Audio fallback when AudioContext is unavailable. Failed playback locks selection and allows Listen to retry. Session counters remain in memory; no backend learning collector, speech recording or mastery model is implemented.
+Edge TTS is a build-time asset-generation utility. Playback uses Web Audio with a same-origin HTML Audio fallback when AudioContext is unavailable. Failed playback locks selection and allows Listen to retry. Session counters and short speech captures remain in memory; no backend learning collector, persistent recording store or mastery model is implemented.
 
 Phase 2 adds a standalone Fruit World visual plugin, public object operations and runtime viewport adapter. Scenes import contracts and Phaser only. Scoped AssetManager deduplicates loads and disposes object URLs; viewport owns texture registration and canvas destruction.
 
 The design baseline is the two original documents at the repository root, with subsequent user decisions recorded in DEVELOPMENT_TASKS.md.
 
-Dependencies: React host → runtime → contracts/core/learning/scenes/mechanics. Speech-core remains a future adapter skeleton. React receives no Phaser references.
+Dependencies: React host → runtime → contracts/core/learning/scenes/mechanics/speech. Speech-core depends on contracts only. React receives no Phaser references.
 
 Phase 0 creates a temporary neutral canvas in the runtime, not a scene plugin or an English learning game. Phaser owns canvas coordinates and animation. The host owns mounting and UI. A directional bridge carries commands and state messages. Initialization checks cancellation after dynamic imports; disposal removes listeners and the canvas and requests Phaser system cleanup on its next frame. No shared mutable runtime singleton exists.
 

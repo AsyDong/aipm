@@ -4,6 +4,7 @@ import type {
   InputEvent,
   PluginMetadata,
 } from '@english/contracts';
+import { normalizeVoiceText } from './voice-text';
 
 export const voiceMatchMetadata: PluginMetadata = {
   id: 'voice-match',
@@ -77,13 +78,13 @@ export class VoiceMatchMechanic implements IMechanicPlugin {
       context.answers.unrecognized('LOW_CONFIDENCE');
       return;
     }
-    const text = event.text?.trim().toLowerCase();
+    const text = normalizeVoiceText(event.text ?? '');
     if (!text) {
       context.answers.unrecognized('NO_SPEECH');
       return;
     }
     const match = task.candidates.find(
-      (candidate) => candidate.text.trim().toLowerCase() === text,
+      (candidate) => normalizeVoiceText(candidate.text) === text,
     );
     // The runtime evaluates correctness; an unknown word must not become a content ID.
     context.answers.submit(

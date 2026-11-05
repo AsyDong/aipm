@@ -1,5 +1,7 @@
 # Test specification
 
+Phase 4 adds mocked ASR/TTS service, deadline/cancellation, codec/recorder cleanup, HTTP payload validation, session-scoped voice capture, stale result rejection and provider-independent word normalization tests. Voice Match Playwright tests in desktop Chromium and iPad WebKit cover permission refusal, service failure/retry, pause cancellation, low-confidence no-attempt behavior, incorrect words, five rounds/rewards and restart. Capture and ASR are explicitly mocked in these tests. See PHASE_4_REPORT.md for actual results and SPEECH_PROVIDER.md for the live backend/physical iPad acceptance gap.
+
 Phase 3: 15 unit tests cover contracts/core architecture, engine lifecycle, event reentrancy, rules/reward idempotency, content ownership and candidate generation, input filtering, supported runtime options, asset ownership/retry and bridge cleanup. Ten Playwright checks (five each in desktop Chromium and iPad WebKit) cover five rounds/completion/restart, pause/resume/replay/content replacement/repeated disposal, missing resources, corrupt-audio retry and wrong-choice recovery/layout. They exercise actual MP3 playback and rendered canvas feedback; they do not measure a child's listening comprehension.
 
 See PHASE_3_REPORT.md for current command results, visual inspection evidence and physical-device/child playtest steps. Human playtesting is pending; automated browser checks alone are not learning acceptance.

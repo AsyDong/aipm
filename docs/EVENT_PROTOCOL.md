@@ -1,5 +1,7 @@
 # Event protocol
 
+Phase 4: runtime dispatches VOICE InputEvents through InputManager with taskId/sessionId ownership. These carry transcription/confidence or a typed failure; they are input facts, not persistent GameEvents. The mechanic emits INPUT_RECEIVED and reports through IAnswerPort. VOICE_FAILED now also distinguishes TIMEOUT, PERMISSION_DENIED and UNSUPPORTED; these count no answer attempt. No raw audio or transcript is added to GameEvent payloads. Bridge commands add VOICE_START/VOICE_STOP and view state optionally includes voice request/record/recognize/retry state; existing Tap hosts remain compatible.
+
 v3.2: VOICE_FAILED { taskId, reason } reports an unreadable answer (NO_SPEECH, LOW_CONFIDENCE, ERROR). It is not an attempt, is never a wrong answer and unlocks no hint. Tap now sends OBJECT_SELECTED (fact) and then calls IAnswerPort.submit; the runtime no longer listens for OBJECT_SELECTED.
 
 v3.1: TaskRunner (game-core) now emits TASK_PRESENTED, ANSWER_SUBMITTED, ANSWER_CORRECT/INCORRECT, REWARD_GRANTED and HINT_REQUESTED; Tap emits INPUT_RECEIVED and OBJECT_SELECTED; runtime emits AUDIO_PLAYED and GAME_REWARD_SUMMARY. InputEvent is a TAP | SWIPE union produced only by input adapters.

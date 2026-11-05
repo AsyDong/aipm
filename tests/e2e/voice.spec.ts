@@ -93,7 +93,7 @@ test('voice retry, wrong word, five matches and restart use the shared rewards',
   );
   for (let i = 0; i < 5; i++) {
     reply = {
-      text: ['apple', 'banana', 'grapes', 'orange', 'watermelon'][i]!,
+      text: ` “${['apple', 'banana', 'grapes', 'orange', 'watermelon'][i]!.toUpperCase()}!”\n`,
       confidence: 0.9,
     };
     await record(page);
