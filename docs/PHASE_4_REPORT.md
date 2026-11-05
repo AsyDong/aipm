@@ -16,3 +16,9 @@ Authorized on 2026-11-05 after Phase 3.2. Implement sections 6.1–6.4 in order,
 Public speech contracts are in game-contracts. SpeechService injects independent ASR/TTS providers, validates transcription confidence, bounds hung providers with a timeout, forwards cancellation and maps failures to typed codes. No rendering dependency or external service is required by unit tests.
 
 Verification: `pnpm test` (38 tests), `pnpm typecheck`, `pnpm lint`, `pnpm build` and `git diff --check` passed. Changed files formatted with Prettier. Real ASR and physical-device acceptance are not covered by this section.
+
+## 6.2 Recording
+
+VoiceRecorder requests microphone access only on start, negotiates WebM/Opus or MP4 (otherwise the browser default), limits capture to five seconds by default, rejects empty blobs and releases all tracks on stop/cancel/error. A permission request is bounded to 15 seconds; late permission grants after cancellation are immediately released. Recordings stay in memory. Nonempty silent audio is detected by ASR, not by assuming encoded byte size measures speech.
+
+Verification: speech unit tests (5 tests), `pnpm typecheck`, `pnpm lint`, `pnpm build` and `git diff --check` passed. Initial lint identified a timer declaration issue, corrected before committing. Physical iPad capture and actual codec support are not confirmed by mocks.
