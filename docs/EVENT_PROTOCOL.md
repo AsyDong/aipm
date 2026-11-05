@@ -1,5 +1,7 @@
 # Event protocol
 
+Phase 5: SWIPE contains a completed, bounded world-coordinate trajectory. Device adapters own mouse/touch capture; InputManager discards gestures at input-state boundaries. Slice emits INPUT_RECEIVED (inputType SWIPE) and OBJECT_SELECTED for its first uncut hit, then submits through IAnswerPort. Existing answer/reward events remain owned by the shared runner. No raw trajectories are added to persistent learning events.
+
 Phase 4: runtime dispatches VOICE InputEvents through InputManager with taskId/sessionId ownership. These carry transcription/confidence or a typed failure; they are input facts, not persistent GameEvents. The mechanic emits INPUT_RECEIVED and reports through IAnswerPort. VOICE_FAILED now also distinguishes TIMEOUT, PERMISSION_DENIED and UNSUPPORTED; these count no answer attempt. No raw audio or transcript is added to GameEvent payloads. Bridge commands add VOICE_START/VOICE_STOP and view state optionally includes voice request/record/recognize/retry state; existing Tap hosts remain compatible.
 
 v3.2: VOICE_FAILED { taskId, reason } reports an unreadable answer (NO_SPEECH, LOW_CONFIDENCE, ERROR). It is not an attempt, is never a wrong answer and unlocks no hint. Tap now sends OBJECT_SELECTED (fact) and then calls IAnswerPort.submit; the runtime no longer listens for OBJECT_SELECTED.

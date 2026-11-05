@@ -4,6 +4,9 @@ import {
   tapMetadata,
   VoiceMatchMechanic,
   voiceMatchMetadata,
+  SliceMechanic,
+  sliceMetadata,
+  sliceAssets,
 } from '@english/game-mechanics';
 import {
   FruitWorldScene,
@@ -25,5 +28,10 @@ export function pluginCatalog(scene: Phaser.Scene): PluginRegistration[] {
     },
     { metadata: tapMetadata, create: () => new TapMechanic() },
     { metadata: voiceMatchMetadata, create: () => new VoiceMatchMechanic() },
+    {
+      metadata: sliceMetadata,
+      create: () => new SliceMechanic(),
+      assets: sliceAssets,
+    },
   ];
 }

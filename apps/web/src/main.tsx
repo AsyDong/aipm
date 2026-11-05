@@ -128,6 +128,8 @@ function Level({
   const paused = state.lifecycle === 'PAUSED';
   const completed = state.lifecycle === 'COMPLETED';
   const correct = state.feedback === 'CORRECT';
+  const slicing =
+    !!level.game && definitionFor(level.game).mechanic.id === 'slice';
   const voiceBusy = !!state.voice && state.voice.status !== 'IDLE';
   const voiceMessages = {
     NO_SPEECH: 'I did not hear a word. Tap Record to try again.',
@@ -154,6 +156,14 @@ function Level({
                 state.feedback === 'LISTEN'
               ? 'Tap Record and say the word!'
               : undefined;
+  const sliceLine =
+    slicing && !state.busy && !correct
+      ? state.feedback === 'RETRY'
+        ? 'Try another fruit. Swipe to slice!'
+        : state.feedback === 'LISTEN'
+          ? 'Swipe across the fruit you heard!'
+          : undefined
+      : undefined;
   const portrait = usePortraitPhone();
   // Turning the phone upright pauses the game instead of hiding it behind a notice.
   useEffect(() => {
@@ -219,12 +229,14 @@ function Level({
           aria-label={
             state.voice
               ? 'Fruit on the counter. Listen, then record your voice.'
-              : 'Fruit on the counter. Listen, then tap one.'
+              : slicing
+                ? 'Fruit on the counter. Listen, then swipe across one.'
+                : 'Fruit on the counter. Listen, then tap one.'
           }
         />
         <Guide>
-          {active && voiceLine
-            ? voiceLine
+          {active && (voiceLine || sliceLine)
+            ? voiceLine || sliceLine
             : guideText(guideKey(state, !!error), state.word)}
         </Guide>
         {(ready ||
@@ -294,7 +306,9 @@ function Level({
                 <p>
                   {state.voice
                     ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
-                    : 'Listen to the word. Tap the fruit.'}
+                    : slicing
+                      ? 'Listen to the word. Swipe across the fruit.'
+                      : 'Listen to the word. Tap the fruit.'}
                 </p>
                 <button
                   className="big-btn"

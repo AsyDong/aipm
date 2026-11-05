@@ -1,5 +1,7 @@
 # Plugin specification
 
+Phase 5 adds local `slice` (Listen & Slice): config `minDistance` defaults to 32 world units and accepts 12–100, with no extra properties. It requires OBJECTS and SLICE, declares SWIPE and preloads `/audio/effects/slice.mp3` through its asset manifest. Fruit World supports the optional object slice operation; existing Tap/Voice contexts remain compatible. Each gesture cuts the first still-available intersection and can submit at most once; task reset clears cut IDs. Wrong cuts do not remove the target, and explicit Next advances only after correctness. Assets and vocabulary remain game configuration/content data.
+
 Phase 3 registers Fruit World and Tap locally through PluginManager. Tap v1.0.0 requires OBJECTS and HIT_TEST and advertises TAP. Its config permits only optional selectionMode: SINGLE. It subscribes to InputManager, presents a supplied LearningTask through the public object facade, emits OBJECT_SELECTED and removes its subscription on destroy. It neither resolves curriculum nor evaluates correctness/rewards. Fruit World remains reusable with both orchard and woodland themes.
 
 Historical checkpoint notes follow.

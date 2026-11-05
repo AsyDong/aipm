@@ -35,7 +35,8 @@
     {
       "id": "waterfall",
       "title": "Waterfall",
-      "locked": true,
+      "subtitle": "Listen & Slice",
+      "game": "powerup0-slice",
       "x": 51,
       "y": 33
     }

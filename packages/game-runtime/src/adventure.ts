@@ -31,6 +31,7 @@ import {
   VoiceRecorder,
 } from '@english/speech-core';
 import { VoiceCapture } from './voice-capture';
+import { SLICE_SOUND } from '@english/game-mechanics';
 
 /**
  * The guide's spoken lines, by the state they belong to. Optional: a missing
@@ -204,7 +205,12 @@ export function createAdventure(
         );
       if (!result.correct) {
         state.feedback = 'RETRY';
-        say(GUIDE_AUDIO.wrong);
+        const mine = ++sayChain;
+        if (definition.mechanic.id === 'slice') {
+          void audio.say(SLICE_SOUND).then(() => {
+            if (mine === sayChain && !disposed) say(GUIDE_AUDIO.wrong);
+          });
+        } else say(GUIDE_AUDIO.wrong);
         publish();
         return;
       }
@@ -217,7 +223,13 @@ export function createAdventure(
       // The chain belongs to this answer only: Next, pause, restart or leaving drop it,
       // otherwise the word would cut off the next prompt on a single-player device.
       const mine = ++sayChain;
-      void audio.say(GUIDE_AUDIO.right).then(() => {
+      const cue =
+        definition.mechanic.id === 'slice'
+          ? audio.say(SLICE_SOUND)
+          : Promise.resolve();
+      void cue.then(async () => {
+        if (mine !== sayChain || disposed) return;
+        await audio.say(GUIDE_AUDIO.right);
         const target = runner?.current()?.target.assets.audio;
         if (mine === sayChain && target && !disposed) void audio.say(target);
       });
@@ -329,8 +341,9 @@ export function createAdventure(
           },
         };
       });
-      input.registerAdapter(createTouchAdapter(scene));
-      input.registerAdapter(createMouseAdapter(scene));
+      const gesture = definition.mechanic.id === 'slice' ? 'SWIPE' : 'TAP';
+      input.registerAdapter(createTouchAdapter(scene, gesture));
+      input.registerAdapter(createMouseAdapter(scene, gesture));
       await engine.initialize(definition);
       if (disposed) {
         await engine.destroy();

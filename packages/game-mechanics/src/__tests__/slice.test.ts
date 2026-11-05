@@ -9,6 +9,7 @@ import { EventBus } from '../../../game-core/src/events';
 import { PluginManager } from '../../../game-core/src/plugins';
 import { fruitWorldMetadata } from '../../../game-scenes/src/metadata';
 import { definitionFor } from '../../../../apps/web/src/content';
+import { TapMechanic, tapMetadata } from '../tap';
 import {
   SliceMechanic,
   firstSwipeHit,
@@ -60,6 +61,10 @@ it('validates SliceConfig using both the registry schema and direct guard; Fruit
     metadata: sliceMetadata,
     create: () => new SliceMechanic(),
   });
+  manager.register({ metadata: tapMetadata, create: () => new TapMechanic() });
+  expect(manager.validate(definitionFor('powerup0-listen-find')).valid).toBe(
+    true,
+  );
   const definition = {
     ...definitionFor('powerup0-listen-find'),
     mechanic: { id: 'slice', version: '1.0.0', config: {} },

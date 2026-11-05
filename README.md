@@ -8,6 +8,8 @@ Phase 4 adds Listen & Say in Talking Market: listen, tap Record, say the word an
 
 ## Run
 
+Phase 5 adds Listen & Slice at the Waterfall map pin, reusing the market scene and Unit 3 content. Listen, then swipe across a fruit using a mouse drag or touch. One gesture cuts its first available fruit; cut fruits cannot count twice in the same task. Find the correct fruit and choose Next. See [Phase 5 report](docs/PHASE_5_REPORT.md) for verification and device limits.
+
 Use Node 22 and pnpm 10.27.0:
 
 ```sh
@@ -44,13 +46,13 @@ packages/game-contracts   Shared transport types
 packages/game-runtime     Phaser adapter and bridge
 packages/game-core        Engine, events, registration, rules and rewards
 packages/game-scenes      Fruit World orchard/woodland visual plugin
-packages/game-mechanics   Content-independent Tap and Voice Match plugins
+packages/game-mechanics   Content-independent Tap, Voice Match and Slice plugins
 packages/learning-core    Content ownership validation and task generation
 packages/speech-core      In-memory recording, bounded speech service and HTTP ASR adapter
 tests/e2e                 Chromium and iPad WebKit checks
 docs                      Architecture, decisions and phase reports
 ```
 
-See [Phase 3 report](docs/PHASE_3_REPORT.md) for the initial listening-game verification and child playtest checklist, and [Phase 4 report](docs/PHASE_4_REPORT.md) for speech checkpoints. Automated iPad WebKit checks do not replace physical iPad Safari testing. Session observations stay in memory and do not establish vocabulary mastery. Public ASR deployment, pronunciation scoring, backend persistence and Phase 5 mechanics remain outside this delivery.
+See [Phase 3 report](docs/PHASE_3_REPORT.md) for the initial listening-game verification and child playtest checklist, [Phase 4 report](docs/PHASE_4_REPORT.md) for speech checkpoints and [Phase 5 report](docs/PHASE_5_REPORT.md) for Slice. Automated iPad WebKit checks do not replace physical iPad Safari testing. Session observations stay in memory and do not establish vocabulary mastery. Public ASR deployment, pronunciation scoring and Phase 6 learning persistence remain outside this delivery.
 
 The monkey guide speaks existing guide lines (child British voice via Edge TTS, files in `apps/web/public/audio/guide`); new microphone status lines currently use English text. Hold phones and small tablets sideways; upright they show a notice. Artwork (island map, market and forest backdrops, fruit, monkey) was generated with Seedream (Volcengine) for this project; see `scripts/process-art.py` for how raw output becomes game assets. Third-party design references stay local and are not committed. Word prompts are generated with Microsoft Edge TTS (`en-GB-SoniaNeural`, rate `-10%`) and served locally. Listen & Find needs no speech-service credentials or live synthesis. To regenerate missing MP3s, install `edge-tts` in a Python environment and run `python scripts/generate-prompts.py`. Textbook files and original recordings remain external.

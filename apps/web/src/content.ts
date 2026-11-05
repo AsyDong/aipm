@@ -16,6 +16,12 @@ export const allContent = parseContents(contentData);
 const games: Record<string, GameDefinition> = {
   'powerup0-listen-find': curriculumGame as GameDefinition,
   'fruit-sampler': demoGame as GameDefinition,
+  'powerup0-slice': {
+    ...curriculumGame,
+    id: 'powerup0-slice',
+    name: 'Listen & Slice',
+    mechanic: { id: 'slice', version: '1.0.0', config: { minDistance: 32 } },
+  } as GameDefinition,
   'powerup0-voice-match': {
     ...curriculumGame,
     id: 'powerup0-voice-match',
