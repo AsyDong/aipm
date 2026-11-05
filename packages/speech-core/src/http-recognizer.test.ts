@@ -2,6 +2,19 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { HttpSpeechRecognizer } from './http-recognizer';
 
 afterEach(() => vi.unstubAllGlobals());
+it('preserves a backend deadline as a retryable timeout', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response('{}', { status: 504 })),
+  );
+  await expect(
+    new HttpSpeechRecognizer().recognize({
+      audio: new Blob(['voice']),
+      language: 'en-GB',
+      signal: new AbortController().signal,
+    }),
+  ).rejects.toMatchObject({ code: 'TIMEOUT' });
+});
 it('sends encoded audio and language without an expected answer or credential', async () => {
   const fetch = vi
     .fn()

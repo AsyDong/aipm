@@ -32,7 +32,10 @@ export class HttpSpeechRecognizer implements ISpeechRecognizer {
       credentials: 'same-origin',
       redirect: 'error',
     });
-    if (!response.ok) throw new SpeechFailure('SERVICE_ERROR');
+    if (!response.ok)
+      throw new SpeechFailure(
+        response.status === 504 ? 'TIMEOUT' : 'SERVICE_ERROR',
+      );
     const result: unknown = await response.json();
     if (
       typeof result !== 'object' ||

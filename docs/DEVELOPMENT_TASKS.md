@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+Phase 4 follow-up: the user supplied the local volcengine-media skill for ASR/image capabilities and authorized GitHub access through the local 7890 proxy. Add the local ASR gateway as a separate verified checkpoint (6.5); keep existing art unless an asset gap requires generation. Credentials stay in the skill's external secrets file. The prior four section commits were successfully pushed through the proxy.
+
 2026-11-05 continuation: the user authorized starting Phase 4 after assessing the current implementation, with one verified commit per section (6.1–6.4). The earlier Phase 3 stop is superseded for Phase 4. Stop after Phase 4; do not start Phase 5. See PHASE_4_REPORT.md.
 
 First milestone: Phase 0 → Phase 1 → Phase 2 → Phase 3. Each phase ends with verification, documentation and a game-branch commit. The user subsequently authorized autonomous progression through Phase 3, with self-review at each checkpoint and human review at the milestone. Phase 0/1 run sequentially; freeze contracts before parallel scene, speech or mechanic work. Use browser-skill for actual UI observation.

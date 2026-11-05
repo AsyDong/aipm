@@ -1,5 +1,7 @@
 # Phase 4: Speech Core and Voice Match
 
+Latest status: sections 6.1–6.4 were pushed successfully through the user-provided 7890 Git proxy. Follow-up section 6.5 adds the local Volcengine ASR gateway and has passed real-provider transcription with the existing skill credentials using new-console X-Api-Key authentication. Physical iPad and child-speech acceptance remain pending. Earlier delivery notes below describe their original checkpoint.
+
 Authorized on 2026-11-05 after Phase 3.2. Implement sections 6.1–6.4 in order, with verification and a separate commit for each. Stop at Phase 4; Phase 5 is outside this task.
 
 ## Assessment and decisions
@@ -48,3 +50,17 @@ Sections 6.1–6.4 have separate commits on `game`. Existing Tap definitions/bri
 Software and mock integration checkpoints are complete. **Phase 4 live-service acceptance is not complete:** no real ASR backend/provider account was supplied or implemented; Talking Market cannot recognize live speech until `/api/speech/recognize` is deployed. Real iPad Safari permission/capture/codec conversion, provider retention and child-speech performance remain unverified. Newly added microphone guidance is English text; existing generated guide/prompts still play. No pronunciation scoring, cloud recording store, Phase 5 or additional curriculum was introduced.
 
 Remote delivery attempt: `git fetch origin game` failed with a connection reset; `git -c http.version=HTTP/1.1 push origin HEAD:game` failed to connect to github.com:443 after 21 seconds. All four section commits are local; remote publication is not confirmed. Retry `git push origin HEAD:game` when connectivity is restored. The only remaining uncommitted file is the user's original `.gitignore` edit.
+
+## 6.5 Volcengine ASR gateway
+
+The user supplied `C:/Users/AsyDong/.workbuddy/skills/volcengine-media` and the Git proxy `http://127.0.0.1:7890`. Fetch and push succeeded; the original four commits are now on remote `game`.
+
+Added a loopback-only Python speech API and Vite same-origin proxy. The backend loads credentials by calling the skill's `volc_common.load_keys`, converts bounded audio to mono 16 kHz PCM through FFmpeg pipes, and implements the ASR v3 WebSocket request/audio/response protocol. No secret or recording is copied into the workspace. It limits upload size, duration, concurrency and deadlines, rejects foreign hosts/origins, cancels disconnected work and returns sanitized errors. Existing providers/mechanics remain compatible; HTTP 504 now maps to the explicit timeout feedback.
+
+The skill's default selfcheck passed under the existing story-studio venv; `--yes` (image generation) was not invoked. Initial legacy-header handshake returned HTTP 400 `app key not found in header or query`. Official documentation confirms new-console X-Api-Key authentication; the existing VOLC_AGENT_KEY worked without an App ID. Live protocol validation also identified that the initial full request consumes sequence 1, so audio starts at 2 (the final packet uses a negative sequence). Both facts were recorded in the skill's protocol notes; its shared scripts were preserved.
+
+Live checks: the existing synthesized apple MP3 returned `Apple.`; in-memory WebM/Opus and MP4/AAC conversions both passed through Vite → HTTP backend → real Volcengine ASR and returned `Apple.`. A separate Chromium UI check fed that synthetic WebM through Record/Done (ASR was not mocked), displayed `Yes! It is apple!` and awarded one star; its 1280x720 screenshot was inspected. No child recordings were used or saved. Existing art was preserved.
+
+Verification: 12 Python backend tests (offline, including real FFmpeg codec conversion), `pnpm test` (65 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, `git diff --check`, and `pnpm test:e2e` (22/22, Chromium and WebKit, 3.1 minutes) passed. The later Python authentication/sequence corrections passed the Python suite and live HTTP/UI checks; frontend code did not change after the full frontend regression. Initial upload-limit test hit a Windows connection reset when intentionally sending an oversized body into an early-close response; changed the test to send an oversized Content-Length with a short body, which directly verifies the pre-read limit. The first live UI script hit shell encoding of a curly apostrophe before making any ASR call; an ASCII regex locator fixed that test script.
+
+Compatibility: existing Tap and provider-neutral Voice Match contracts remain unchanged. New runtime requirements apply only to the local speech server: Python 3.11+, websockets 15.0.1, FFmpeg and the external skill loader. Public hosted use needs its own trusted proxy/access policy. Physical iPad microphone capture, child-speech accuracy, learning outcomes and provider-side retention remain unverified. Phase 5 was not started.

@@ -1,6 +1,6 @@
 # Module specification
 
-Phase 4 adds speech-core capture/service/HTTP adapter, runtime VoiceCapture, task/session-scoped VOICE input and a local VoiceMatch mechanic. The web app uses bridge commands only. Real ASR backend deployment is external; see SPEECH_PROVIDER.md.
+Phase 4 adds speech-core capture/service/HTTP adapter, runtime VoiceCapture, task/session-scoped VOICE input and a local VoiceMatch mechanic. The web app uses bridge commands only. scripts/speech_server.py and volc_asr.py provide a loopback HTTP gateway to real Volcengine ASR, with external skill-managed credentials and in-memory FFmpeg conversion; see SPEECH_PROVIDER.md.
 
 Phase 3 ownership (historical baseline):
 
