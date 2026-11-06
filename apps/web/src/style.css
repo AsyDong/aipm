@@ -587,6 +587,52 @@ canvas {
 }
 
 /* ---------- small portrait window (desktop narrow): stacked, no overlay guide ---------- */
+.composer {
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 20px;
+  background: #fff8e8;
+  color: #283f42;
+  border-radius: 16px;
+}
+.composer fieldset {
+  margin: 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.composer label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.composer input,
+.composer select,
+.composer textarea {
+  font: inherit;
+  padding: 6px;
+  max-width: 100%;
+}
+.composer input[type='number'] {
+  width: 90px;
+}
+.composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.composer button {
+  padding: 10px 16px;
+}
+.composer pre {
+  overflow: auto;
+  max-height: 320px;
+}
+.composer textarea {
+  width: 100%;
+  min-height: 140px;
+}
+
 @media (max-width: 720px) and (orientation: portrait) {
   .hud,
   .stage,

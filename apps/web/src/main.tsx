@@ -9,8 +9,10 @@ import type {
   IGameBridge,
   LearningOptions,
   LearningProgress,
+  GameDefinition,
 } from '@english/contracts';
 import { learnerId, LearningOutbox } from './learning';
+import { Composer } from './composer';
 import { mountAdventure } from '@english/runtime';
 import {
   allContent,
@@ -94,11 +96,13 @@ function Level({
   onExit,
   onDone,
   learning,
+  definition,
 }: {
   level: WorldLevel;
   onExit: () => void;
   onDone: (stars: number) => void;
   learning?: LearningOptions | undefined;
+  definition?: GameDefinition;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const bridge = useRef<IGameBridge | null>(null);
@@ -107,10 +111,10 @@ function Level({
   const [muted, setMuted] = useState(false);
   const saved = useRef(false);
   useEffect(() => {
-    if (!host.current || !level.game) return;
+    if (!host.current || (!level.game && !definition)) return;
     const game = mountAdventure(
       host.current,
-      definitionFor(level.game),
+      definition ?? definitionFor(level.game!),
       allContent,
       learning,
     );
@@ -129,7 +133,7 @@ function Level({
       bridge.current = null;
       document.removeEventListener('visibilitychange', hide);
     };
-  }, [level.game, learning]);
+  }, [level.game, learning, definition]);
   const send = (command: Parameters<IGameBridge['send']>[0]) =>
     bridge.current?.send(command);
   const ready = state.lifecycle === 'READY';
@@ -138,7 +142,8 @@ function Level({
   const completed = state.lifecycle === 'COMPLETED';
   const correct = state.feedback === 'CORRECT';
   const slicing =
-    !!level.game && definitionFor(level.game).mechanic.id === 'slice';
+    (definition ?? (level.game ? definitionFor(level.game) : undefined))
+      ?.mechanic.id === 'slice';
   const voiceBusy = !!state.voice && state.voice.status !== 'IDLE';
   const voiceMessages = {
     NO_SPEECH: 'I did not hear a word. Tap Record to try again.',
@@ -464,6 +469,8 @@ function RotateNotice() {
 }
 
 function App() {
+  const [composing, setComposing] = useState(false);
+  const [preview, setPreview] = useState<GameDefinition>();
   const [level, setLevel] = useState<WorldLevel | null>(null);
   const [stars, setStars] = useState(loadStars);
   const portrait = usePortraitPhone();
@@ -568,7 +575,19 @@ function App() {
         </span>
         <span className="subtitle">{level ? level.subtitle : world.title}</span>
       </header>
-      {level ? (
+      {composing ? (
+        preview ? (
+          <Level
+            key={preview.id}
+            level={{ id: preview.id, title: preview.name, x: 0, y: 0 }}
+            definition={preview}
+            onExit={() => setPreview(undefined)}
+            onDone={() => {}}
+          />
+        ) : (
+          <Composer onPreview={setPreview} onExit={() => setComposing(false)} />
+        )
+      ) : level ? (
         <Level
           key={level.id}
           level={level}
@@ -579,7 +598,7 @@ function App() {
       ) : (
         <WorldMap stars={stars} onPick={pick} />
       )}
-      {!level && (
+      {!level && !composing && (
         <details className="session-notes">
           <summary>Learning notes for grown-ups</summary>
           <p>{syncNote}</p>
@@ -602,6 +621,11 @@ function App() {
             </p>
           ))}
         </details>
+      )}
+      {!level && !composing && (
+        <button onClick={() => setComposing(true)}>
+          Game Composer for grown-ups
+        </button>
       )}
     </main>
   );
