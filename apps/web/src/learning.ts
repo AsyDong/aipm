@@ -7,7 +7,12 @@ const LIMIT = 200;
 export function learnerId(): string {
   let id = localStorage.getItem(PROFILE);
   if (!id) {
-    id = crypto.randomUUID();
+    id =
+      typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+            b.toString(16).padStart(2, '0'),
+          ).join('');
     localStorage.setItem(PROFILE, id);
   }
   return id;
@@ -18,7 +23,7 @@ export class LearningOutbox {
   private running = false;
   constructor(
     private storage: Storage,
-    private request: typeof fetch = fetch,
+    private request: typeof fetch = (...args) => fetch(...args),
   ) {}
   pending() {
     return Array.from({ length: this.storage.length }, (_, i) =>

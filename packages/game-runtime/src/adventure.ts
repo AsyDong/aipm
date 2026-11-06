@@ -9,6 +9,7 @@ import type {
   IGameBridge,
   LearningContent,
   LearningTask,
+  LearningOptions,
 } from '@english/contracts';
 import {
   GameEngine,
@@ -18,7 +19,11 @@ import {
   TaskRunner,
   GameFailure,
 } from '@english/game-core';
-import { ContentResolver, createTasks } from '@english/learning-core';
+import {
+  ContentResolver,
+  createTasks,
+  LearningEventCollector,
+} from '@english/learning-core';
 import { pluginCatalog } from './plugin-catalog';
 import { createViewport } from './viewport';
 import { InputManager } from './input';
@@ -51,6 +56,7 @@ export function createAdventure(
   parent: HTMLElement,
   definition: GameDefinition,
   contents: LearningContent[],
+  learning?: LearningOptions,
 ): IGameBridge {
   const subscribers = new Set<(message: GameMessage) => void>();
   const viewport = createViewport(parent);
@@ -63,6 +69,12 @@ export function createAdventure(
   let engine: GameEngine | undefined;
   let context: GameContext | undefined;
   let runner: TaskRunner | undefined;
+  let collector: LearningEventCollector | undefined;
+  function saveLearning() {
+    const submission = collector?.finish();
+    collector = undefined;
+    if (submission) learning?.save(submission);
+  }
   let locked = true;
   let epoch = 0;
   let startedAt = 0;
@@ -84,6 +96,15 @@ export function createAdventure(
           input,
           audio,
           (value) => {
+            if (value.status === 'RECORDING') {
+              const task = runner?.current();
+              if (task)
+                context?.eventBus.emit(
+                  'VOICE_RECORDED',
+                  { taskId: task.id },
+                  'speech',
+                );
+            }
             state.voice = value;
             publish();
           },
@@ -184,6 +205,7 @@ export function createAdventure(
     state.summary = summary;
     state.busy = false;
     engine.complete(summary.durationMs);
+    saveLearning();
     context.eventBus.emit(
       'GAME_REWARD_SUMMARY',
       { stars: summary.stars, collectibles: 0 },
@@ -301,6 +323,17 @@ export function createAdventure(
       }
       if (disposed) return;
       engine = new GameEngine(manager, (base) => {
+        if (learning)
+          collector = new LearningEventCollector(
+            {
+              sessionId: base.sessionId,
+              learnerId: learning.learnerId,
+              gameId: base.gameId,
+              mechanicId: definition.mechanic.id,
+              startedAt: Date.now(),
+            },
+            base.eventBus,
+          );
         rules.initialize(definition.rules);
         rewards.reset();
         pendingTasks = createTasks(
@@ -334,6 +367,7 @@ export function createAdventure(
         return {
           context,
           dispose: () => {
+            saveLearning();
             voice?.cancel();
             input.disable();
             audio.stopAll();

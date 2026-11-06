@@ -69,6 +69,17 @@ test('five real audio rounds, hints, rewards, completion and restart', async ({
   page,
 }) => {
   const errors: string[] = [];
+  const learning: {
+    completed: boolean;
+    records: { completed: boolean; hints: number }[];
+  }[] = [];
+  await page.route('**/api/v1/**', async (route) => {
+    if (route.request().method() === 'GET')
+      return route.fulfill({ json: { progress: [] } });
+    const data = route.request().postDataJSON();
+    learning.push(data);
+    return route.fulfill({ json: { sessionId: data.session.sessionId } });
+  });
   page.on('pageerror', (error) => errors.push(error.message));
   await start(page);
   for (let i = 0; i < 5; i++) {
@@ -81,6 +92,14 @@ test('five real audio rounds, hints, rewards, completion and restart', async ({
   }
   await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
   await expect(page.getByLabel('3 of 3 stars')).toBeVisible();
+  await expect.poll(() => learning.length).toBe(1);
+  expect(learning[0]!.completed).toBe(true);
+  expect(learning[0]!.records).toHaveLength(5);
+  expect(
+    learning[0]!.records.every(
+      (record) => record.completed && record.hints === 1,
+    ),
+  ).toBe(true);
   await page.getByText('Grown-up notes').click();
   await expect(page.getByText(/Hints: 5/)).toBeVisible();
   await expect(page.getByText(/First choices: 0 \/ 5/)).toBeVisible();

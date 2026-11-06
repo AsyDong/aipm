@@ -3,6 +3,7 @@ import type {
   IGameBridge,
   LearningContent,
   GameMessage,
+  LearningOptions,
 } from '@english/contracts';
 
 /** Synchronous host handle; async Phaser import never mounts after disposal. */
@@ -10,6 +11,7 @@ export function mountAdventure(
   parent: HTMLElement,
   definition: GameDefinition,
   contents: LearningContent[],
+  learning?: LearningOptions,
 ): IGameBridge {
   let inner: IGameBridge | undefined;
   let disposed = false;
@@ -17,7 +19,7 @@ export function mountAdventure(
   void import('./adventure')
     .then(({ createAdventure }) => {
       if (disposed) return;
-      inner = createAdventure(parent, definition, contents);
+      inner = createAdventure(parent, definition, contents, learning);
       inner.subscribe((message) => {
         for (const listener of listeners) listener(message);
       });

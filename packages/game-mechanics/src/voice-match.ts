@@ -86,6 +86,11 @@ export class VoiceMatchMechanic implements IMechanicPlugin {
     const match = task.candidates.find(
       (candidate) => normalizeVoiceText(candidate.text) === text,
     );
+    context.eventBus.emit(
+      'VOICE_RECOGNIZED',
+      { taskId: task.id },
+      'voice-match',
+    );
     // The runtime evaluates correctness; an unknown word must not become a content ID.
     context.answers.submit(
       match?.id ?? '',

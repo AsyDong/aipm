@@ -17,6 +17,10 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+Phase 6 adds separate learning notes and offline resubmission. Start the local learning backend in another terminal with Python 3.11+: `python scripts/learning_server.py`. No extra Python packages are needed. SQLite defaults to `~/.english-adventure/learning.sqlite3`, outside Git; `--database` and `--port` override it. Vite proxies `/api/v1/` to loopback port 8788. Static hosting needs the same-origin API route configured separately. Open “Learning notes for grown-ups” on the map for sync status and content observations.
+
+One anonymous device profile represents the learner; shared-device users share these observations. Completed sessions and sessions left through the map are saved. Browser storage holds at most 200 unsent sessions, with 20 sent per batch, an eight-second request timeout, and automatic retries from 15 seconds up to five minutes plus retry on reconnect/reload. Clearing site data removes unsent notes and the local profile; browser storage denial/full conditions are reported. Abrupt browser termination during an active session can lose that unfinished session. The backend is for local use only; authenticated multiuser access is not implemented. No audio, transcripts or swipe paths are saved. Review flags indicate unfinished/hinted/retried tasks, never mastery.
+
 ## Publish over HTTPS
 
 `pnpm build` writes a static site to `apps/web/dist`; serve it over HTTPS, with the speech API routed separately if Voice Match is used. Browsers expose secure-context APIs (`crypto.randomUUID` and the microphone for Voice Match) only on HTTPS or localhost. Plain-HTTP LAN pages support Tap, but the microphone will not work.
@@ -53,6 +57,6 @@ tests/e2e                 Chromium and iPad WebKit checks
 docs                      Architecture, decisions and phase reports
 ```
 
-See [Phase 3 report](docs/PHASE_3_REPORT.md) for the initial listening-game verification and child playtest checklist, [Phase 4 report](docs/PHASE_4_REPORT.md) for speech checkpoints and [Phase 5 report](docs/PHASE_5_REPORT.md) for Slice. Automated iPad WebKit checks do not replace physical iPad Safari testing. Session observations stay in memory and do not establish vocabulary mastery. Public ASR deployment, pronunciation scoring and Phase 6 learning persistence remain outside this delivery.
+See [Phase 3 report](docs/PHASE_3_REPORT.md) for the initial listening-game verification and child playtest checklist, [Phase 4 report](docs/PHASE_4_REPORT.md) for speech checkpoints, [Phase 5 report](docs/PHASE_5_REPORT.md) for Slice and [Phase 6 report](docs/PHASE_6_REPORT.md) for learning persistence. Automated iPad WebKit checks do not replace physical iPad Safari testing. Observations do not establish vocabulary mastery. Public authenticated deployment, pronunciation scoring and Phase 7 remain outside this delivery.
 
 The monkey guide speaks existing guide lines (child British voice via Edge TTS, files in `apps/web/public/audio/guide`); new microphone status lines currently use English text. Hold phones and small tablets sideways; upright they show a notice. Artwork (island map, market and forest backdrops, fruit, monkey) was generated with Seedream (Volcengine) for this project; see `scripts/process-art.py` for how raw output becomes game assets. Third-party design references stay local and are not committed. Word prompts are generated with Microsoft Edge TTS (`en-GB-SoniaNeural`, rate `-10%`) and served locally. Listen & Find needs no speech-service credentials or live synthesis. To regenerate missing MP3s, install `edge-tts` in a Python environment and run `python scripts/generate-prompts.py`. Textbook files and original recordings remain external.

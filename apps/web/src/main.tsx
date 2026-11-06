@@ -4,7 +4,13 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
-import type { GameViewState, IGameBridge } from '@english/contracts';
+import type {
+  GameViewState,
+  IGameBridge,
+  LearningOptions,
+  LearningProgress,
+} from '@english/contracts';
+import { learnerId, LearningOutbox } from './learning';
 import { mountAdventure } from '@english/runtime';
 import {
   allContent,
@@ -87,10 +93,12 @@ function Level({
   level,
   onExit,
   onDone,
+  learning,
 }: {
   level: WorldLevel;
   onExit: () => void;
   onDone: (stars: number) => void;
+  learning?: LearningOptions | undefined;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const bridge = useRef<IGameBridge | null>(null);
@@ -104,6 +112,7 @@ function Level({
       host.current,
       definitionFor(level.game),
       allContent,
+      learning,
     );
     bridge.current = game;
     const off = game.subscribe((message) => {
@@ -120,7 +129,7 @@ function Level({
       bridge.current = null;
       document.removeEventListener('visibilitychange', hide);
     };
-  }, [level.game]);
+  }, [level.game, learning]);
   const send = (command: Parameters<IGameBridge['send']>[0]) =>
     bridge.current?.send(command);
   const ready = state.lifecycle === 'READY';
@@ -458,6 +467,93 @@ function App() {
   const [level, setLevel] = useState<WorldLevel | null>(null);
   const [stars, setStars] = useState(loadStars);
   const portrait = usePortraitPhone();
+  const [learning, setLearning] = useState<LearningOptions>();
+  const [syncNote, setSyncNote] = useState('');
+  const [observations, setObservations] = useState<LearningProgress[]>([]);
+  useEffect(() => {
+    let active = true;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let syncing = false;
+    let storageFailed = false;
+    let delay = 15000;
+    try {
+      const id = learnerId();
+      const outbox = new LearningOutbox(localStorage);
+      const sync = async () => {
+        if (syncing || !active) return;
+        syncing = true;
+        clearTimeout(retry);
+        try {
+          await outbox.flush();
+          const response = await fetch(
+            `/api/v1/learning-progress?learnerId=${encodeURIComponent(id)}`,
+            { signal: AbortSignal.timeout(8000) },
+          );
+          if (!response.ok) throw new Error('Learning sync unavailable');
+          const data = (await response.json()) as {
+            progress: LearningProgress[];
+          };
+          if (!Array.isArray(data.progress))
+            throw new Error('Invalid learning progress');
+          if (active) {
+            setObservations(data.progress);
+            if (!storageFailed)
+              setSyncNote(
+                outbox.pending().length
+                  ? 'Learning notes saved on this device. Sync pending.'
+                  : 'Learning notes synced.',
+              );
+          }
+          delay = 15000;
+        } catch {
+          if (active && !storageFailed)
+            setSyncNote('Learning notes saved on this device. Sync pending.');
+          delay = Math.min(delay * 2, 300000);
+        } finally {
+          syncing = false;
+          if (active)
+            retry = setTimeout(() => {
+              void sync();
+            }, delay);
+        }
+      };
+      setLearning({
+        learnerId: id,
+        save: (submission) => {
+          try {
+            outbox.save(submission);
+            storageFailed = false;
+            if (active)
+              setSyncNote('Learning notes saved on this device. Sync pending.');
+            void sync();
+          } catch {
+            storageFailed = true;
+            if (active)
+              setSyncNote(
+                'Learning notes could not be saved. Device storage is unavailable or full.',
+              );
+          }
+        },
+      });
+      const online = () => {
+        void sync();
+      };
+      window.addEventListener('online', online);
+      void sync();
+      return () => {
+        active = false;
+        clearTimeout(retry);
+        window.removeEventListener('online', online);
+      };
+    } catch {
+      setSyncNote(
+        'Learning notes are unavailable because device storage is blocked.',
+      );
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
   const pick = (next: WorldLevel) => {
     void tryLockLandscape();
     setLevel(next);
@@ -478,9 +574,34 @@ function App() {
           level={level}
           onExit={() => setLevel(null)}
           onDone={(earned) => setStars(saveStars(level.id, earned))}
+          learning={learning}
         />
       ) : (
         <WorldMap stars={stars} onPick={pick} />
+      )}
+      {!level && (
+        <details className="session-notes">
+          <summary>Learning notes for grown-ups</summary>
+          <p>{syncNote}</p>
+          <p>
+            This device uses one anonymous profile. These observations are
+            separate from stars and do not measure vocabulary mastery.
+          </p>
+          {observations.map((item) => (
+            <p key={`${item.curriculumId}:${item.unitId}:${item.contentId}`}>
+              {allContent.find(
+                (content) =>
+                  content.id === item.contentId &&
+                  content.curriculumId === item.curriculumId &&
+                  content.unitId === item.unitId,
+              )?.text ?? item.contentId}
+              : {item.listens} listens · {item.completions} completed tasks ·{' '}
+              {item.hints} hints · {item.voiceAttempts} recordings ·{' '}
+              {item.recognized} recognized ·{' '}
+              {item.needsReview ? 'Listen again' : 'Practised'}
+            </p>
+          ))}
+        </details>
       )}
     </main>
   );

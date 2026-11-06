@@ -1,6 +1,8 @@
 # Architecture
 
-Current milestone: Phase 5 Slice, authorized after Phase 4.5. Three independent checkpoints cover input, mechanic/rendering, and playable integration. Stop before Phase 6. Phase 0 and 1 froze the foundation before scene and mechanic implementation.
+Current milestone: Phase 6 Learning Data, authorized after Phase 5 acceptance. Three independent checkpoints cover contracts/collector, persistence/API/outbox, and runtime/host integration. Stop before Phase 7. Phase 0 and 1 froze the foundation before scene and mechanic implementation.
+
+Phase 6: runtime optionally owns a learning-core collector per engine session and passes its immutable snapshot to a host callback at completion or context disposal. Public ownership contracts include learner, game, session, curriculum, unit and target content. The host uses a pseudonymous local profile, a bounded per-session localStorage outbox and same-origin HTTP. A loopback Python/SQLite backend validates strict learning-only payloads and atomically deduplicates by session ID; learning progress is aggregated separately from rewards. Collection stores no raw input, transcript or audio. Recording facts require successful capture start; recognized facts require nonempty text above the mechanic confidence gate, including wrong words. Review flags are observations rather than mastery. Active-session crash recovery and authenticated public deployment are outside this phase.
 
 Phase 5: optional SWIPE-mode Phaser adapters collect at most 128 world-coordinate samples and InputManager clears pending gestures at enable/disable boundaries. Slice intersects path segments against up to six candidate bounds and submits only the first uncut hit through IAnswerPort. Task-local cut IDs prevent duplicates. Runtime's optional object slice operation crops the existing texture into two animated halves; FruitWorld declares SLICE without importing the mechanic or changing its scene implementation. Plugin-scoped assets include a synthetic slice cue played through AudioManager before feedback. Game Core, RuleEngine and TaskRunner are unchanged. Tap, Voice Match and Slice reuse the same scene and round/reward loop.
 
@@ -12,7 +14,7 @@ Data flow (v3.1): the host loads GameDefinition and LearningContent from JSON (a
 
 Runtime composes the engine, local Fruit World/Tap factories, viewport, input and audio managers. Core, contracts and learning-core remain independent of React and Phaser. The scene does not evaluate answers; the mechanic contains no textbook vocabulary. Runtime gates selection until prompt playback completes and ignores stale asynchronous playback after pause, restart or disposal. Restart creates a new session and resets observations/rewards. Page hiding pauses the game.
 
-Edge TTS is a build-time asset-generation utility. Playback uses Web Audio with a same-origin HTML Audio fallback when AudioContext is unavailable. Failed playback locks selection and allows Listen to retry. Session counters and short speech captures remain in memory; no backend learning collector, persistent recording store or mastery model is implemented.
+Edge TTS is a build-time asset-generation utility. Playback uses Web Audio with a same-origin HTML Audio fallback when AudioContext is unavailable. Failed playback locks selection and allows Listen to retry. Short speech captures remain in memory; Phase 6 persists learning observations separately. No persistent recording store or mastery model is implemented.
 
 Phase 2 adds a standalone Fruit World visual plugin, public object operations and runtime viewport adapter. Scenes import contracts and Phaser only. Scoped AssetManager deduplicates loads and disposes object URLs; viewport owns texture registration and canvas destruction.
 
