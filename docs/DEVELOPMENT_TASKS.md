@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+Phase 7 continuation: the user authorized the next chapter after Phase 6. Implement Game Composer with a form, shared validation, local save/import/export and existing-runtime preview; stop before Phase 8. Keep preview observations separate from real learning and stars. See PHASE_7_REPORT.md.
+
 Phase 6 continuation: the user accepted Phase 5 and authorized the next development stage. Implement Learning Data in three sequential verified commits (contracts/collector, persistence/API/offline outbox, runtime/host/regression), then stop before Phase 7. Use a local anonymous device profile and a loopback Python/SQLite backend; no account system, raw recordings or mastery scoring. See PHASE_6_REPORT.md.
 
 Phase 5 continuation: the user authorized proceeding to the next chapter after the real-ASR follow-up. Implement Slice as three independently verified commits (input/configuration, mechanic/rendering/audio, playable level/regression), then stop at the task book's Phase 5 milestone. See PHASE_5_REPORT.md.
