@@ -177,6 +177,8 @@ export interface EventPayloadMap {
   HINT_REQUESTED: { taskId: string; level: number };
   /** The child's answer could not be read (e.g. no speech). Not a wrong answer: no attempt is counted. */
   VOICE_FAILED: { taskId: string; reason: UnrecognizedReason };
+  VOICE_RECORDED: { taskId: string };
+  VOICE_RECOGNIZED: { taskId: string };
   REWARD_GRANTED: {
     rewardType: RewardDefinition['type'];
     amount: number;

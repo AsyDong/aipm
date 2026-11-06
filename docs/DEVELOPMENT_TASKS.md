@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+Phase 6 continuation: the user accepted Phase 5 and authorized the next development stage. Implement Learning Data in three sequential verified commits (contracts/collector, persistence/API/offline outbox, runtime/host/regression), then stop before Phase 7. Use a local anonymous device profile and a loopback Python/SQLite backend; no account system, raw recordings or mastery scoring. See PHASE_6_REPORT.md.
+
 Phase 5 continuation: the user authorized proceeding to the next chapter after the real-ASR follow-up. Implement Slice as three independently verified commits (input/configuration, mechanic/rendering/audio, playable level/regression), then stop at the task book's Phase 5 milestone. See PHASE_5_REPORT.md.
 
 Phase 4 follow-up: the user supplied the local volcengine-media skill for ASR/image capabilities and authorized GitHub access through the local 7890 proxy. Add the local ASR gateway as a separate verified checkpoint (6.5); keep existing art unless an asset gap requires generation. Credentials stay in the skill's external secrets file. The prior four section commits were successfully pushed through the proxy.

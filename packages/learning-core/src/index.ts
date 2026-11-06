@@ -4,3 +4,4 @@ export {
   parseContents,
   shuffle,
 } from './content';
+export { LearningEventCollector } from './collector';

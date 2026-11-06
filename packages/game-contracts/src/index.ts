@@ -2,6 +2,7 @@
 export type Unsubscribe = () => void;
 export * from './game';
 export * from './speech';
+export * from './learning';
 
 export type BootstrapCommand = { type: 'PAUSE' } | { type: 'RESUME' };
 export type BootstrapState = 'READY' | 'RUNNING' | 'PAUSED' | 'DESTROYED';
