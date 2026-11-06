@@ -56,6 +56,9 @@ it('uses the iOS playback session and fails instead of hanging when playback nev
   );
   await vi.advanceTimersByTimeAsync(10_000);
   expect(await result).toBe('Audio timed out');
+  await audio.destroy();
+  await audio.destroy();
+  expect(() => audio.stopAll()).not.toThrow();
 });
 
 it('switches the iOS audio session between playback and play-and-record', () => {

@@ -1,6 +1,8 @@
 # Architecture
 
-Current milestone: Phase 7 Game Composer, authorized after Phase 6 acceptance. Two independent checkpoints cover shared validation/local descriptors and the form/save/import/export/preview flow. Stop before Phase 8. Phase 0 and 1 froze the foundation before scene and mechanic implementation.
+Current milestone: Phase 8 architecture regression and performance, authorized after Phase 7. Two checkpoints cover lazy loading/viewport lifecycle and extension/regression evidence. Stop for review after Phase 8; this is the task book's final chapter.
+
+Phase 8 lazily imports the adult Composer and coalesces viewport resize callbacks with disposal cancellation. A test-only Reaction plugin runs against the real FruitWorld class (drawing mocked), public object/answer contracts and existing round loop over five restarts without Core changes. Browser lifecycle tests check canvases and managed Blob URLs return to zero across repeated scene/mechanic switches. These checks do not replace physical-device memory or latency profiling.
 
 Phase 7: Composer reads local PluginMetadata and content data, builds standard GameDefinition JSON, validates with PluginManager/Ajv, validateAdventure, ContentResolver and scoped AssetManager, then either stores JSON in localStorage, downloads it, imports it or previews through the existing React bridge. Preview has no learning callback and its completion does not write map stars. Local plugin factories remain code-owned; configuration cannot execute code or load remote plugins. Public publishing, authentication, drag editing and new game protocols are not implemented.
 

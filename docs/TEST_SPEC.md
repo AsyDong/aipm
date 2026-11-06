@@ -1,5 +1,7 @@
 # Test specification
 
+Phase 8 adds a public-contract Reaction mechanic extension test, repeated audio destroy and viewport resize/disposal tests, lazy Composer loading/build-size verification, full Tap/Voice/Slice/Composer browser regression and malformed configuration checks. Physical-device acceptance remains separate.
+
 Phase 6 adds collector target/session ownership and observation tests, durable outbox reload/retry and capacity tests, and Python SQLite/HTTP tests for concurrent idempotency, conflicting snapshots, strict payload validation, latest review status and learner separation. Browser tests assert completed five-task submission and unfinished-session offline/reload/reconnect behavior in Chromium and WebKit. API responses are mocked in browser tests; Python HTTP tests exercise the real server and SQLite. Physical-device acceptance remains separate.
 
 Phase 5 adds mouse/touch adapter ownership, trajectory bounds/cancellation, collision-order/edge tests, Slice duplicate suppression/retry and schema validation with the same FruitWorld registration as Tap. Playwright covers five rounds/completion/restart, wrong cuts, tap rejection, replay/pause and disposal in desktop Chromium and iPad WebKit. WebKit swipes use touch-shaped DOM events passed through Phaser because Playwright exposes no WebKit native touch-drag API; this is simulated input, not physical-device acceptance. See PHASE_5_REPORT.md for actual results.

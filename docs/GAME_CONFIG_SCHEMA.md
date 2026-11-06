@@ -1,5 +1,7 @@
 # Game configuration schema
 
+Phase 8 regression keeps the schema as the single executable definition validator. Composer import, load and preview re-run schema/plugin/capability/content/resource checks; a stale saved JSON cannot bypass runtime validation.
+
 v3.1: levels and vocabulary are JSON files (apps/web/src/data/*.json), validated at load (parseContents) and by the schema before a game starts. The mechanic config schema is packages/game-mechanics/src/tap.schema.json. Adding a word or level needs no TypeScript change.
 
 Phase 3 executes GameDefinition through the adventure runtime. Candidate count defaults to 3; targets support sequential or random progression and candidate positions are shuffled each round. The runtime requires at least two resolved content items.
