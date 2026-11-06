@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+Phase 8 continuation: the user authorized the next chapter after Phase 7. Execute architecture extension/regression and measured performance checks, preserving existing behavior; stop for review after Phase 8. Reaction is a test fixture, not a new published gameplay feature. See PHASE_8_REPORT.md.
+
 Phase 7 continuation: the user authorized the next chapter after Phase 6. Implement Game Composer with a form, shared validation, local save/import/export and existing-runtime preview; stop before Phase 8. Keep preview observations separate from real learning and stars. See PHASE_7_REPORT.md.
 
 Phase 6 continuation: the user accepted Phase 5 and authorized the next development stage. Implement Learning Data in three sequential verified commits (contracts/collector, persistence/API/offline outbox, runtime/host/regression), then stop before Phase 7. Use a local anonymous device profile and a loopback Python/SQLite backend; no account system, raw recordings or mastery scoring. See PHASE_6_REPORT.md.

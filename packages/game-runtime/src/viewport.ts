@@ -31,7 +31,14 @@ export function createViewport(parent: HTMLElement) {
   });
   // Phaser re-fits on window resize only; phones rotating (or a layout change around
   // the canvas) can leave it at the old size, so refit on every layout change.
-  const refit = () => requestAnimationFrame(() => game.scale.refresh());
+  let refitFrame: number | undefined;
+  const refit = () => {
+    if (disposed || refitFrame !== undefined) return;
+    refitFrame = requestAnimationFrame(() => {
+      refitFrame = undefined;
+      if (!disposed) game.scale.refresh();
+    });
+  };
   const watcher = new ResizeObserver(refit);
   watcher.observe(parent);
   addEventListener('orientationchange', refit);
@@ -70,6 +77,7 @@ export function createViewport(parent: HTMLElement) {
     async destroy() {
       if (disposed) return;
       disposed = true;
+      if (refitFrame !== undefined) cancelAnimationFrame(refitFrame);
       watcher.disconnect();
       removeEventListener('orientationchange', refit);
       removeEventListener('resize', refit);

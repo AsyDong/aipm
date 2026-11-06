@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, StrictMode, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/fredoka/500.css';
@@ -12,7 +12,9 @@ import type {
   GameDefinition,
 } from '@english/contracts';
 import { learnerId, LearningOutbox } from './learning';
-import { Composer } from './composer';
+const Composer = lazy(() =>
+  import('./composer').then(({ Composer }) => ({ default: Composer })),
+);
 import { mountAdventure } from '@english/runtime';
 import {
   allContent,
@@ -585,7 +587,12 @@ function App() {
             onDone={() => {}}
           />
         ) : (
-          <Composer onPreview={setPreview} onExit={() => setComposing(false)} />
+          <Suspense fallback={<p role="status">Loading Game Composer…</p>}>
+            <Composer
+              onPreview={setPreview}
+              onExit={() => setComposing(false)}
+            />
+          </Suspense>
         )
       ) : level ? (
         <Level
