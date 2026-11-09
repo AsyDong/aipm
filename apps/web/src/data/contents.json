@@ -115,5 +115,257 @@
       "kind": "DEMO",
       "reference": "Independent content-reuse fixture, not official textbook content"
     }
+  },
+  {
+    "id": "powerup0-unit0-cameron",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "Cameron",
+    "assets": {
+      "image": "/images/characters/cameron.webp",
+      "audio": "/audio/hello-cameron.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-jim",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "Jim",
+    "assets": {
+      "image": "/images/characters/jim.webp",
+      "audio": "/audio/hello-jim.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-jenny",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "Jenny",
+    "assets": {
+      "image": "/images/characters/jenny.webp",
+      "audio": "/audio/hello-jenny.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-bus-red",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "red bus",
+    "assets": {
+      "image": "/images/vehicles/bus-red.webp",
+      "audio": "/audio/the-red-bus.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-bus-blue",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "blue bus",
+    "assets": {
+      "image": "/images/vehicles/bus-blue.webp",
+      "audio": "/audio/the-blue-bus.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-bus-green",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "green bus",
+    "assets": {
+      "image": "/images/vehicles/bus-green.webp",
+      "audio": "/audio/the-green-bus.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-bus-yellow",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "yellow bus",
+    "assets": {
+      "image": "/images/vehicles/bus-yellow.webp",
+      "audio": "/audio/the-yellow-bus.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit0-boat",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-0",
+    "text": "boat",
+    "assets": {
+      "image": "/images/vehicles/boat.webp",
+      "audio": "/audio/the-boat.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Starter: Hello (teaching courseware)"
+    }
+  },
+  {
+    "id": "powerup0-unit3-rice",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "rice",
+    "assets": {
+      "image": "/images/food/rice.webp",
+      "audio": "/audio/rice.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 2"
+    }
+  },
+  {
+    "id": "powerup0-unit3-beans",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "beans",
+    "assets": {
+      "image": "/images/food/beans.webp",
+      "audio": "/audio/beans.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 2"
+    }
+  },
+  {
+    "id": "powerup0-unit3-egg",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "egg",
+    "assets": {
+      "image": "/images/food/egg.webp",
+      "audio": "/audio/egg.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 2"
+    }
+  },
+  {
+    "id": "powerup0-unit3-burger",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "burger",
+    "assets": {
+      "image": "/images/food/burger.webp",
+      "audio": "/audio/burger.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 2"
+    }
+  },
+  {
+    "id": "powerup0-unit3-carrot",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "carrot",
+    "assets": {
+      "image": "/images/food/carrot.webp",
+      "audio": "/audio/carrot.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, Vocabulary 2"
+    }
+  },
+  {
+    "id": "powerup0-unit3-count-apples-3",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "three apples",
+    "assets": {
+      "image": "/images/count/apples-3.webp",
+      "audio": "/audio/three-apples.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    }
+  },
+  {
+    "id": "powerup0-unit3-count-bananas-6",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "six bananas",
+    "assets": {
+      "image": "/images/count/bananas-6.webp",
+      "audio": "/audio/six-bananas.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    }
+  },
+  {
+    "id": "powerup0-unit3-count-oranges-2",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "two oranges",
+    "assets": {
+      "image": "/images/count/oranges-2.webp",
+      "audio": "/audio/two-oranges.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    }
+  },
+  {
+    "id": "powerup0-unit3-count-burgers-4",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "four burgers",
+    "assets": {
+      "image": "/images/count/burgers-4.webp",
+      "audio": "/audio/four-burgers.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    }
+  },
+  {
+    "id": "powerup0-unit3-count-eggs-5",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "five eggs",
+    "assets": {
+      "image": "/images/count/eggs-5.webp",
+      "audio": "/audio/five-eggs.mp3"
+    },
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    }
   }
 ]

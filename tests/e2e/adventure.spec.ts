@@ -150,7 +150,9 @@ test('finished levels keep their stars on the map after a reload', async ({
   await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to the map' }).first().click();
   await page.reload();
-  const market = page.getByRole('button', { name: 'Play Fruit Market' });
+  const market = page.locator('.pin', {
+    has: page.getByRole('button', { name: 'Play Fruit Market' }),
+  });
   await expect(market.getByLabel('3 of 3 stars')).toBeVisible();
 });
 

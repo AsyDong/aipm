@@ -1,6 +1,10 @@
 # Architecture
 
-Current milestone: Phase 8 architecture regression and performance, authorized after Phase 7. Two checkpoints cover lazy loading/viewport lifecycle and extension/regression evidence. Stop for review after Phase 8; this is the task book's final chapter.
+Current milestone: Phase 9 Hello intro segment and Unit 3 sample map (2026-11-07 continuation), authorized for child playtesting with browser-skill verification. Data-only content work on the existing engine; no new mechanics, plugins or dependencies. Phase 8 remains the final architecture chapter.
+
+Phase 9 adds content, not mechanisms: the world map grows to 14 pins (3 Hello nodes at Welcome Harbour, 6 Unit 3 nodes at Market Street, the Talking Market and Woodland samplers, 3 locked "coming soon" placeholders). Every node is a GameDefinition JSON entry reusing the existing Tap / Voice Match / Slice round loop, ContentResolver unit ownership and reward rules; per-level `story` and `hello` fields (spoken guide audio per level) make each pin's goal explicit to a non-reader. Counting practice is listen-and-find over generated group cards, not a counting mechanic. Pin hit targets wrap only the bubble while labels and stars are non-interactive siblings, so close pins never swallow each other's taps.
+
+Phase 8 lazily imports the adult Composer and coalesces viewport resize callbacks with disposal cancellation. A test-only Reaction plugin runs against the real FruitWorld class (drawing mocked), public object/answer contracts and existing round loop over five restarts without Core changes. Browser lifecycle tests check canvases and managed Blob URLs return to zero across repeated scene/mechanic switches. These checks do not replace physical-device memory or latency profiling.
 
 Phase 8 lazily imports the adult Composer and coalesces viewport resize callbacks with disposal cancellation. A test-only Reaction plugin runs against the real FruitWorld class (drawing mocked), public object/answer contracts and existing round loop over five restarts without Core changes. Browser lifecycle tests check canvases and managed Blob URLs return to zero across repeated scene/mechanic switches. These checks do not replace physical-device memory or latency profiling.
 

@@ -6,6 +6,8 @@ Phase 3.2 turns it into a small game world: a Fruit Island map with one level pe
 
 Phase 4 adds Listen & Say in Talking Market: listen, tap Record, say the word and tap Done (capture stops automatically after five seconds). Run the included local Volcengine ASR backend; it uses the external volcengine-media skill's credentials and has passed real-provider checks with synthetic audio. Existing Listen & Find levels need no backend. See [speech integration](docs/SPEECH_PROVIDER.md) for backend setup and [Phase 4 report](docs/PHASE_4_REPORT.md) for physical-device acceptance limits.
 
+The current preview (Phase 9) is a Friendly World map with 14 pins: three Hello-intro listening games at Welcome Harbour, six Unit 3 "Food shopping" games at Market Street (listen-find, group-card counting practice and a slice game), the Talking Market voice level and a woodland sampler, plus locked "coming soon" pins. Each level opens with a one-line story so a non-reader knows the goal, and every pin speaks its own guide line. See [Phase 9 report](docs/PHASE_9_REPORT.md).
+
 ## Run
 
 Phase 5 adds Listen & Slice at the Waterfall map pin, reusing the market scene and Unit 3 content. Listen, then swipe across a fruit using a mouse drag or touch. One gesture cuts its first available fruit; cut fruits cannot count twice in the same task. Find the correct fruit and choose Next. See [Phase 5 report](docs/PHASE_5_REPORT.md) for verification and device limits.
@@ -16,6 +18,8 @@ Use Node 22 and pnpm 10.27.0:
 pnpm install --frozen-lockfile
 pnpm dev
 ```
+
+On Windows, run `start.cmd` (double-click it or `.\start.cmd` from a terminal): it starts the learning backend in its own window and runs `pnpm dev` in the current one. Close each window to stop. The speech (ASR) backend is separate and optional; see [speech integration](docs/SPEECH_PROVIDER.md).
 
 Phase 6 adds separate learning notes and offline resubmission. Start the local learning backend in another terminal with Python 3.11+: `python scripts/learning_server.py`. No extra Python packages are needed. SQLite defaults to `~/.english-adventure/learning.sqlite3`, outside Git; `--database` and `--port` override it. Vite proxies `/api/v1/` to loopback port 8788. Static hosting needs the same-origin API route configured separately. Open “Learning notes for grown-ups” on the map for sync status and content observations.
 

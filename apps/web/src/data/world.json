@@ -1,44 +1,134 @@
 {
-  "title": "Fruit Island",
+  "title": "Friendly World Adventure",
   "levels": [
     {
-      "id": "market",
+      "id": "harbour-friends",
+      "title": "Harbour Friends",
+      "subtitle": "Welcome Harbour · Hello",
+      "game": "hello-greet",
+      "x": 45,
+      "y": 56,
+      "story": "A new friend is waiting to say hello!",
+      "hello": "Hello! Welcome to the harbour! Can you find the friend who says hello?"
+    },
+    {
+      "id": "find-the-bus",
+      "title": "Find the Bus",
+      "subtitle": "Welcome Harbour · Hello",
+      "game": "hello-bus",
+      "x": 62,
+      "y": 46,
+      "story": "Which bus should we take? Listen carefully!",
+      "hello": "Great! Now listen and find the bus I say."
+    },
+    {
+      "id": "all-aboard",
+      "title": "All Aboard",
+      "subtitle": "Welcome Harbour · Hello",
+      "game": "hello-board",
+      "x": 54,
+      "y": 66,
+      "story": "One last listening game, then we sail!",
+      "hello": "Well done! Now find what I say, and then we sail!"
+    },
+    {
+      "id": "fruit-market",
       "title": "Fruit Market",
-      "subtitle": "Unit 3 · Food shopping",
-      "game": "powerup0-listen-find",
-      "x": 57,
-      "y": 74
+      "subtitle": "Market Street · Unit 3",
+      "game": "u3-basket",
+      "x": 41,
+      "y": 72,
+      "story": "The picnic is coming. First, some fruit!"
+    },
+    {
+      "id": "fruit-stall",
+      "title": "Fruit Stall",
+      "subtitle": "Market Street · Unit 3",
+      "game": "u3-stall",
+      "x": 51,
+      "y": 83,
+      "story": "The stall is empty. Fill the shelf with fruit!",
+      "hello": "The fruit stall is empty! Put the fruit I say on the shelf."
+    },
+    {
+      "id": "grocery-shop",
+      "title": "Grocery Shop",
+      "subtitle": "Market Street · Unit 3",
+      "game": "u3-grocery",
+      "x": 63,
+      "y": 74,
+      "story": "Shop for the picnic. Find the food you hear!",
+      "hello": "Now let's shop for the picnic. Find the food I say."
+    },
+    {
+      "id": "counting-boxes",
+      "title": "Counting Boxes",
+      "subtitle": "Market Street · Unit 3",
+      "game": "u3-count",
+      "x": 67,
+      "y": 64,
+      "story": "Listen and count. Tap the right box!",
+      "hello": "The boxes are mixed up! Listen and find the right box."
+    },
+    {
+      "id": "fruit-kitchen",
+      "title": "Fruit Kitchen",
+      "subtitle": "Market Street · Unit 3",
+      "game": "powerup0-slice",
+      "x": 72,
+      "y": 50,
+      "story": "Make a fruit plate. Swipe to slice!",
+      "hello": "Let's make a fruit plate! Slice the fruit I say."
+    },
+    {
+      "id": "picnic-time",
+      "title": "Picnic Time",
+      "subtitle": "Market Street · Unit 3",
+      "game": "u3-picnic",
+      "x": 41,
+      "y": 47,
+      "story": "Bring the food you hear to the picnic!",
+      "hello": "Picnic time! Bring the food I say to the table."
+    },
+    {
+      "id": "talking-market",
+      "title": "Talking Market",
+      "subtitle": "Market Street · Listen & Say",
+      "game": "powerup0-voice-match",
+      "x": 35,
+      "y": 63
     },
     {
       "id": "woodland",
-      "title": "Woodland",
+      "title": "Woodland Walk",
       "subtitle": "Demo words",
       "game": "fruit-sampler",
       "x": 84,
       "y": 50
     },
     {
-      "id": "voice-market",
-      "title": "Talking Market",
-      "subtitle": "Listen & Say",
-      "game": "powerup0-voice-match",
-      "x": 31,
-      "y": 84
-    },
-    {
       "id": "lighthouse",
       "title": "Lighthouse",
+      "subtitle": "Coming soon",
       "locked": true,
       "x": 15,
       "y": 63
     },
     {
-      "id": "waterfall",
-      "title": "Waterfall",
-      "subtitle": "Listen & Slice",
-      "game": "powerup0-slice",
-      "x": 51,
-      "y": 33
+      "id": "friends-square",
+      "title": "Friends Square",
+      "subtitle": "Coming soon",
+      "locked": true,
+      "x": 27,
+      "y": 44
+    },
+    {
+      "id": "school-trail",
+      "title": "School Trail",
+      "subtitle": "Coming soon",
+      "locked": true,
+      "x": 20,
+      "y": 52
     }
   ]
 }

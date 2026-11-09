@@ -12,20 +12,24 @@ export const fruitWorldMetadata: PluginMetadata = {
   configSchema: {
     type: 'object',
     additionalProperties: false,
-    properties: { theme: { enum: ['MARKET', 'FOREST'] } },
+    properties: { theme: { enum: ['MARKET', 'FOREST', 'HARBOUR'] } },
   },
 };
 
 export const fruitWorldBackground = (config: Record<string, unknown>) =>
   config.theme === 'FOREST'
     ? '/images/scenes/forest.webp'
-    : '/images/scenes/market.webp';
+    : config.theme === 'HARBOUR'
+      ? '/images/scenes/harbour.webp'
+      : '/images/scenes/market.webp';
 
 /** Where the counter top is in each backdrop, in world units (1280x720). */
 export const fruitWorldShelf = (config: Record<string, unknown>) =>
   config.theme === 'FOREST'
     ? { centerX: 640, baseY: 525 }
-    : { centerX: 770, baseY: 565 };
+    : config.theme === 'HARBOUR'
+      ? { centerX: 640, baseY: 645 } // the wooden pier
+      : { centerX: 770, baseY: 565 };
 
 export const fruitWorldAssets = (
   config: Record<string, unknown>,

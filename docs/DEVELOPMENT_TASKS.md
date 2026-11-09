@@ -1,5 +1,7 @@
 # Confirmed scope and decisions
 
+2026-11-07 continuation: the user asked for the Hello intro segment and a complete Unit 3 sample map so a child can playtest, with browser-skill verification and a commit when tests pass. This is data-only content work on the existing engine: no new mechanics, plugins or curriculum content embedded in code. Nine playable pins (3 Hello, 6 Unit 3) reuse listen-find/slice/voice games through GameDefinition JSON; per-level story and hello lines give each pin a concrete goal. Counting practice uses generated group cards, not a counting mechanic. See PHASE_9_REPORT.md.
+
 Phase 8 continuation: the user authorized the next chapter after Phase 7. Execute architecture extension/regression and measured performance checks, preserving existing behavior; stop for review after Phase 8. Reaction is a test fixture, not a new published gameplay feature. See PHASE_8_REPORT.md.
 
 Phase 7 continuation: the user authorized the next chapter after Phase 6. Implement Game Composer with a form, shared validation, local save/import/export and existing-runtime preview; stop before Phase 8. Keep preview observations separate from real learning and stars. See PHASE_7_REPORT.md.

@@ -24,10 +24,10 @@ test('repeated scene and mechanic switches release all managed asset URLs and ca
   for (const name of [
     'Fruit Market',
     'Woodland',
-    'Waterfall',
+    'Fruit Kitchen',
     'Talking Market',
     'Fruit Market',
-    'Waterfall',
+    'Fruit Kitchen',
   ]) {
     await page.getByRole('button', { name: `Play ${name}` }).click();
     await expect(

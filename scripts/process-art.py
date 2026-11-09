@@ -28,10 +28,38 @@ def key_out(path: Path, box: int) -> Image.Image:
 
 (OUT / 'fruit').mkdir(parents=True, exist_ok=True)
 (OUT / 'scenes').mkdir(parents=True, exist_ok=True)
+(OUT / 'characters').mkdir(parents=True, exist_ok=True)
+(OUT / 'vehicles').mkdir(parents=True, exist_ok=True)
+(OUT / 'food').mkdir(parents=True, exist_ok=True)
+
+def process(src: str, run) -> None:
+    """Raw output stays external; skip sources that are not in the current raw set."""
+    if not (RAW / f'{src}.png').exists():
+        print('skip (no raw):', src)
+        return
+    run()
+
 for name in ['apple', 'banana', 'grapes', 'orange', 'watermelon', 'pear']:
-    key_out(RAW / f'fruit_{name}.png', 380).save(OUT / 'fruit' / f'{name}.webp', quality=88, method=6)
-key_out(RAW / 'mascot.png', 480).save(OUT / 'mascot.webp', quality=88, method=6)
-for src, dst in [('market', 'scenes/market'), ('forest', 'scenes/forest'), ('map', 'map')]:
-    Image.open(RAW / f'{src}.png').convert('RGB').save(OUT / f'{dst}.webp', quality=80, method=6)
+    process(f'fruit_{name}', lambda n=name: key_out(RAW / f'fruit_{n}.png', 380).save(OUT / 'fruit' / f'{n}.webp', quality=88, method=6))
+process('mascot', lambda: key_out(RAW / 'mascot.png', 480).save(OUT / 'mascot.webp', quality=88, method=6))
+for src, dst in [('market', 'scenes/market'), ('forest', 'scenes/forest'), ('scene_harbour', 'scenes/harbour'), ('map', 'map')]:
+    process(src, lambda s=src, d=dst: Image.open(RAW / f'{s}.png').convert('RGB').save(OUT / f'{d}.webp', quality=80, method=6))
+# Friendly World sample: Hello characters and vehicles, Unit 3 extra food.
+for src, dst in [
+    ('char_cameron', 'characters/cameron'),
+    ('char_jim', 'characters/jim'),
+    ('char_jenny', 'characters/jenny'),
+    ('bus_red', 'vehicles/bus-red'),
+    ('bus_blue', 'vehicles/bus-blue'),
+    ('bus_green', 'vehicles/bus-green'),
+    ('bus_yellow', 'vehicles/bus-yellow'),
+    ('boat', 'vehicles/boat'),
+    ('food_rice', 'food/rice'),
+    ('food_beans', 'food/beans'),
+    ('food_egg', 'food/egg'),
+    ('food_burger', 'food/burger'),
+    ('food_carrot', 'food/carrot'),
+]:
+    process(src, lambda s=src, d=dst: key_out(RAW / f'{s}.png', 380).save(OUT / f'{d}.webp', quality=88, method=6))
 for f in sorted(OUT.rglob('*.webp')):
     print(f.relative_to(OUT), f.stat().st_size // 1024, 'KB')

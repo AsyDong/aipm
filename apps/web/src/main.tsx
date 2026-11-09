@@ -195,9 +195,9 @@ function Level({
     }
     if (spoken.current === key) return; // once per visit to that state
     spoken.current = key;
-    const url = guideAudio(key);
+    const url = guideAudio(key, level);
     if (url) bridge.current?.send({ type: 'SAY', url });
-  }, [state, error]);
+  }, [state, error, level]);
   useEffect(() => {
     if (completed && !saved.current) {
       saved.current = true;
@@ -253,7 +253,7 @@ function Level({
         <Guide>
           {active && (voiceLine || sliceLine)
             ? voiceLine || sliceLine
-            : guideText(guideKey(state, !!error), state.word)}
+            : guideText(guideKey(state, !!error), state.word, level)}
         </Guide>
         {(ready ||
           paused ||
@@ -319,17 +319,18 @@ function Level({
             ) : ready ? (
               <>
                 <h2>{level.title}</h2>
+                {level.story && <p className="story">{level.story}</p>}
                 <p>
                   {state.voice
                     ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
                     : slicing
                       ? 'Listen to the word. Swipe across the fruit.'
-                      : 'Listen to the word. Tap the fruit.'}
+                      : 'Listen to the word. Tap the right one.'}
                 </p>
                 <button
                   className="big-btn"
                   onClick={() => {
-                    const url = guideAudio('HELLO');
+                    const url = guideAudio('HELLO', level);
                     if (url) send({ type: 'SAY', url, wait: true });
                     send({ type: 'START' });
                   }}
@@ -431,24 +432,28 @@ function WorldMap({
           {world.levels.map((level) => {
             const got = mapStars(stars[level.id] ?? 0, 6);
             return (
-              <button
+              <div
                 key={level.id}
                 className={`pin ${level.locked ? 'locked' : ''} ${got ? 'cleared' : ''}`}
                 style={{ left: `${level.x}%`, top: `${level.y}%` }}
-                disabled={level.locked}
-                aria-label={
-                  level.locked
-                    ? `${level.title}, coming soon`
-                    : `Play ${level.title}`
-                }
-                onClick={() => onPick(level)}
               >
-                <span className="pin-bubble">
-                  {level.locked ? <LockIcon /> : <PlayIcon />}
-                </span>
+                {/* Only the bubble is the tap target so close pins never block each other. */}
+                <button
+                  disabled={level.locked}
+                  aria-label={
+                    level.locked
+                      ? `${level.title}, coming soon`
+                      : `Play ${level.title}`
+                  }
+                  onClick={() => onPick(level)}
+                >
+                  <span className="pin-bubble">
+                    {level.locked ? <LockIcon /> : <PlayIcon />}
+                  </span>
+                </button>
                 <span className="pin-label">{level.title}</span>
                 {!level.locked && <Stars count={got} />}
-              </button>
+              </div>
             );
           })}
         </div>
