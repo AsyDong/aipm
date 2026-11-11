@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { ContentResolver, createTasks } from './content';
+import { ContentResolver, createTasks, parseContents } from './content';
 const items = ['one', 'two', 'three'].map((id) => ({
   id,
   text: id,
@@ -28,6 +28,44 @@ it('resolves explicit ownership and rejects missing, duplicated or cross-unit co
       items: [...definition.items, ...definition.items],
     }),
   ).rejects.toThrow('Duplicate');
+});
+it('uses target-specific pictures so the noun alone cannot reveal a counted answer', () => {
+  const contents = items.map((item) => ({
+    ...item,
+    distractors: [2, 4].map((count) => ({
+      id: `${item.id}-${count}`,
+      text: `${count} ${item.text}`,
+      curriculumId: item.curriculumId,
+      unitId: item.unitId,
+      assets: { image: `/${item.id}-${count}.webp` },
+    })),
+  }));
+  const parsed = parseContents(contents);
+  for (const task of createTasks(parsed, 3, 3, () => 0.2)) {
+    expect(task.candidates).toHaveLength(3);
+    expect(
+      task.candidates.every((choice) => choice.id.startsWith(task.target.id)),
+    ).toBe(true);
+    expect(
+      task.candidates.filter((choice) => choice.id === task.target.id),
+    ).toHaveLength(1);
+  }
+  expect(() =>
+    parseContents([
+      {
+        ...contents[0],
+        distractors: [{ ...contents[0]!.distractors[0], unitId: 'other' }],
+      },
+    ]),
+  ).toThrow('ownership');
+  expect(() =>
+    parseContents([
+      {
+        ...contents[0],
+        distractors: [{ ...contents[0]!.distractors[0], id: contents[0]!.id }],
+      },
+    ]),
+  ).toThrow('ownership');
 });
 it('builds attributed tasks with one target, unique candidates and no content-dependent mechanism', () => {
   const tasks = createTasks(items, 5, 3, () => 0.2);

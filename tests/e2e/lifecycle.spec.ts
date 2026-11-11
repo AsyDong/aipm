@@ -21,6 +21,7 @@ test('repeated scene and mechanic switches release all managed asset URLs and ca
     Object.assign(window, { liveAssetCount: () => live.size });
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   for (const name of [
     'Fruit Market',
     'Woodland',

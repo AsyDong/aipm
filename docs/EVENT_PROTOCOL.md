@@ -1,5 +1,7 @@
 # Event protocol
 
+Phase 9 review extends GameViewState with optional `collected` entries containing taskId/contentId/text/image for solved targets only. Runtime appends an entry after a correct answer; pause/replay preserve it and start/restart clear it. The host can render task results without reading task targets or Phaser objects. This presentation field is not persisted as a learning event.
+
 Current learning events also include VOICE_RECORDED (successful capture start) and VOICE_RECOGNIZED (nonempty recognition above the confidence gate, including wrong words). They carry task IDs in the session-scoped EventBus envelope. Phase 6 persists aggregated task observations in immutable session submissions rather than raw input events. Phase 8 introduces no public event or bridge protocol changes; the Reaction test uses existing task/input/answer contracts.
 
 Phase 5: SWIPE contains a completed, bounded world-coordinate trajectory. Device adapters own mouse/touch capture; InputManager discards gestures at input-state boundaries. Slice emits INPUT_RECEIVED (inputType SWIPE) and OBJECT_SELECTED for its first uncut hit, then submits through IAnswerPort. Existing answer/reward events remain owned by the shared runner. No raw trajectories are added to persistent learning events.

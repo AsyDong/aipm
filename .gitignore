@@ -8,3 +8,5 @@ test-results/
 !.env.example
 *.log
 __pycache__/
+.playwright
+.playwright-mcp/

@@ -4,6 +4,7 @@ const WORLD = { width: 1280, height: 720 };
 // The hint turns the plate under the right fruit gold (#ffd21f).
 async function openLevel(page: Page, name = 'Fruit Market') {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: `Play ${name}` }).click();
 }
 async function start(page: Page, name?: string) {

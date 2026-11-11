@@ -194,6 +194,7 @@ export function createAdventure(
   }
   /** First round of a session: the engine is already started, so plugins listen. */
   function begin() {
+    state.collected = [];
     runner?.start(pendingTasks);
     showRound();
   }
@@ -240,6 +241,17 @@ export function createAdventure(
       input.disable();
       state.feedback = 'CORRECT';
       const word = runner.current()?.target.text;
+      const solved = runner.current();
+      if (solved)
+        state.collected = [
+          ...(state.collected ?? []),
+          {
+            taskId: solved.id,
+            contentId: solved.target.id,
+            text: solved.target.text,
+            image: solved.target.assets.image,
+          },
+        ];
       if (word) state.word = word;
       // "Yes! It is" ... then the word itself, so the child hears the whole sentence.
       // The chain belongs to this answer only: Next, pause, restart or leaving drop it,
@@ -273,6 +285,12 @@ export function createAdventure(
       validateAdventure(definition);
       const resolved = await resolver.resolve(definition.content);
       const assets = resolved.flatMap((content) => [
+        ...(content.distractors ?? []).map((choice) => ({
+          key: choice.assets.image,
+          type: 'IMAGE' as const,
+          url: choice.assets.image,
+          version: '1.0.0',
+        })),
         {
           key: content.assets.image,
           type: 'IMAGE' as const,

@@ -64,6 +64,12 @@ export async function checkCompositionAssets(
     definition.content,
   );
   const references: AssetReference[] = resolved.flatMap((item) => [
+    ...(item.distractors ?? []).map((choice) => ({
+      key: choice.assets.image,
+      url: choice.assets.image,
+      type: 'IMAGE' as const,
+      version: '1.0.0',
+    })),
     {
       key: item.assets.image,
       url: item.assets.image,

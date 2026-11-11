@@ -1,110 +1,262 @@
 {
   "title": "Friendly World Adventure",
+  "units": [
+    {
+      "id": "hello",
+      "title": "Welcome Harbour",
+      "subtitle": "Hello",
+      "x": 20,
+      "y": 42,
+      "marker": "U0",
+      "scene": "harbour",
+      "map": "/images/maps/hello.webp"
+    },
+    {
+      "id": "unit-1",
+      "title": "Friendship Square",
+      "subtitle": "Friends and family",
+      "x": 31,
+      "y": 33,
+      "marker": "U1",
+      "scene": "square"
+    },
+    {
+      "id": "unit-2",
+      "title": "School Discovery",
+      "subtitle": "At school",
+      "x": 52,
+      "y": 20,
+      "marker": "U2",
+      "scene": "school"
+    },
+    {
+      "id": "unit-3",
+      "title": "Market Street",
+      "subtitle": "Food shopping",
+      "x": 54,
+      "y": 44,
+      "marker": "U3",
+      "scene": "market",
+      "map": "/images/maps/unit-3.webp"
+    },
+    {
+      "id": "unit-4",
+      "title": "Cosy House",
+      "subtitle": "At home",
+      "x": 71,
+      "y": 20,
+      "marker": "U4",
+      "scene": "house"
+    },
+    {
+      "id": "unit-5",
+      "title": "Monster Art Studio",
+      "subtitle": "My body",
+      "x": 86,
+      "y": 40,
+      "marker": "U5",
+      "scene": "studio"
+    },
+    {
+      "id": "unit-6",
+      "title": "Toy Workshop",
+      "subtitle": "My toys",
+      "x": 87,
+      "y": 70,
+      "marker": "U6",
+      "scene": "workshop"
+    },
+    {
+      "id": "unit-7",
+      "title": "Adventure Park",
+      "subtitle": "Free time",
+      "x": 67,
+      "y": 62,
+      "marker": "U7",
+      "scene": "park"
+    },
+    {
+      "id": "unit-8",
+      "title": "Seaside Rescue",
+      "subtitle": "We're having fun",
+      "x": 52,
+      "y": 76,
+      "marker": "U8",
+      "scene": "seaside"
+    },
+    {
+      "id": "unit-9",
+      "title": "New Farm",
+      "subtitle": "Moving to the farm",
+      "x": 22,
+      "y": 74,
+      "marker": "U9",
+      "scene": "farm"
+    }
+  ],
   "levels": [
     {
       "id": "harbour-friends",
       "title": "Harbour Friends",
       "subtitle": "Welcome Harbour · Hello",
       "game": "hello-greet",
-      "x": 45,
-      "y": 56,
+      "x": 25,
+      "y": 27,
       "story": "A new friend is waiting to say hello!",
-      "hello": "Hello! Welcome to the harbour! Can you find the friend who says hello?"
+      "hello": "Hello! Welcome to the harbour! Can you find the friend who says hello?",
+      "chapter": "hello",
+      "order": 1,
+      "collection": "Friends together",
+      "outcome": "Our new friends are ready for the journey!",
+      "marker": "A1",
+      "unitId": "hello"
     },
     {
       "id": "find-the-bus",
       "title": "Find the Bus",
       "subtitle": "Welcome Harbour · Hello",
       "game": "hello-bus",
-      "x": 62,
-      "y": 46,
+      "x": 47,
+      "y": 39,
       "story": "Which bus should we take? Listen carefully!",
-      "hello": "Great! Now listen and find the bus I say."
+      "hello": "Great! Now listen and find the bus I say.",
+      "chapter": "hello",
+      "order": 2,
+      "collection": "Tickets ready",
+      "outcome": "We found our buses. Next stop: the boat!",
+      "marker": "A2",
+      "unitId": "hello"
     },
     {
       "id": "all-aboard",
       "title": "All Aboard",
       "subtitle": "Welcome Harbour · Hello",
       "game": "hello-board",
-      "x": 54,
-      "y": 66,
+      "x": 52,
+      "y": 70,
       "story": "One last listening game, then we sail!",
-      "hello": "Well done! Now find what I say, and then we sail!"
+      "hello": "Well done! Now find what I say, and then we sail!",
+      "chapter": "hello",
+      "order": 3,
+      "collection": "All aboard",
+      "outcome": "Everyone is aboard. Set sail for Market Street!",
+      "marker": "A3",
+      "unitId": "hello"
     },
     {
       "id": "fruit-market",
       "title": "Fruit Market",
       "subtitle": "Market Street · Unit 3",
       "game": "u3-basket",
-      "x": 41,
-      "y": 72,
-      "story": "The picnic is coming. First, some fruit!"
+      "x": 24,
+      "y": 71,
+      "story": "The picnic is coming. First, some fruit!",
+      "chapter": "unit-3",
+      "order": 1,
+      "collection": "Picnic basket",
+      "outcome": "Our fruit basket is ready. Let us help at the stall!",
+      "marker": "B1",
+      "unitId": "unit-3"
     },
     {
       "id": "fruit-stall",
       "title": "Fruit Stall",
       "subtitle": "Market Street · Unit 3",
       "game": "u3-stall",
-      "x": 51,
-      "y": 83,
+      "x": 45,
+      "y": 55,
       "story": "The stall is empty. Fill the shelf with fruit!",
-      "hello": "The fruit stall is empty! Put the fruit I say on the shelf."
+      "hello": "The fruit stall is empty! Put the fruit I say on the shelf.",
+      "chapter": "unit-3",
+      "order": 2,
+      "collection": "Fruit shelf",
+      "outcome": "The fruit shelf is full. Time to visit the grocery shop!",
+      "marker": "B2",
+      "unitId": "unit-3"
     },
     {
       "id": "grocery-shop",
       "title": "Grocery Shop",
       "subtitle": "Market Street · Unit 3",
       "game": "u3-grocery",
-      "x": 63,
+      "x": 67,
       "y": 74,
       "story": "Shop for the picnic. Find the food you hear!",
-      "hello": "Now let's shop for the picnic. Find the food I say."
+      "hello": "Now let's shop for the picnic. Find the food I say.",
+      "chapter": "unit-3",
+      "order": 3,
+      "collection": "Shopping basket",
+      "outcome": "We have the food. Now check the boxes!",
+      "marker": "B3",
+      "unitId": "unit-3"
     },
     {
       "id": "counting-boxes",
       "title": "Counting Boxes",
       "subtitle": "Market Street · Unit 3",
       "game": "u3-count",
-      "x": 67,
-      "y": 64,
+      "x": 88,
+      "y": 58,
       "story": "Listen and count. Tap the right box!",
-      "hello": "The boxes are mixed up! Listen and find the right box."
+      "hello": "The boxes are mixed up! Listen and find the right box.",
+      "chapter": "unit-3",
+      "order": 4,
+      "collection": "Boxes checked",
+      "outcome": "The right quantities are packed. On to the kitchen!",
+      "marker": "B4",
+      "unitId": "unit-3"
     },
     {
       "id": "fruit-kitchen",
       "title": "Fruit Kitchen",
       "subtitle": "Market Street · Unit 3",
       "game": "powerup0-slice",
-      "x": 72,
-      "y": 50,
+      "x": 69,
+      "y": 42,
       "story": "Make a fruit plate. Swipe to slice!",
-      "hello": "Let's make a fruit plate! Slice the fruit I say."
+      "hello": "Let's make a fruit plate! Slice the fruit I say.",
+      "chapter": "unit-3",
+      "order": 5,
+      "collection": "Fruit plate",
+      "outcome": "Our fruit plate is ready. Meet everyone at the picnic!",
+      "marker": "B5",
+      "unitId": "unit-3"
     },
     {
       "id": "picnic-time",
       "title": "Picnic Time",
       "subtitle": "Market Street · Unit 3",
       "game": "u3-picnic",
-      "x": 41,
-      "y": 47,
+      "x": 32,
+      "y": 37,
       "story": "Bring the food you hear to the picnic!",
-      "hello": "Picnic time! Bring the food I say to the table."
+      "hello": "Picnic time! Bring the food I say to the table.",
+      "chapter": "unit-3",
+      "order": 6,
+      "collection": "Picnic table",
+      "outcome": "The picnic is ready. Thank you for helping everyone!",
+      "marker": "B6",
+      "unitId": "unit-3"
     },
     {
       "id": "talking-market",
       "title": "Talking Market",
       "subtitle": "Market Street · Listen & Say",
       "game": "powerup0-voice-match",
-      "x": 35,
-      "y": 63
+      "x": 43,
+      "y": 83,
+      "marker": "S",
+      "unitId": "unit-3"
     },
     {
       "id": "woodland",
       "title": "Woodland Walk",
       "subtitle": "Demo words",
       "game": "fruit-sampler",
-      "x": 84,
-      "y": 50
+      "x": 90,
+      "y": 20,
+      "marker": "W",
+      "unitId": "unit-3"
     },
     {
       "id": "lighthouse",
@@ -112,7 +264,7 @@
       "subtitle": "Coming soon",
       "locked": true,
       "x": 15,
-      "y": 63
+      "y": 64
     },
     {
       "id": "friends-square",
@@ -120,15 +272,15 @@
       "subtitle": "Coming soon",
       "locked": true,
       "x": 27,
-      "y": 44
+      "y": 28
     },
     {
       "id": "school-trail",
       "title": "School Trail",
       "subtitle": "Coming soon",
       "locked": true,
-      "x": 20,
-      "y": 52
+      "x": 43,
+      "y": 31
     }
   ]
 }

@@ -76,13 +76,22 @@ export interface LearningContent {
   text: string;
   assets: { image: string; audio: string };
   source: { reference: string; page?: string; kind: 'CURRICULUM' | 'DEMO' };
+  /** Optional picture-only alternatives belonging to this target's curriculum. */
+  distractors?: LearningCandidate[];
+}
+export interface LearningCandidate {
+  id: string;
+  curriculumId: string;
+  unitId: string;
+  text: string;
+  assets: { image: string };
 }
 export interface LearningTask {
   id: string;
   curriculumId: string;
   unitId: string;
   target: LearningContent;
-  candidates: LearningContent[];
+  candidates: LearningCandidate[];
 }
 export interface SceneObject {
   objectId: string;
@@ -390,6 +399,13 @@ export interface GameViewState {
   };
   /** Only set once the task is solved, so the answer is never leaked earlier. */
   word?: string;
+  /** Solved targets only; the host can show a collection without reading tasks. */
+  collected?: {
+    taskId: string;
+    contentId: string;
+    text: string;
+    image: string;
+  }[];
   summary?: GameSummary;
 }
 export type GameMessage =

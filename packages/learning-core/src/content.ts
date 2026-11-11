@@ -55,7 +55,7 @@ export function createTasks(
   return Array.from({ length: rounds }, (_, index) => {
     const target = targets[index % targets.length]!;
     const distractors = shuffle(
-      contents.filter((item) => item.id !== target.id),
+      target.distractors ?? contents.filter((item) => item.id !== target.id),
       random,
     ).slice(0, optionCount - 1);
     return {
@@ -90,6 +90,25 @@ export function parseContents(raw: unknown): LearningContent[] {
       text(source.reference) &&
       (source.kind === 'CURRICULUM' || source.kind === 'DEMO');
     if (!ok) throw new Error(`Invalid content entry #${i}`);
+    if (item.distractors !== undefined) {
+      if (!Array.isArray(item.distractors) || item.distractors.length < 1)
+        throw new Error(`Invalid distractors #${i}`);
+      const ids = new Set([item.id]);
+      for (const choice of item.distractors) {
+        if (
+          !isDict(choice) ||
+          !text(choice.id) ||
+          !text(choice.text) ||
+          choice.curriculumId !== item.curriculumId ||
+          choice.unitId !== item.unitId ||
+          !isDict(choice.assets) ||
+          !text(choice.assets.image) ||
+          ids.has(choice.id)
+        )
+          throw new Error(`Invalid distractor ownership or picture #${i}`);
+        ids.add(choice.id);
+      }
+    }
     return item as unknown as LearningContent;
   });
 }

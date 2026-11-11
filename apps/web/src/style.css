@@ -362,11 +362,33 @@ canvas {
 /* ---------- world map ---------- */
 .world {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.chapter-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.chapter-heading h1 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 38px);
+  color: #234b50;
+}
+.chapter-heading p {
+  margin: 3px 0 0;
+  color: #245a63;
+}
+.chapter-heading .big-btn {
+  font-size: 17px;
+  min-height: 46px;
+  padding: 8px 16px;
 }
 .world-map {
   position: relative;
-  width: min(100%, calc((100dvh - 90px) * 16 / 9));
+  width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 24px;
   overflow: hidden;
@@ -377,29 +399,25 @@ canvas {
 .map-art {
   position: absolute;
   inset: 0;
+  transition: transform 600ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.entering-location .pin {
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.entering-location {
+  pointer-events: none;
 }
 .world-art {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   -webkit-user-drag: none;
-}
-.map-guide {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-}
-.map-guide .guide {
-  position: static;
-  max-width: 100%;
-}
-.map-guide .bubble {
-  margin-bottom: 40px;
 }
 .pin {
   position: absolute;
-  transform: translate(-50%, -62%);
+  transform: translate(-50%, -22px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -407,6 +425,10 @@ canvas {
   pointer-events: none;
 }
 .pin > button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   background: none;
@@ -415,15 +437,17 @@ canvas {
 .pin-bubble {
   display: grid;
   place-items: center;
-  width: clamp(44px, 7vw, 76px);
-  height: clamp(44px, 7vw, 76px);
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   color: #4a2c00;
   background: linear-gradient(#ffd95a, var(--sun));
   box-shadow:
     0 5px 0 var(--sun-deep),
     0 8px 12px #0004;
-  animation: hop 1.6s ease-in-out infinite;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid #fff8df;
 }
 .pin-bubble .icon {
   width: 55%;
@@ -443,16 +467,11 @@ canvas {
     0 5px 0 var(--leaf-deep),
     0 8px 12px #0004;
 }
-@keyframes hop {
-  50% {
-    transform: translateY(-8px);
-  }
-}
 .pin-label {
-  padding: 3px 12px;
-  border-radius: 14px;
-  background: #fff;
-  font-size: clamp(12px, 1.6vw, 19px);
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #fffffff2;
+  font-size: clamp(10px, 1vw, 13px);
   font-weight: 700;
   white-space: nowrap;
   box-shadow: 0 3px 0 #0002;
@@ -461,12 +480,100 @@ canvas {
   gap: 2px;
 }
 .pin .star-row .icon {
-  width: clamp(14px, 2vw, 24px);
-  height: clamp(14px, 2vw, 24px);
+  width: 11px;
+  height: 11px;
   animation: none !important;
 }
 .pin .star-row .on .icon {
   filter: none;
+}
+.map-key {
+  margin: 0;
+  font-size: 13px;
+  color: #234b50;
+}
+.pin.hello .pin-bubble {
+  background: #7edbea;
+  color: #124b64;
+}
+.pin:focus-within,
+.pin:hover {
+  z-index: 3;
+}
+.task-collection {
+  position: absolute;
+  z-index: 1;
+  right: 10px;
+  top: 10px;
+  max-width: 52%;
+  border-radius: 12px;
+  padding: 6px 10px;
+  background: #fff6dcf2;
+  color: #3a2a1a;
+  pointer-events: none;
+  font-size: clamp(11px, 1.5vw, 17px);
+}
+.task-collection > div {
+  display: flex;
+}
+.task-collection img {
+  width: clamp(22px, 3vw, 42px);
+  height: clamp(22px, 3vw, 42px);
+  object-fit: contain;
+}
+.story-result {
+  border-radius: 14px;
+  padding: 4px 14px;
+  background: #fff6dc;
+}
+.collected-items {
+  display: flex;
+  justify-content: center;
+}
+.collected-items img {
+  width: clamp(28px, 4vw, 52px);
+  height: clamp(28px, 4vw, 52px);
+  object-fit: contain;
+}
+.picnic-result {
+  background: repeating-conic-gradient(#fff1d9 0 25%, #f5bcb3 0 50%) 0 / 20px
+    20px;
+}
+.picnic-friends {
+  display: flex;
+  justify-content: space-around;
+}
+.picnic-friends img {
+  height: clamp(32px, 5vw, 64px);
+  width: auto;
+}
+.overlay.results {
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+.overlay.results .story {
+  max-width: 700px;
+  font-size: clamp(15px, 2vw, 24px);
+}
+.overlay.results .overlay-actions {
+  gap: 8px;
+}
+.overlay.results .big-btn {
+  font-size: clamp(14px, 1.8vw, 20px);
+  padding: 8px 16px;
+  min-height: 44px;
+}
+@media (max-width: 720px) {
+  .chapter-heading {
+    align-items: flex-start;
+  }
+  .chapter-heading p {
+    font-size: 12px;
+  }
+  .chapter-heading .big-btn {
+    max-width: 48%;
+    font-size: 14px;
+  }
 }
 
 /* ---------- portrait notice ---------- */
@@ -533,7 +640,17 @@ canvas {
     border-radius: 16px;
   }
   .world-map {
-    width: min(100%, calc((100dvh - 14px) * 16 / 9));
+    width: min(100%, calc((100dvh - 96px) * 16 / 9));
+    align-self: center;
+  }
+  .world {
+    gap: 4px;
+  }
+  .chapter-heading h1 {
+    font-size: 24px;
+  }
+  .map-key {
+    font-size: 11px;
   }
   .round-btn {
     width: 44px;
@@ -587,9 +704,12 @@ canvas {
     width: 40px;
     height: 40px;
   }
-  .pin-bubble {
-    width: 44px;
-    height: 44px;
+  .pin-label {
+    display: none;
+  }
+  .pin:hover .pin-label,
+  .pin:focus-within .pin-label {
+    display: block;
   }
 }
 
@@ -648,6 +768,9 @@ canvas {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .map-art {
+    transition: none;
+  }
   .nudge,
   .rotate-phone,
   .pin-bubble,

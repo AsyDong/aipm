@@ -5,6 +5,7 @@ async function open(page: Page) {
     Math.random = () => 0.999999;
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Kitchen' }).click();
   await page.getByRole('button', { name: /^Let/ }).click();
   await expect(page.getByRole('status')).toHaveText(

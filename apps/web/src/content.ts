@@ -23,7 +23,6 @@ const FOODS = ['rice', 'beans', 'egg', 'burger', 'carrot'].map((word) => ({
 }));
 const COUNTS = [
   { contentId: 'powerup0-unit3-count-apples-3' },
-  { contentId: 'powerup0-unit3-count-bananas-6' },
   { contentId: 'powerup0-unit3-count-oranges-2' },
   { contentId: 'powerup0-unit3-count-burgers-4' },
   { contentId: 'powerup0-unit3-count-eggs-5' },
@@ -46,6 +45,7 @@ function listenFind(
     optionCount: number;
     unit: { curriculumId: string; unitId: string };
     theme?: 'MARKET' | 'FOREST' | 'HARBOUR';
+    progression?: 'SEQUENTIAL' | 'RANDOM';
   },
 ): GameDefinition {
   return {
@@ -70,7 +70,7 @@ function listenFind(
       allowRetry: true,
       timeLimitMs: null,
       hintPolicy: { enabled: true, afterAttempts: 0, hintLevel: 1 },
-      progression: { mode: 'RANDOM' },
+      progression: { mode: options.progression ?? 'RANDOM' },
     },
     reward: { type: 'STAR', successReward: 1, completionBonus: 1 },
     difficulty: { optionCount: options.optionCount },
@@ -108,8 +108,14 @@ const games: Record<string, GameDefinition> = {
   }),
   'hello-board': listenFind(
     'hello-board',
-    [{ contentId: 'powerup0-unit0-boat' }, ...BUSES.slice(0, 2), ...CHARACTERS],
-    { rounds: 5, optionCount: 3, unit: HELLO_UNIT, theme: 'HARBOUR' },
+    [...CHARACTERS, ...BUSES.slice(0, 2), { contentId: 'powerup0-unit0-boat' }],
+    {
+      rounds: 6,
+      optionCount: 3,
+      unit: HELLO_UNIT,
+      theme: 'HARBOUR',
+      progression: 'SEQUENTIAL',
+    },
   ),
   // Market Street (Unit 3): basket, stall, grocery, counting, picnic.
   'u3-basket': listenFind('u3-basket', FRUITS, {
@@ -128,7 +134,7 @@ const games: Record<string, GameDefinition> = {
     unit: U3_UNIT,
   }),
   'u3-count': listenFind('u3-count', COUNTS, {
-    rounds: 5,
+    rounds: 4,
     optionCount: 3,
     unit: U3_UNIT,
   }),
@@ -170,5 +176,31 @@ export interface WorldLevel {
   story?: string;
   /** This place's own spoken welcome line; audio lives at hello-<id>.mp3. */
   hello?: string;
+  chapter?: string;
+  order?: number;
+  collection?: string;
+  outcome?: string;
+  marker?: string;
+  unitId?: string;
 }
-export const world = worldData as { title: string; levels: WorldLevel[] };
+export interface WorldUnit {
+  id: string;
+  title: string;
+  subtitle: string;
+  x: number;
+  y: number;
+  marker: string;
+  scene: string;
+  /** Unit map art; falls back to the world overview when absent. */
+  map?: string;
+}
+export const world = worldData as {
+  title: string;
+  units: WorldUnit[];
+  levels: WorldLevel[];
+};
+export const storyLevels = world.levels.filter((level) => level.chapter);
+export const nextStoryLevel = (level: WorldLevel) =>
+  level.chapter
+    ? storyLevels[storyLevels.findIndex((item) => item.id === level.id) + 1]
+    : undefined;

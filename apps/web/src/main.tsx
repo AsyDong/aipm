@@ -22,14 +22,15 @@ import {
   guideAudio,
   guideText,
   world,
+  nextStoryLevel,
   type GuideKey,
   type WorldLevel,
+  type WorldUnit,
 } from './content';
-import { loadStars, mapStars, saveStars } from './progress';
+import { gameStars, loadStars, saveStars } from './progress';
 import {
   BackIcon,
   BulbIcon,
-  LockIcon,
   MutedIcon,
   NextIcon,
   PauseIcon,
@@ -39,6 +40,9 @@ import {
 } from './icons';
 import { tryLockLandscape, usePortraitPhone } from './orientation';
 import './style.css';
+
+/** World overview art; units without their own map zoom into this. */
+const WORLD_MAP_SRC = '/images/maps/world.webp';
 
 const INITIAL: GameViewState = {
   lifecycle: 'INITIALIZING',
@@ -99,12 +103,14 @@ function Level({
   onDone,
   learning,
   definition,
+  onNext,
 }: {
   level: WorldLevel;
   onExit: () => void;
   onDone: (stars: number) => void;
   learning?: LearningOptions | undefined;
   definition?: GameDefinition;
+  onNext?: (() => void) | undefined;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const bridge = useRef<IGameBridge | null>(null);
@@ -185,7 +191,8 @@ function Level({
   useEffect(() => {
     if (portrait && active) bridge.current?.send({ type: 'PAUSE' });
   }, [portrait, active]);
-  const earned = mapStars(state.stars, state.total + 1);
+  const gameDefinition = definition ?? definitionFor(level.game!);
+  const earned = gameStars(state.stars, gameDefinition);
   const spoken = useRef('');
   useEffect(() => {
     const key = guideKey(state, !!error);
@@ -238,6 +245,18 @@ function Level({
         </span>
       </div>
       <div className="stage">
+        {level.collection && active && (
+          <div className="task-collection" aria-label={level.collection}>
+            <span>
+              {level.collection} · {state.collected?.length ?? 0}/{state.total}
+            </span>
+            <div>
+              {state.collected?.map((item) => (
+                <img key={item.taskId} src={item.image} alt={item.text} />
+              ))}
+            </div>
+          </div>
+        )}
         <div
           className="canvas-host"
           ref={host}
@@ -272,11 +291,44 @@ function Level({
             ) : completed ? (
               <>
                 <h2>Great job!</h2>
+                {level.outcome && <p className="story">{level.outcome}</p>}
+                {level.collection && (
+                  <div
+                    className={`story-result ${level.id === 'picnic-time' ? 'picnic-result' : ''}`}
+                    aria-label={`${level.collection} complete`}
+                  >
+                    {level.id === 'picnic-time' && (
+                      <div className="picnic-friends">
+                        {['jim', 'jenny', 'cameron'].map((name) => (
+                          <img
+                            key={name}
+                            src={`/images/characters/${name}.webp`}
+                            alt={name}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="collected-items">
+                      {state.collected?.map((item) => (
+                        <img
+                          key={item.taskId}
+                          src={item.image}
+                          alt={item.text}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <Stars count={earned} />
                 <p>
                   You collected <strong>{state.stars}</strong> stars.
                 </p>
                 <div className="overlay-actions">
+                  {onNext && (
+                    <button className="big-btn" onClick={onNext}>
+                      Continue adventure <NextIcon />
+                    </button>
+                  )}
                   <button
                     className="big-btn"
                     onClick={() => {
@@ -417,50 +469,97 @@ function Level({
   );
 }
 
-function WorldMap({
-  stars,
-  onPick,
-}: {
-  stars: Record<string, number>;
-  onPick: (level: WorldLevel) => void;
-}) {
+function WorldMap({ onPickUnit }: { onPickUnit: (unit: WorldUnit) => void }) {
   return (
     <section className="world" aria-label={world.title}>
+      <div className="chapter-heading">
+        <div>
+          <h1>World map</h1>
+          <p>U0–U9 · Follow the friends from the harbour to the farm</p>
+        </div>
+      </div>
       <div className="world-map">
         <div className="map-art">
-          <img src="/images/map.webp" alt="" className="world-art" />
-          {world.levels.map((level) => {
-            const got = mapStars(stars[level.id] ?? 0, 6);
+          <img src={WORLD_MAP_SRC} alt="" className="world-art" />
+          {world.units.map((unit) => {
             return (
               <div
-                key={level.id}
-                className={`pin ${level.locked ? 'locked' : ''} ${got ? 'cleared' : ''}`}
-                style={{ left: `${level.x}%`, top: `${level.y}%` }}
+                key={unit.id}
+                className="pin unit-pin"
+                style={{ left: `${unit.x}%`, top: `${unit.y}%` }}
               >
-                {/* Only the bubble is the tap target so close pins never block each other. */}
                 <button
-                  disabled={level.locked}
-                  aria-label={
-                    level.locked
-                      ? `${level.title}, coming soon`
-                      : `Play ${level.title}`
-                  }
-                  onClick={() => onPick(level)}
+                  aria-label={`Open ${unit.title}`}
+                  onClick={() => onPickUnit(unit)}
+                  title={unit.title}
                 >
-                  <span className="pin-bubble">
-                    {level.locked ? <LockIcon /> : <PlayIcon />}
-                  </span>
+                  <span className="pin-bubble">{unit.marker}</span>
                 </button>
-                <span className="pin-label">{level.title}</span>
-                {!level.locked && <Stars count={got} />}
+                <span className="pin-label">{unit.title}</span>
               </div>
             );
           })}
         </div>
-        <div className="map-guide">
-          <Guide>{guideText('MAP')}</Guide>
+      </div>
+      <p className="map-key">U0–U9 · Open a unit to see its story locations</p>
+    </section>
+  );
+}
+
+function UnitMap({
+  unit,
+  stars,
+  onPick,
+  onBack,
+}: {
+  unit: WorldUnit;
+  stars: Record<string, number>;
+  onPick: (level: WorldLevel) => void;
+  onBack: () => void;
+}) {
+  const levels = world.levels.filter((level) => level.unitId === unit.id);
+  return (
+    <section className="world" aria-label={`${unit.title} map`}>
+      <div className="chapter-heading">
+        <div>
+          <h1>{unit.title}</h1>
+          <p>Unit map · {unit.subtitle}</p>
+        </div>
+        <button className="big-btn" onClick={onBack}>
+          World map
+        </button>
+      </div>
+      <div className="world-map unit-map">
+        <div className="map-art">
+          <img src={unit.map ?? WORLD_MAP_SRC} alt="" className="world-art" />
+          {levels.map((level) => {
+            const got = level.game
+              ? gameStars(stars[level.id] ?? 0, definitionFor(level.game))
+              : 0;
+            return (
+              <div
+                key={level.id}
+                className={`pin ${got ? 'cleared' : ''}`}
+                style={{ left: `${level.x}%`, top: `${level.y}%` }}
+              >
+                <button
+                  aria-label={`Play ${level.title}`}
+                  onClick={() => onPick(level)}
+                >
+                  <span className="pin-bubble">{level.marker}</span>
+                </button>
+                <span className="pin-label">{level.title}</span>
+                <Stars count={got} />
+              </div>
+            );
+          })}
         </div>
       </div>
+      <p className="map-key">
+        {levels.length
+          ? `${levels.length} story locations · Choose a numbered point`
+          : 'This unit is being prepared'}
+      </p>
     </section>
   );
 }
@@ -479,6 +578,7 @@ function App() {
   const [composing, setComposing] = useState(false);
   const [preview, setPreview] = useState<GameDefinition>();
   const [level, setLevel] = useState<WorldLevel | null>(null);
+  const [unit, setUnit] = useState<WorldUnit | null>(null);
   const [stars, setStars] = useState(loadStars);
   const portrait = usePortraitPhone();
   const [learning, setLearning] = useState<LearningOptions>();
@@ -572,6 +672,10 @@ function App() {
     void tryLockLandscape();
     setLevel(next);
   };
+  const pickUnit = (next: WorldUnit) => {
+    void tryLockLandscape();
+    setUnit(next);
+  };
   return (
     <main>
       {portrait && <RotateNotice />}
@@ -606,9 +710,21 @@ function App() {
           onExit={() => setLevel(null)}
           onDone={(earned) => setStars(saveStars(level.id, earned))}
           learning={learning}
+          onNext={
+            nextStoryLevel(level)
+              ? () => pick(nextStoryLevel(level)!)
+              : undefined
+          }
+        />
+      ) : unit ? (
+        <UnitMap
+          unit={unit}
+          stars={stars}
+          onPick={pick}
+          onBack={() => setUnit(null)}
         />
       ) : (
-        <WorldMap stars={stars} onPick={pick} />
+        <WorldMap onPickUnit={pickUnit} />
       )}
       {!level && !composing && (
         <details className="session-notes">

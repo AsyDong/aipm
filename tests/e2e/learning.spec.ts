@@ -14,6 +14,7 @@ test('unfinished learning survives reload and retries the identical session afte
     return route.fulfill({ json: { sessionId: data.session.sessionId } });
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Market' }).click();
   await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText('Which one is it?');

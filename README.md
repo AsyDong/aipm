@@ -1,5 +1,7 @@
 # English Adventure
 
+The homepage is the story overview for U0–U9. Open a unit landmark to see that unit's own map and numbered training locations; U0 and U3 currently contain the playable sample. Solved items accumulate during each mission, Hello ends on the boat, and Unit 3 ends with a picnic. The map and shared scene art still need coordinated replacement: a Seedream request was blocked by environment network permissions, and current imagery does not meet location matching acceptance. See [the scene replacement plan](docs/SCENE_ART_REPLACEMENT.md). Drag-and-drop, dynamic world construction and new spoken endings are not implemented.
+
 An English-only listening adventure for beginners. The long-term learning goal is 500 listening words; this is not a claim that the current preview teaches or assesses those words.
 
 Phase 3.2 turns it into a small game world: a Fruit Island map with one level per unit, a monkey guide who talks in short English lines, a market scene where fruit drops onto a counter, and stars kept on the map (this device only). Listen & Find is the first level type: five listening rounds, randomized picture choices, replay, hints, friendly retries, pause/resume, stars and a session summary. The default collection is Power Up 0, Unit 3, printed page 28: apple, banana, grapes, orange and watermelon. An explicitly independent woodland sampler demonstrates content and scene reuse.

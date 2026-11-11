@@ -50,6 +50,7 @@ async function mockMicrophone(page: Page) {
 async function open(page: Page) {
   await mockMicrophone(page);
   await page.goto('/');
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Talking Market' }).click();
   await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText(

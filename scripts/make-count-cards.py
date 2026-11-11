@@ -1,7 +1,7 @@
 """Compose listening cards that show a count of one food (Unit 3 counting node).
 
-Builds square cards from existing transparent webp assets: three apples, six
-bananas and so on, arranged like dice pips on a soft rounded card. Usage:
+Builds count alternatives using single-item food assets (never banana bunches).
+Each question shows the same food in different quantities. Usage:
 python scripts/make-count-cards.py
 """
 from pathlib import Path
@@ -20,11 +20,10 @@ LAYOUTS = {
     6: [(0.30, 0.25), (0.70, 0.25), (0.30, 0.50), (0.70, 0.50), (0.30, 0.75), (0.70, 0.75)],
 }
 CARDS = {
-    'apples-3': ('fruit/apple.webp', 3),
-    'bananas-6': ('fruit/banana.webp', 6),
-    'oranges-2': ('fruit/orange.webp', 2),
-    'burgers-4': ('food/burger.webp', 4),
-    'eggs-5': ('food/egg.webp', 5),
+    f'{food}-{count}': (source, count)
+    for food, source in [('apples', 'fruit/apple.webp'), ('oranges', 'fruit/orange.webp'),
+                         ('burgers', 'food/burger.webp'), ('eggs', 'food/egg.webp')]
+    for count in range(2, 7)
 }
 
 
@@ -33,7 +32,7 @@ def card(source: Path, count: int) -> Image.Image:
     drawn = ImageDraw.Draw(base)
     drawn.rounded_rectangle((10, 10, CARD - 10, CARD - 10), 48, fill=(255, 249, 231, 255), outline=(232, 196, 106, 255), width=8)
     item = Image.open(source).convert('RGBA')
-    size = round(300 / max(1, count**0.5)) + 90  # more items -> smaller copies
+    size = 160 if count >= 5 else 210  # keep neighbouring items separate for counting
     item.thumbnail((size, size), Image.LANCZOS)
     for fx, fy in LAYOUTS[count]:
         xy = (round(fx * CARD) - item.width // 2, round(fy * CARD) - item.height // 2)
@@ -42,6 +41,7 @@ def card(source: Path, count: int) -> Image.Image:
 
 
 def main() -> None:
+    assert all(len(LAYOUTS[count]) == count for count in range(2, 7))
     OUT.mkdir(parents=True, exist_ok=True)
     for name, (source, count) in CARDS.items():
         card(IMAGES / source, count).save(OUT / f'{name}.webp', quality=88, method=6)
