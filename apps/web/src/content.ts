@@ -10,8 +10,9 @@ import guideData from './data/guide.json';
  * Levels, vocabulary and the world map are data, not code: edit src/data/*.json.
  * Content is checked at load; each definition is validated by the runtime before
  * it starts. Power Up 0 Unit 3 entries were verified against printed page 28.
- * The Friendly World sample nodes share one Listen & Find template below; the
- * Slice and Voice Match variants reuse the curriculum definition as before.
+ * Market Street stops share the Listen & Find builder but differ in what the
+ * child does: fill a basket, stock a shelf, shop from a list, count and pack
+ * (the Count & Pack mechanic), slice onto a plate, and serve the friends.
  */
 export const allContent = parseContents(contentData);
 
@@ -27,6 +28,16 @@ const COUNTS = [
   { contentId: 'powerup0-unit3-count-burgers-4' },
   { contentId: 'powerup0-unit3-count-eggs-5' },
 ];
+/** Two count-the-group rounds, then four pack-the-box rounds; six apples is
+ *  pool-only so even a full box can be judged (and repacked after a miss). */
+const COUNT_PACK = [
+  { contentId: 'powerup0-unit3-numeral-3' },
+  { contentId: 'powerup0-unit3-numeral-4' },
+  ...COUNTS,
+  { contentId: 'powerup0-unit3-count-apples-6' },
+];
+/** Shared by the scene (drawn box) and the mechanic (tap-to-finish zone). */
+const PACK_BOX = { x: 1000, y: 540, width: 260, height: 220 };
 const CHARACTERS = ['cameron', 'jim', 'jenny'].map((name) => ({
   contentId: `powerup0-unit0-${name}`,
 }));
@@ -46,6 +57,7 @@ function listenFind(
     unit: { curriculumId: string; unitId: string };
     theme?: 'MARKET' | 'FOREST' | 'HARBOUR';
     progression?: 'SEQUENTIAL' | 'RANDOM';
+    place?: 'BASKET' | 'SHELF' | 'PLATE' | 'CHARACTERS' | 'BOX';
   },
 ): GameDefinition {
   return {
@@ -56,7 +68,7 @@ function listenFind(
     scene: {
       id: 'fruit-world',
       version: '1.0.0',
-      config: { theme: options.theme ?? 'MARKET' },
+      config: { theme: options.theme ?? 'MARKET', place: options.place },
     },
     mechanic: {
       id: 'tap',
@@ -117,31 +129,78 @@ const games: Record<string, GameDefinition> = {
       progression: 'SEQUENTIAL',
     },
   ),
-  // Market Street (Unit 3): basket, stall, grocery, counting, picnic.
+  // Market Street (Unit 3): each stop now works differently, not just new words.
+  // 1 Entrance: a friend hands over a basket that visibly fills.
   'u3-basket': listenFind('u3-basket', FRUITS, {
     rounds: 5,
     optionCount: 2,
     unit: U3_UNIT,
+    place: 'BASKET',
   }),
+  // 2 Stall: meet the five fruits first (level.meet), then stock the shelf
+  // in a fixed order so the empty stall becomes a full one.
   'u3-stall': listenFind('u3-stall', FRUITS, {
     rounds: 5,
     optionCount: 5,
     unit: U3_UNIT,
+    place: 'SHELF',
+    progression: 'SEQUENTIAL',
   }),
+  // 3 Grocery: a picture shopping list (level.checklist), food into the basket.
   'u3-grocery': listenFind('u3-grocery', FOODS, {
     rounds: 5,
     optionCount: 3,
     unit: U3_UNIT,
+    place: 'BASKET',
   }),
-  'u3-count': listenFind('u3-count', COUNTS, {
-    rounds: 4,
-    optionCount: 3,
-    unit: U3_UNIT,
-  }),
+  // 4 Delivery station: count a group and tap the numeral, then pack the
+  // heard quantity into the box and tap the box. A different interaction,
+  // not another listen-and-point round.
+  'u3-count': {
+    id: 'u3-count',
+    version: '1.0.0',
+    schemaVersion: '1.0.0',
+    name: 'Count & Pack',
+    scene: {
+      id: 'fruit-world',
+      version: '1.0.0',
+      config: { theme: 'MARKET', place: 'BOX', box: PACK_BOX },
+    },
+    mechanic: {
+      id: 'count-pack',
+      version: '1.0.0',
+      config: { box: PACK_BOX },
+    },
+    content: { ...U3_UNIT, items: COUNT_PACK },
+    input: { allowed: ['MOUSE', 'TOUCH'] },
+    rules: {
+      rounds: 6,
+      allowRetry: true,
+      timeLimitMs: null,
+      hintPolicy: { enabled: true, afterAttempts: 0, hintLevel: 1 },
+      progression: { mode: 'SEQUENTIAL' },
+    },
+    reward: { type: 'STAR', successReward: 1, completionBonus: 1 },
+    difficulty: { optionCount: 4 },
+  } as GameDefinition,
+  // 5 Kitchen: slice the right fruit; the plate fills piece by piece.
+  'u3-kitchen': {
+    ...curriculumGame,
+    id: 'u3-kitchen',
+    name: 'Listen & Slice',
+    mechanic: { id: 'slice', version: '1.0.0', config: { minDistance: 32 } },
+    scene: {
+      id: 'fruit-world',
+      version: '1.0.0',
+      config: { theme: 'MARKET', place: 'PLATE' },
+    },
+  } as GameDefinition,
+  // 6 Picnic: friends take turns asking; each gets the food they asked for.
   'u3-picnic': listenFind('u3-picnic', [...FRUITS, ...FOODS], {
     rounds: 6,
     optionCount: 4,
     unit: U3_UNIT,
+    place: 'CHARACTERS',
   }),
 };
 export function definitionFor(gameId: string): GameDefinition {
@@ -156,7 +215,9 @@ export type GuideKey = keyof typeof guideData;
 export const guideText = (key: GuideKey, word?: string, level?: WorldLevel) =>
   key === 'HELLO' && level?.hello
     ? level.hello
-    : guideData[key].text.replace('{word}', word ?? 'right');
+    : key === 'ASK' && level?.ask
+      ? level.ask
+      : guideData[key].text.replace('{word}', word ?? 'right');
 /** Spoken file for a guide line, or undefined when the line is text-only. */
 export const guideAudio = (key: GuideKey, level?: WorldLevel) => {
   if (key === 'HELLO' && level?.hello)
@@ -176,6 +237,12 @@ export interface WorldLevel {
   story?: string;
   /** This place's own spoken welcome line; audio lives at hello-<id>.mp3. */
   hello?: string;
+  /** A stop's own question line while the child chooses (e.g. "How many?"). */
+  ask?: string;
+  /** Meet-the-words strip on the intro overlay: tap a picture, hear its word. */
+  meet?: string[];
+  /** The grocery stop shows its whole shopping list, ticking off what is found. */
+  checklist?: boolean;
   chapter?: string;
   order?: number;
   collection?: string;

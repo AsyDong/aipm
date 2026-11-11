@@ -7,11 +7,13 @@ interface Slot {
   plate: Phaser.GameObjects.Ellipse;
   image: string;
   cut: boolean;
+  collected: boolean;
 }
 
 /** Places fruit on the counter, animates feedback, and answers hit tests. */
 export class PhaserObjects implements ISceneObjects {
   private slots: Slot[] = [];
+  private collected: Phaser.GameObjects.Image[] = [];
   private centerX = 640;
   private baseY = 520;
   constructor(private scene: Phaser.Scene) {}
@@ -20,57 +22,115 @@ export class PhaserObjects implements ISceneObjects {
     this.baseY = baseY;
   }
   show(items: SceneItem[]) {
-    this.clear();
-    const count = items.length;
-    const size = count <= 3 ? 210 : count === 4 ? 180 : 150;
+    this.clearSlots();
+    // A LARGE item is the question picture: it stands apart, left of the shelf.
+    const featured = items.find((item) => item.size === 'LARGE');
+    const row = items.filter((item) => item !== featured);
+    const count = row.length;
+    const size = row.some((item) => item.size === 'SMALL')
+      ? 110
+      : count <= 3
+        ? 210
+        : count === 4
+          ? 180
+          : 150;
     const spacing = size + 30;
-    items.forEach((item, index) => {
+    if (featured) this.place(featured, 230, 320, 260);
+    row.forEach((item, index) => {
       const x = this.centerX + (index - (count - 1) / 2) * spacing;
       const y = this.baseY - size / 2;
-      const plate = this.scene.add
-        .ellipse(x, this.baseY + 8, size * 0.95, 30, 0x000000, 0.25)
-        .setDepth(1);
-      const fruit = this.scene.add
-        .image(0, 0, item.image)
-        .setDisplaySize(size, size);
-      const container = this.scene.add
-        .container(x, y - 280, [fruit])
-        .setDepth(2)
-        .setAlpha(0);
-      const model: SceneObject = {
-        objectId: item.objectId,
-        contentId: item.contentId,
-        x,
-        y,
-        width: size + 20,
-        height: size + 40,
-      };
-      this.slots.push({
-        model,
-        container,
-        plate,
-        image: item.image,
-        cut: false,
-      });
-      // Drop in with a bounce, then bob gently while waiting.
-      this.scene.tweens.add({
-        targets: container,
-        y,
-        alpha: 1,
-        duration: 520,
-        delay: index * 110,
-        ease: 'Bounce.easeOut',
-        onComplete: () =>
-          this.scene.tweens.add({
-            targets: container,
-            y: y - 6,
-            duration: 1500 + index * 220,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut',
-          }),
-      });
+      this.place(item, x, y, size);
     });
+  }
+  private place(item: SceneItem, x: number, y: number, size: number) {
+    const index = this.slots.length;
+    const plate = this.scene.add
+      .ellipse(x, y + size / 2 + 8, size * 0.95, 30, 0x000000, 0.25)
+      .setDepth(1);
+    const fruit = this.scene.add
+      .image(0, 0, item.image)
+      .setDisplaySize(size, size);
+    const container = this.scene.add
+      .container(x, y - 280, [fruit])
+      .setDepth(2)
+      .setAlpha(0);
+    const model: SceneObject = {
+      objectId: item.objectId,
+      contentId: item.contentId,
+      x,
+      y,
+      width: size + 20,
+      height: size + 40,
+    };
+    this.slots.push({
+      model,
+      container,
+      plate,
+      image: item.image,
+      cut: false,
+      collected: false,
+    });
+    // Drop in with a bounce, then bob gently while waiting.
+    this.scene.tweens.add({
+      targets: container,
+      y,
+      alpha: 1,
+      duration: 520,
+      delay: index * 110,
+      ease: 'Bounce.easeOut',
+      onComplete: () =>
+        this.scene.tweens.add({
+          targets: container,
+          y: y - 6,
+          duration: 1500 + index * 220,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.inOut',
+        }),
+    });
+  }
+  /** A solved item visibly joins the basket, shelf, plate or box; it survives show(). */
+  collect(objectId: string, to: { x: number; y: number; scale?: number }) {
+    const slot = this.slots.find(({ model }) => model.objectId === objectId);
+    if (!slot || slot.collected) return;
+    slot.collected = true;
+    const size = to.scale ? (slot.model.width - 20) * to.scale : 80;
+    const mini = this.scene.add
+      .image(slot.model.x, slot.model.y, slot.image)
+      .setDisplaySize(size, size)
+      .setDepth(4);
+    this.collected.push(mini);
+    this.scene.tweens.add({
+      targets: mini,
+      x: to.x,
+      y: to.y,
+      duration: 520,
+      ease: 'Cubic.easeInOut',
+    });
+    // The original leaves the counter: it now lives in the collection place.
+    this.scene.tweens.killTweensOf(slot.container);
+    this.scene.tweens.add({
+      targets: slot.container,
+      alpha: 0,
+      duration: 300,
+    });
+  }
+  /** Empties every collected mini (e.g. a wrongly packed box), keeps the shelf. */
+  clearCollected() {
+    for (const mini of this.collected.splice(0)) {
+      this.scene.tweens.killTweensOf(mini);
+      mini.destroy();
+    }
+    // Emptied boxes hand their contents back to the counter for another try.
+    for (const slot of this.slots) {
+      if (!slot.collected) continue;
+      slot.collected = false;
+      this.scene.tweens.add({
+        targets: slot.container,
+        alpha: 1,
+        duration: 250,
+      });
+    }
   }
   hitTest(x: number, y: number) {
     return this.slots.find(
@@ -167,6 +227,10 @@ export class PhaserObjects implements ISceneObjects {
     }
   }
   clear() {
+    this.clearSlots();
+    this.clearCollected();
+  }
+  private clearSlots() {
     for (const { container, plate } of this.slots) {
       this.scene.tweens.killTweensOf(container.list);
       this.scene.tweens.killTweensOf(container);

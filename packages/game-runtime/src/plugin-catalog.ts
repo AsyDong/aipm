@@ -3,6 +3,7 @@ import {
   TapMechanic,
   VoiceMatchMechanic,
   SliceMechanic,
+  CountPackMechanic,
 } from '@english/game-mechanics';
 import { FruitWorldScene } from '@english/game-scenes';
 import type Phaser from 'phaser';
@@ -18,6 +19,7 @@ export function pluginCatalog(scene: Phaser.Scene): PluginRegistration[] {
     tap: () => new TapMechanic(),
     'voice-match': () => new VoiceMatchMechanic(),
     slice: () => new SliceMechanic(),
+    'count-pack': () => new CountPackMechanic(),
   };
   return composerPlugins.map((plugin) => {
     const create = factories[plugin.metadata.id];

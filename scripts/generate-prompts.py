@@ -35,19 +35,25 @@ PHRASES = [
     ('burger', 'burger'),
     ('carrot', 'carrot'),
     ('three-apples', 'Three apples!'),
+    ('six-apples', 'Six apples!'),
     ('six-bananas', 'Six bananas!'),
     ('two-oranges', 'Two oranges!'),
     ('four-burgers', 'Four burgers!'),
     ('five-eggs', 'Five eggs!'),
+]
+# Extra guide lines outside guide.json keys (e.g. the shared counting question).
+GUIDE_EXTRA = [
+    ('how_many', 'How many?'),
 ]
 # Per-level welcome lines for the sample world (spoken as the guide, one file each).
 LEVEL_HELLO = {
     'harbour-friends': 'Hello! Welcome to the harbour! Can you find the friend who says hello?',
     'find-the-bus': 'Great! Now listen and find the bus I say.',
     'all-aboard': 'Well done! Now find what I say, and then we sail!',
+    'fruit-market': 'Here is your basket! Listen, and put the fruit I say in the basket.',
     'fruit-stall': 'The fruit stall is empty! Put the fruit I say on the shelf.',
     'grocery-shop': "Now let's shop for the picnic. Find the food I say.",
-    'counting-boxes': 'The boxes are mixed up! Listen and find the right box.',
+    'counting-boxes': 'First, count the food and tap the number. Then pack the box: tap the food, then tap the box!',
     'fruit-kitchen': "Let's make a fruit plate! Slice the fruit I say.",
     'picnic-time': 'Picnic time! Bring the food I say to the table.',
 }
@@ -78,6 +84,8 @@ async def main():
         await speak(line.get('say', line['text']), AUDIO / 'guide' / f'{key.lower()}.mp3', GUIDE_VOICE)
     for level, text in LEVEL_HELLO.items():
         await speak(text, AUDIO / 'guide' / f'hello-{level}.mp3', GUIDE_VOICE)
+    for filename, text in GUIDE_EXTRA:
+        await speak(text, AUDIO / 'guide' / f'{filename}.mp3', GUIDE_VOICE)
 
 
 if __name__ == '__main__':

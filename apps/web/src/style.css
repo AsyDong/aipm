@@ -220,9 +220,9 @@ canvas {
 .guide {
   position: absolute;
   left: 8px;
-  bottom: 6px;
+  top: 8px;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 4px;
   max-width: 46%;
   pointer-events: none;
@@ -240,7 +240,7 @@ canvas {
 }
 .bubble {
   position: relative;
-  margin: 0 0 clamp(36px, 8vw, 90px);
+  margin: clamp(6px, 1vw, 12px) 0 0;
   padding: 10px 16px;
   border-radius: 20px;
   background: #fff;
@@ -515,6 +515,63 @@ canvas {
 }
 .task-collection > div {
   display: flex;
+}
+/* The grocery stop's picture shopping list: dim until found, then a tick. */
+.shopping-list .list-item {
+  position: relative;
+  display: inline-block;
+}
+.shopping-list .list-item:not(.bought) img {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.shopping-list .tick {
+  position: absolute;
+  right: -2px;
+  bottom: -4px;
+  color: #2e9e44;
+  font-weight: 700;
+  font-size: clamp(16px, 2.4vw, 26px);
+  text-shadow: 0 1px 0 #fff;
+}
+/* Meet-the-fruit strip on the intro overlay: tap a picture, hear its word. */
+.meet-strip {
+  background: #fff6dc;
+  border-radius: 16px;
+  padding: 8px 14px;
+}
+.meet-strip p {
+  color: #7a4d16;
+  font-size: clamp(14px, 1.8vw, 20px);
+}
+.meet-strip > div {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.meet-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  background: #ffffffb0;
+  color: #5c3a12;
+  font-weight: 600;
+  font-size: clamp(12px, 1.6vw, 18px);
+  padding: 6px 10px;
+  cursor: pointer;
+  min-width: 64px;
+  min-height: 64px;
+}
+.meet-item:active {
+  border-color: #e8a23c;
+  transform: scale(0.96);
+}
+.meet-item img {
+  width: clamp(40px, 6vw, 72px);
+  height: clamp(40px, 6vw, 72px);
+  object-fit: contain;
 }
 .task-collection img {
   width: clamp(22px, 3vw, 42px);

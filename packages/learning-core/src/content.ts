@@ -90,6 +90,14 @@ export function parseContents(raw: unknown): LearningContent[] {
       text(source.reference) &&
       (source.kind === 'CURRICULUM' || source.kind === 'DEMO');
     if (!ok) throw new Error(`Invalid content entry #${i}`);
+    if (
+      (item.quantity !== undefined &&
+        (!Number.isInteger(item.quantity) ||
+          (item.quantity as number) < 1 ||
+          (item.quantity as number) > 12)) ||
+      (item.illustration !== undefined && !text(item.illustration))
+    )
+      throw new Error(`Invalid quantity or illustration #${i}`);
     if (item.distractors !== undefined) {
       if (!Array.isArray(item.distractors) || item.distractors.length < 1)
         throw new Error(`Invalid distractors #${i}`);

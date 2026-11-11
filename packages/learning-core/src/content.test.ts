@@ -80,3 +80,18 @@ it('builds attributed tasks with one target, unique candidates and no content-de
     expect(new Set(task.candidates.map((item) => item.id)).size).toBe(3);
   }
 });
+it('accepts optional quantity and illustration, rejecting malformed values', () => {
+  const counted = { ...items[0], quantity: 3, illustration: '/apple.webp' };
+  expect(parseContents([counted])[0]).toMatchObject({
+    quantity: 3,
+    illustration: '/apple.webp',
+  });
+  for (const bad of [
+    { ...items[0], quantity: 0 },
+    { ...items[0], quantity: 2.5 },
+    { ...items[0], quantity: 'three' },
+    { ...items[0], illustration: '' },
+    { ...items[0], illustration: 4 },
+  ])
+    expect(() => parseContents([bad])).toThrow('quantity or illustration');
+});

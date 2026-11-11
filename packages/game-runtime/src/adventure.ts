@@ -264,6 +264,9 @@ export function createAdventure(
       void cue.then(async () => {
         if (mine !== sayChain || disposed) return;
         await audio.say(GUIDE_AUDIO.right);
+        // Count & Pack prompts are questions, not words: repeating the target
+        // audio here would read "How many?" back as if it were the answer.
+        if (definition.mechanic.id === 'count-pack') return;
         const target = runner?.current()?.target.assets.audio;
         if (mine === sayChain && target && !disposed) void audio.say(target);
       });
@@ -291,6 +294,16 @@ export function createAdventure(
           url: choice.assets.image,
           version: '1.0.0',
         })),
+        ...(content.illustration
+          ? [
+              {
+                key: content.illustration,
+                type: 'IMAGE' as const,
+                url: content.illustration,
+                version: '1.0.0',
+              },
+            ]
+          : []),
         {
           key: content.assets.image,
           type: 'IMAGE' as const,
@@ -304,7 +317,16 @@ export function createAdventure(
           version: '1.0.0',
         },
       ]);
-      await viewport.preload({ scope: 'session', assets }, scene);
+      await viewport.preload(
+        {
+          scope: 'session',
+          // A counted group can be both an answer image and an illustration.
+          assets: [
+            ...new Map(assets.map((asset) => [asset.key, asset])).values(),
+          ],
+        },
+        scene,
+      );
       if (disposed) return;
       await viewport
         .preload(
@@ -481,8 +503,9 @@ export function createAdventure(
         voice?.stop();
         break;
       case 'SAY':
-        // Same-origin urls only; AssetManager enforces that on load.
-        if (command.url.startsWith('/audio/guide/')) {
+        // Guide lines and word prompts; same-origin urls only, AssetManager
+        // enforces that on load.
+        if (command.url.startsWith('/audio/')) {
           await viewport.assets
             .preload({
               scope: 'cues',

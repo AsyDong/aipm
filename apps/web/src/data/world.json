@@ -156,7 +156,8 @@
       "collection": "Picnic basket",
       "outcome": "Our fruit basket is ready. Let us help at the stall!",
       "marker": "B1",
-      "unitId": "unit-3"
+      "unitId": "unit-3",
+      "hello": "Here is your basket! Listen, and put the fruit I say in the basket."
     },
     {
       "id": "fruit-stall",
@@ -172,7 +173,14 @@
       "collection": "Fruit shelf",
       "outcome": "The fruit shelf is full. Time to visit the grocery shop!",
       "marker": "B2",
-      "unitId": "unit-3"
+      "unitId": "unit-3",
+      "meet": [
+        "powerup0-unit3-apple",
+        "powerup0-unit3-banana",
+        "powerup0-unit3-grapes",
+        "powerup0-unit3-orange",
+        "powerup0-unit3-watermelon"
+      ]
     },
     {
       "id": "grocery-shop",
@@ -188,7 +196,8 @@
       "collection": "Shopping basket",
       "outcome": "We have the food. Now check the boxes!",
       "marker": "B3",
-      "unitId": "unit-3"
+      "unitId": "unit-3",
+      "checklist": true
     },
     {
       "id": "counting-boxes",
@@ -197,20 +206,21 @@
       "game": "u3-count",
       "x": 88,
       "y": 58,
-      "story": "Listen and count. Tap the right box!",
-      "hello": "The boxes are mixed up! Listen and find the right box.",
+      "story": "Some boxes have the wrong amount! Count the food, then pack each box.",
+      "hello": "First, count the food and tap the number. Then pack the box: tap the food, then tap the box!",
       "chapter": "unit-3",
       "order": 4,
       "collection": "Boxes checked",
       "outcome": "The right quantities are packed. On to the kitchen!",
       "marker": "B4",
-      "unitId": "unit-3"
+      "unitId": "unit-3",
+      "ask": "How many?"
     },
     {
       "id": "fruit-kitchen",
       "title": "Fruit Kitchen",
       "subtitle": "Market Street · Unit 3",
-      "game": "powerup0-slice",
+      "game": "u3-kitchen",
       "x": 69,
       "y": 42,
       "story": "Make a fruit plate. Swipe to slice!",

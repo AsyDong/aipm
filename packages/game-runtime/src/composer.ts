@@ -11,6 +11,7 @@ import {
   voiceMatchMetadata,
   sliceMetadata,
   sliceAssets,
+  countPackMetadata,
 } from '@english/game-mechanics';
 import {
   fruitWorldMetadata,
@@ -28,6 +29,7 @@ export const composerPlugins: {
   { metadata: tapMetadata },
   { metadata: voiceMatchMetadata },
   { metadata: sliceMetadata, assets: sliceAssets },
+  { metadata: countPackMetadata },
 ];
 
 export async function validateComposition(
@@ -70,6 +72,16 @@ export async function checkCompositionAssets(
       type: 'IMAGE' as const,
       version: '1.0.0',
     })),
+    ...(item.illustration
+      ? [
+          {
+            key: item.illustration,
+            url: item.illustration,
+            type: 'IMAGE' as const,
+            version: '1.0.0',
+          },
+        ]
+      : []),
     {
       key: item.assets.image,
       url: item.assets.image,

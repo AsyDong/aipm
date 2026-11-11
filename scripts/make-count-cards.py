@@ -46,6 +46,33 @@ def main() -> None:
     for name, (source, count) in CARDS.items():
         card(IMAGES / source, count).save(OUT / f'{name}.webp', quality=88, method=6)
         print(f'count/{name}.webp', (OUT / f'{name}.webp').stat().st_size // 1024, 'KB')
+    for count in range(2, 7):
+        numeral(count).save(OUT / f'numeral-{count}.webp', quality=88, method=6)
+        print(f'count/numeral-{count}.webp written')
+
+
+def numeral(count: int) -> Image.Image:
+    """Answer cards for How-many: a big digit with counting pips underneath."""
+    from PIL import ImageFont
+
+    base = Image.new('RGBA', (CARD, CARD), (0, 0, 0, 0))
+    d = ImageDraw.Draw(base)
+    d.rounded_rectangle((10, 10, CARD - 10, CARD - 10), 48, fill=(255, 249, 231, 255), outline=(232, 196, 106, 255), width=8)
+    font = None
+    for name in ('C:/Windows/Fonts/arialbd.ttf', 'C:/Windows/Fonts/arial.ttf'):
+        try:
+            font = ImageFont.truetype(name, 300)
+            break
+        except OSError:
+            continue
+    d.text((CARD / 2, 300), str(count), fill=(138, 90, 44, 255), font=font, anchor='mm')
+    radius = 24
+    gap = 70
+    start = CARD / 2 - (count - 1) * gap / 2
+    for i in range(count):
+        x = start + i * gap
+        d.ellipse((x - radius, 470 - radius, x + radius, 470 + radius), fill=(232, 156, 60, 255))
+    return base
 
 
 if __name__ == '__main__':

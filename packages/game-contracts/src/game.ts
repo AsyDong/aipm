@@ -78,6 +78,13 @@ export interface LearningContent {
   source: { reference: string; page?: string; kind: 'CURRICULUM' | 'DEMO' };
   /** Optional picture-only alternatives belonging to this target's curriculum. */
   distractors?: LearningCandidate[];
+  /** Counting items: how many things this item names (e.g. "three apples" → 3). */
+  quantity?: number;
+  /**
+   * A picture that illustrates the item without being its answer card:
+   * a group to count for a numeral, a single food to pack for a counted item.
+   */
+  illustration?: string;
 }
 export interface LearningCandidate {
   id: string;
@@ -262,6 +269,8 @@ export interface SceneItem {
   objectId: string;
   contentId: string;
   image: string;
+  /** LARGE: featured question picture beside the shelf. SMALL: small packable items. */
+  size?: 'LARGE' | 'SMALL';
 }
 export interface ISceneObjects {
   /** The scene says where its counter is: horizontal centre and the surface fruit stands on. */
@@ -272,6 +281,16 @@ export interface ISceneObjects {
   feedback(objectId: string, kind: 'CORRECT' | 'RETRY' | 'HINT'): void;
   /** Optional capability: visually split an object without evaluating its content. */
   slice?(objectId: string): void;
+  /**
+   * Optional capability: fly a small copy of an object's image to a collection
+   * point (a basket, shelf slot, plate or box). Purely visual; no evaluation.
+   */
+  collect?(
+    objectId: string,
+    to: { x: number; y: number; scale?: number },
+  ): void;
+  /** Optional capability: remove collected minis only (e.g. re-pack after a miss). */
+  clearCollected?(): void;
   clear(): void;
 }
 export interface IContentResolver {

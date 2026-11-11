@@ -152,6 +152,9 @@ function Level({
   const slicing =
     (definition ?? (level.game ? definitionFor(level.game) : undefined))
       ?.mechanic.id === 'slice';
+  const counting =
+    (definition ?? (level.game ? definitionFor(level.game) : undefined))
+      ?.mechanic.id === 'count-pack';
   const voiceBusy = !!state.voice && state.voice.status !== 'IDLE';
   const voiceMessages = {
     NO_SPEECH: 'I did not hear a word. Tap Record to try again.',
@@ -245,17 +248,52 @@ function Level({
         </span>
       </div>
       <div className="stage">
-        {level.collection && active && (
-          <div className="task-collection" aria-label={level.collection}>
+        {level.collection && active && level.checklist ? (
+          <div
+            className="task-collection shopping-list"
+            aria-label={level.collection}
+          >
             <span>
               {level.collection} · {state.collected?.length ?? 0}/{state.total}
             </span>
             <div>
-              {state.collected?.map((item) => (
-                <img key={item.taskId} src={item.image} alt={item.text} />
-              ))}
+              {gameDefinition.content.items.map((reference) => {
+                const item = allContent.find(
+                  (content) => content.id === reference.contentId,
+                );
+                if (!item) return null;
+                const bought = state.collected?.some(
+                  (collected) => collected.contentId === item.id,
+                );
+                return (
+                  <span
+                    key={item.id}
+                    className={`list-item ${bought ? 'bought' : ''}`}
+                  >
+                    <img src={item.assets.image} alt={item.text} />
+                    <span className="tick" aria-hidden>
+                      {bought ? '✓' : ''}
+                    </span>
+                  </span>
+                );
+              })}
             </div>
           </div>
+        ) : (
+          level.collection &&
+          active && (
+            <div className="task-collection" aria-label={level.collection}>
+              <span>
+                {level.collection} · {state.collected?.length ?? 0}/
+                {state.total}
+              </span>
+              <div>
+                {state.collected?.map((item) => (
+                  <img key={item.taskId} src={item.image} alt={item.text} />
+                ))}
+              </div>
+            </div>
+          )
         )}
         <div
           className="canvas-host"
@@ -266,7 +304,9 @@ function Level({
               ? 'Fruit on the counter. Listen, then record your voice.'
               : slicing
                 ? 'Fruit on the counter. Listen, then swipe across one.'
-                : 'Fruit on the counter. Listen, then tap one.'
+                : counting
+                  ? 'Food to count and a box to pack. Tap a number, or tap food into the box and tap the box.'
+                  : 'Fruit on the counter. Listen, then tap one.'
           }
         />
         <Guide>
@@ -372,12 +412,41 @@ function Level({
               <>
                 <h2>{level.title}</h2>
                 {level.story && <p className="story">{level.story}</p>}
+                {level.meet && (
+                  <div className="meet-strip" aria-label="Meet the fruit">
+                    <p>Tap a fruit to hear its name!</p>
+                    <div>
+                      {level.meet.map((contentId) => {
+                        const item = allContent.find(
+                          (content) => content.id === contentId,
+                        );
+                        return (
+                          item && (
+                            <button
+                              key={contentId}
+                              className="meet-item"
+                              aria-label={`Hear ${item.text}`}
+                              onClick={() =>
+                                send({ type: 'SAY', url: item.assets.audio })
+                              }
+                            >
+                              <img src={item.assets.image} alt={item.text} />
+                              <span>{item.text}</span>
+                            </button>
+                          )
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <p>
                   {state.voice
                     ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
-                    : slicing
-                      ? 'Listen to the word. Swipe across the fruit.'
-                      : 'Listen to the word. Tap the right one.'}
+                    : counting
+                      ? 'Count the food and tap the number. Then pack the food and tap the box!'
+                      : slicing
+                        ? 'Listen to the word. Swipe across the fruit.'
+                        : 'Listen to the word. Tap the right one.'}
                 </p>
                 <button
                   className="big-btn"

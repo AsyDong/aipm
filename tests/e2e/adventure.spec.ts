@@ -131,9 +131,6 @@ test('the map remembers stars; pause, replay, leave and re-enter, and a second l
   }
   // Different level on the same scene and mechanic, only the data changes.
   await page.getByRole('button', { name: 'Back to the map' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Lighthouse, coming soon' }),
-  ).toBeDisabled();
   await start(page, 'Woodland');
   await hintedChoice(page);
 });
@@ -151,6 +148,7 @@ test('finished levels keep their stars on the map after a reload', async ({
   await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to the map' }).first().click();
   await page.reload();
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   const market = page.locator('.pin', {
     has: page.getByRole('button', { name: 'Play Fruit Market' }),
   });
@@ -248,6 +246,7 @@ test('an upright phone gets a "turn sideways" notice and the game pauses', async
   await expect(page.getByText('Turn your phone sideways to play!')).toHaveCount(
     0,
   );
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Market' }).click();
   await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText('Which one is it?', {

@@ -307,6 +307,8 @@
       "image": "/images/count/apples-3.webp",
       "audio": "/audio/three-apples.mp3"
     },
+    "quantity": 3,
+    "illustration": "/images/fruit/apple.webp",
     "source": {
       "kind": "CURRICULUM",
       "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
@@ -359,6 +361,8 @@
       "image": "/images/count/oranges-2.webp",
       "audio": "/audio/two-oranges.mp3"
     },
+    "quantity": 2,
+    "illustration": "/images/fruit/orange.webp",
     "source": {
       "kind": "CURRICULUM",
       "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
@@ -403,6 +407,60 @@
     ]
   },
   {
+    "id": "powerup0-unit3-count-apples-6",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "six apples",
+    "assets": {
+      "image": "/images/count/apples-6.webp",
+      "audio": "/audio/six-apples.mp3"
+    },
+    "quantity": 6,
+    "illustration": "/images/fruit/apple.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-count-apples-2",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "2 apples",
+        "assets": {
+          "image": "/images/count/apples-2.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-count-apples-3",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "3 apples",
+        "assets": {
+          "image": "/images/count/apples-3.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-count-apples-4",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "4 apples",
+        "assets": {
+          "image": "/images/count/apples-4.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-count-apples-5",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "5 apples",
+        "assets": {
+          "image": "/images/count/apples-5.webp"
+        }
+      }
+    ]
+  },
+  {
     "id": "powerup0-unit3-count-burgers-4",
     "curriculumId": "powerup-0",
     "unitId": "unit-3",
@@ -411,6 +469,8 @@
       "image": "/images/count/burgers-4.webp",
       "audio": "/audio/four-burgers.mp3"
     },
+    "quantity": 4,
+    "illustration": "/images/food/burger.webp",
     "source": {
       "kind": "CURRICULUM",
       "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
@@ -463,6 +523,8 @@
       "image": "/images/count/eggs-5.webp",
       "audio": "/audio/five-eggs.mp3"
     },
+    "quantity": 5,
+    "illustration": "/images/food/egg.webp",
     "source": {
       "kind": "CURRICULUM",
       "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
@@ -502,6 +564,271 @@
         "text": "6 eggs",
         "assets": {
           "image": "/images/count/eggs-6.webp"
+        }
+      }
+    ]
+  },
+  {
+    "id": "powerup0-unit3-numeral-2",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "two",
+    "assets": {
+      "image": "/images/count/numeral-2.webp",
+      "audio": "/audio/guide/how_many.mp3"
+    },
+    "illustration": "/images/count/oranges-2.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-numeral-3",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "three",
+        "assets": {
+          "image": "/images/count/numeral-3.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-4",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "four",
+        "assets": {
+          "image": "/images/count/numeral-4.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-5",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "five",
+        "assets": {
+          "image": "/images/count/numeral-5.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-6",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "six",
+        "assets": {
+          "image": "/images/count/numeral-6.webp"
+        }
+      }
+    ]
+  },
+  {
+    "id": "powerup0-unit3-numeral-3",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "three",
+    "assets": {
+      "image": "/images/count/numeral-3.webp",
+      "audio": "/audio/guide/how_many.mp3"
+    },
+    "illustration": "/images/count/apples-3.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-numeral-2",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "two",
+        "assets": {
+          "image": "/images/count/numeral-2.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-4",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "four",
+        "assets": {
+          "image": "/images/count/numeral-4.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-5",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "five",
+        "assets": {
+          "image": "/images/count/numeral-5.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-6",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "six",
+        "assets": {
+          "image": "/images/count/numeral-6.webp"
+        }
+      }
+    ]
+  },
+  {
+    "id": "powerup0-unit3-numeral-4",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "four",
+    "assets": {
+      "image": "/images/count/numeral-4.webp",
+      "audio": "/audio/guide/how_many.mp3"
+    },
+    "illustration": "/images/count/burgers-4.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-numeral-2",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "two",
+        "assets": {
+          "image": "/images/count/numeral-2.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-3",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "three",
+        "assets": {
+          "image": "/images/count/numeral-3.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-5",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "five",
+        "assets": {
+          "image": "/images/count/numeral-5.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-6",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "six",
+        "assets": {
+          "image": "/images/count/numeral-6.webp"
+        }
+      }
+    ]
+  },
+  {
+    "id": "powerup0-unit3-numeral-5",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "five",
+    "assets": {
+      "image": "/images/count/numeral-5.webp",
+      "audio": "/audio/guide/how_many.mp3"
+    },
+    "illustration": "/images/count/eggs-5.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-numeral-2",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "two",
+        "assets": {
+          "image": "/images/count/numeral-2.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-3",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "three",
+        "assets": {
+          "image": "/images/count/numeral-3.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-4",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "four",
+        "assets": {
+          "image": "/images/count/numeral-4.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-6",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "six",
+        "assets": {
+          "image": "/images/count/numeral-6.webp"
+        }
+      }
+    ]
+  },
+  {
+    "id": "powerup0-unit3-numeral-6",
+    "curriculumId": "powerup-0",
+    "unitId": "unit-3",
+    "text": "six",
+    "assets": {
+      "image": "/images/count/numeral-6.webp",
+      "audio": "/audio/guide/how_many.mp3"
+    },
+    "illustration": "/images/count/apples-6.webp",
+    "source": {
+      "kind": "CURRICULUM",
+      "reference": "Cambridge Power Up 0, Unit 3: Food shopping, How many practice"
+    },
+    "distractors": [
+      {
+        "id": "powerup0-unit3-numeral-2",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "two",
+        "assets": {
+          "image": "/images/count/numeral-2.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-3",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "three",
+        "assets": {
+          "image": "/images/count/numeral-3.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-4",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "four",
+        "assets": {
+          "image": "/images/count/numeral-4.webp"
+        }
+      },
+      {
+        "id": "powerup0-unit3-numeral-5",
+        "curriculumId": "powerup-0",
+        "unitId": "unit-3",
+        "text": "five",
+        "assets": {
+          "image": "/images/count/numeral-5.webp"
         }
       }
     ]

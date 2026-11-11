@@ -1,6 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function start(page: Page, name: string, unit: string) {
+async function start(
+  page: Page,
+  name: string,
+  unit: string,
+  ask = 'Which one is it?',
+) {
   await page.addInitScript(() => {
     Math.random = () => 0.999999;
   });
@@ -11,9 +16,16 @@ async function start(page: Page, name: string, unit: string) {
   await page.getByRole('button', { name: `Open ${unit}`, exact: true }).click();
   await page.getByRole('button', { name: `Play ${name}`, exact: true }).click();
   await page.getByRole('button', { name: /^Let/ }).click();
-  await expect(page.getByRole('status')).toHaveText('Which one is it?', {
-    timeout: 20000,
-  });
+  await expect(page.getByRole('status')).toHaveText(ask, { timeout: 20000 });
+}
+
+async function tapWorld(page: Page, x: number, y: number) {
+  const box = (await page.locator('canvas').boundingBox())!;
+  const px = box.x + (x * box.width) / 1280,
+    py = box.y + (y * box.height) / 720;
+  if (page.context().browser()?.browserType().name() === 'webkit')
+    await page.touchscreen.tap(px, py);
+  else await page.mouse.click(px, py);
 }
 
 async function chooseFirst(
@@ -25,12 +37,7 @@ async function chooseFirst(
   const size = count <= 3 ? 210 : 180;
   const x = centerX - ((count - 1) / 2) * (size + 30);
   const y = baseY - size / 2;
-  const box = (await page.locator('canvas').boundingBox())!;
-  const px = box.x + (x * box.width) / 1280,
-    py = box.y + (y * box.height) / 720;
-  if (page.context().browser()?.browserType().name() === 'webkit')
-    await page.touchscreen.tap(px, py);
-  else await page.mouse.click(px, py);
+  await tapWorld(page, x, y);
   await expect(page.getByRole('status')).toContainText('Yes! It is');
 }
 
@@ -155,33 +162,54 @@ test('short story collects solved items, keeps three stars on the map, and conti
   ).toBeVisible();
 });
 
-test('counted choices load same-food alternatives; restart clears the collected boxes', async ({
+test('counting and packing complete six rounds; restart clears the collected boxes', async ({
   page,
 }) => {
   const images: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/images/count/')) images.push(request.url());
   });
-  await start(page, 'Counting Boxes', 'Market Street');
-  for (const count of [2, 3, 4, 5, 6])
-    expect(images.some((url) => url.endsWith(`/apples-${count}.webp`))).toBe(
-      true,
-    );
-  for (let i = 0; i < 4; i++) {
-    await chooseFirst(page, 3);
-    await expect(
-      page.getByLabel('Boxes checked', { exact: true }).locator('img'),
-    ).toHaveCount(i + 1);
+  const ask = 'How many?';
+  await start(page, 'Counting Boxes', 'Market Street', ask);
+  for (const file of [
+    'numeral-2',
+    'numeral-3',
+    'numeral-4',
+    'numeral-5',
+    'numeral-6',
+    'apples-3',
+    'oranges-2',
+    'burgers-4',
+    'eggs-5',
+  ])
+    expect(images.some((url) => url.endsWith(`/${file}.webp`))).toBe(true);
+  const collected = page
+    .getByLabel('Boxes checked', { exact: true })
+    .locator('img');
+  // Count the picture and tap a numeral in the first two rounds.
+  for (let i = 0; i < 2; i++) {
+    await chooseFirst(page, 4);
+    await expect(collected).toHaveCount(i + 1);
+    await page.getByRole('button', { name: 'Next', exact: false }).click();
+    await expect(page.getByRole('status')).toHaveText(ask);
+  }
+  // Pack 3, 2, 4 and 5 single foods, then tap the box to answer.
+  for (const [index, quantity] of [3, 2, 4, 5].entries()) {
+    for (let item = 0; item < quantity; item++)
+      await tapWorld(page, 70 + item * 140, 545);
+    await tapWorld(page, 1000, 540);
+    await expect(page.getByRole('status')).toContainText('Yes! It is');
+    await expect(collected).toHaveCount(index + 3);
     await page
-      .getByRole('button', { name: i === 3 ? 'Finish' : 'Next', exact: false })
+      .getByRole('button', {
+        name: index === 3 ? 'Finish' : 'Next',
+        exact: false,
+      })
       .click();
-    if (i < 3)
-      await expect(page.getByRole('status')).toHaveText('Which one is it?');
+    if (index < 3) await expect(page.getByRole('status')).toHaveText(ask);
   }
   await page.getByRole('button', { name: 'Play again' }).click();
-  await expect(
-    page.getByLabel('Boxes checked', { exact: true }).locator('img'),
-  ).toHaveCount(0);
+  await expect(collected).toHaveCount(0);
 });
 
 test('the last mission ends with friends around the collected picnic food', async ({
