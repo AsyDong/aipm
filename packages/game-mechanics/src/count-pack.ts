@@ -48,7 +48,7 @@ export function boxSlot(box: BoxRect, index: number) {
   return {
     x: box.x - 70 + (index % 3) * 70,
     y: box.y - 35 + Math.floor(index / 3) * 70,
-    scale: 0.55,
+    scale: 0.48,
   };
 }
 

@@ -133,7 +133,7 @@ it('validates config and computes box slots in two rows inside the box', () => {
     { box: { ...box, width: 0 } },
   ])
     expect(() => validateCountPackConfig(config)).toThrow('CountPackConfig');
-  expect(boxSlot(box, 0)).toEqual({ x: 430, y: 365, scale: 0.55 });
+  expect(boxSlot(box, 0)).toEqual({ x: 430, y: 365, scale: 0.48 });
   expect(boxSlot(box, 3).y).toBe(435);
 });
 

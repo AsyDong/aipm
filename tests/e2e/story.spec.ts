@@ -229,6 +229,11 @@ test('the last mission ends with friends around the collected picnic food', asyn
   ).toBeVisible();
   await expect(page.locator('.picnic-friends img')).toHaveCount(3);
   await expect(page.locator('.collected-items img')).toHaveCount(6);
+  expect(
+    await page
+      .locator('.overlay.results')
+      .evaluate((overlay) => overlay.scrollHeight <= overlay.clientHeight),
+  ).toBe(true);
   await expect(
     page.getByRole('button', { name: 'Continue adventure' }),
   ).toHaveCount(0);
