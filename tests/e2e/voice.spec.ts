@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 /** Deterministic capture only; this does not certify hardware or recognition quality. */
 async function mockMicrophone(page: Page) {
@@ -49,6 +50,7 @@ async function mockMicrophone(page: Page) {
 }
 async function open(page: Page) {
   await mockMicrophone(page);
+  await unlockBefore(page, 'Talking Market');
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Talking Market' }).click();

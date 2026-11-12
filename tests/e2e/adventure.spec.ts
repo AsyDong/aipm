@@ -1,8 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 const WORLD = { width: 1280, height: 720 };
 // The hint turns the plate under the right fruit gold (#ffd21f).
 async function openLevel(page: Page, name = 'Fruit Market') {
+  await unlockBefore(page, name);
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: `Play ${name}` }).click();
@@ -131,7 +133,7 @@ test('the map remembers stars; pause, replay, leave and re-enter, and a second l
   }
   // Different level on the same scene and mechanic, only the data changes.
   await page.getByRole('button', { name: 'Back to the map' }).click();
-  await start(page, 'Woodland');
+  await start(page, 'Woodland Walk');
   await hintedChoice(page);
 });
 
@@ -238,6 +240,7 @@ test('an upright phone gets a "turn sideways" notice and the game pauses', async
     isMobile: true,
   });
   const page = await context.newPage();
+  await unlockBefore(page, 'Fruit Market');
   await page.goto('/');
   await expect(
     page.getByText('Turn your phone sideways to play!'),

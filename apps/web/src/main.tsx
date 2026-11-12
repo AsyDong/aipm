@@ -1,4 +1,13 @@
-import { lazy, Suspense, StrictMode, useEffect, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  StrictMode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/fredoka/500.css';
@@ -23,7 +32,11 @@ import {
   guideText,
   world,
   nextStoryLevel,
+  levelUnlocked,
+  unitUnlocked,
+  routeTo,
   type GuideKey,
+  type MapPerson,
   type WorldLevel,
   type WorldUnit,
 } from './content';
@@ -31,6 +44,7 @@ import { gameStars, loadStars, saveStars } from './progress';
 import {
   BackIcon,
   BulbIcon,
+  LockIcon,
   MutedIcon,
   NextIcon,
   PauseIcon,
@@ -538,7 +552,29 @@ function Level({
   );
 }
 
-function WorldMap({ onPickUnit }: { onPickUnit: (unit: WorldUnit) => void }) {
+function MapPeople({ people }: { people: MapPerson[] | undefined }) {
+  return people?.map((person) => (
+    <img
+      key={`${person.image}:${person.x}:${person.y}`}
+      className="map-person"
+      src={person.image}
+      alt=""
+      style={{
+        left: `${person.x}%`,
+        top: `${person.y}%`,
+        width: `${person.size}%`,
+      }}
+    />
+  ));
+}
+
+function WorldMap({
+  stars,
+  onPickUnit,
+}: {
+  stars: Record<string, number>;
+  onPickUnit: (unit: WorldUnit) => void;
+}) {
   return (
     <section className="world" aria-label={world.title}>
       <div className="chapter-heading">
@@ -550,19 +586,29 @@ function WorldMap({ onPickUnit }: { onPickUnit: (unit: WorldUnit) => void }) {
       <div className="world-map">
         <div className="map-art">
           <img src={WORLD_MAP_SRC} alt="" className="world-art" />
+          <MapPeople people={world.people} />
           {world.units.map((unit) => {
+            const open = unitUnlocked(unit, stars);
             return (
               <div
                 key={unit.id}
-                className="pin unit-pin"
+                className={`pin unit-pin ${open ? '' : 'locked'}`}
                 style={{ left: `${unit.x}%`, top: `${unit.y}%` }}
               >
                 <button
-                  aria-label={`Open ${unit.title}`}
+                  aria-label={
+                    open ? `Open ${unit.title}` : `${unit.title} locked`
+                  }
+                  disabled={!open}
                   onClick={() => onPickUnit(unit)}
                   title={unit.title}
                 >
                   <span className="pin-bubble">{unit.marker}</span>
+                  {!open && (
+                    <span className="pin-lock" aria-hidden>
+                      <LockIcon />
+                    </span>
+                  )}
                 </button>
                 <span className="pin-label">{unit.title}</span>
               </div>
@@ -570,7 +616,7 @@ function WorldMap({ onPickUnit }: { onPickUnit: (unit: WorldUnit) => void }) {
           })}
         </div>
       </div>
-      <p className="map-key">U0–U9 · Open a unit to see its story locations</p>
+      <p className="map-key">Finish each stop to unlock the next adventure</p>
     </section>
   );
 }
@@ -578,15 +624,77 @@ function WorldMap({ onPickUnit }: { onPickUnit: (unit: WorldUnit) => void }) {
 function UnitMap({
   unit,
   stars,
+  destination,
   onPick,
   onBack,
 }: {
   unit: WorldUnit;
   stars: Record<string, number>;
+  destination: WorldLevel | undefined;
   onPick: (level: WorldLevel) => void;
   onBack: () => void;
 }) {
-  const levels = world.levels.filter((level) => level.unitId === unit.id);
+  const levels = useMemo(
+    () => world.levels.filter((level) => level.unitId === unit.id),
+    [unit.id],
+  );
+  const currentIndex = levels.reduce(
+    (latest, level, index) => ((stars[level.id] ?? 0) > 0 ? index : latest),
+    -1,
+  );
+  const start =
+    currentIndex >= 0
+      ? (levels[currentIndex]!.walk?.at(-1) ?? levels[currentIndex]!)
+      : (unit.start ?? { x: 8, y: 88 });
+  const [walking, setWalking] = useState(false);
+  const monkey = useRef<HTMLDivElement>(null);
+  const animation = useRef<Animation | undefined>(undefined);
+  useEffect(
+    () => () => {
+      animation.current?.cancel();
+      animation.current = undefined;
+    },
+    [],
+  );
+  const startWalk = useCallback(
+    (level: WorldLevel) => {
+      if (animation.current || !levelUnlocked(level, stars)) return;
+      const targetIndex = levels.findIndex((item) => item.id === level.id);
+      if (targetIndex < 0 || !monkey.current) return;
+      void tryLockLandscape();
+      const route = routeTo(levels, currentIndex, targetIndex);
+      if (
+        !route.length ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        onPick(level);
+        return;
+      }
+      const points = [start, ...route];
+      setWalking(true);
+      const tween = monkey.current.animate(
+        points.map((point, index) => ({
+          left: `${point.x}%`,
+          top: `${point.y}%`,
+          offset: index / (points.length - 1),
+        })),
+        {
+          duration: Math.min(2600, Math.max(900, route.length * 420)),
+          easing: 'linear',
+          fill: 'forwards',
+        },
+      );
+      animation.current = tween;
+      tween.onfinish = () => {
+        animation.current = undefined;
+        onPick(level);
+      };
+    },
+    [currentIndex, levels, onPick, stars, start],
+  );
+  useEffect(() => {
+    if (destination) startWalk(destination);
+  }, [destination, startWalk]);
   return (
     <section className="world" aria-label={`${unit.title} map`}>
       <div className="chapter-heading">
@@ -598,24 +706,45 @@ function UnitMap({
           World map
         </button>
       </div>
-      <div className="world-map unit-map">
+      <div
+        className={`world-map unit-map ${walking ? 'entering-location' : ''}`}
+      >
         <div className="map-art">
           <img src={unit.map ?? WORLD_MAP_SRC} alt="" className="world-art" />
+          <MapPeople people={unit.people ?? world.people} />
+          <div
+            ref={monkey}
+            className={`map-monkey ${walking ? 'walking' : ''}`}
+            style={{ left: `${start.x}%`, top: `${start.y}%` }}
+            aria-hidden
+            data-testid="map-monkey"
+          >
+            <img src="/images/mascot.webp" alt="" />
+          </div>
           {levels.map((level) => {
             const got = level.game
               ? gameStars(stars[level.id] ?? 0, definitionFor(level.game))
               : 0;
+            const open = levelUnlocked(level, stars);
             return (
               <div
                 key={level.id}
-                className={`pin ${got ? 'cleared' : ''}`}
+                className={`pin ${got ? 'cleared' : ''} ${open ? '' : 'locked'}`}
                 style={{ left: `${level.x}%`, top: `${level.y}%` }}
               >
                 <button
-                  aria-label={`Play ${level.title}`}
-                  onClick={() => onPick(level)}
+                  aria-label={
+                    open ? `Play ${level.title}` : `${level.title} locked`
+                  }
+                  disabled={!open || walking}
+                  onClick={() => startWalk(level)}
                 >
                   <span className="pin-bubble">{level.marker}</span>
+                  {!open && (
+                    <span className="pin-lock" aria-hidden>
+                      <LockIcon />
+                    </span>
+                  )}
                 </button>
                 <span className="pin-label">{level.title}</span>
                 <Stars count={got} />
@@ -625,9 +754,11 @@ function UnitMap({
         </div>
       </div>
       <p className="map-key">
-        {levels.length
-          ? `${levels.length} story locations · Choose a numbered point`
-          : 'This unit is being prepared'}
+        {walking
+          ? 'Walking along the road…'
+          : levels.length
+            ? 'Choose the next open stop. Finish it to unlock the next one.'
+            : 'This unit is being prepared'}
       </p>
     </section>
   );
@@ -648,6 +779,7 @@ function App() {
   const [preview, setPreview] = useState<GameDefinition>();
   const [level, setLevel] = useState<WorldLevel | null>(null);
   const [unit, setUnit] = useState<WorldUnit | null>(null);
+  const [pending, setPending] = useState<WorldLevel>();
   const [stars, setStars] = useState(loadStars);
   const portrait = usePortraitPhone();
   const [learning, setLearning] = useState<LearningOptions>();
@@ -739,11 +871,19 @@ function App() {
   }, []);
   const pick = (next: WorldLevel) => {
     void tryLockLandscape();
+    setPending(undefined);
     setLevel(next);
   };
   const pickUnit = (next: WorldUnit) => {
     void tryLockLandscape();
+    setPending(undefined);
     setUnit(next);
+  };
+  const continueTo = (next: WorldLevel) => {
+    void tryLockLandscape();
+    setUnit(world.units.find((item) => item.id === next.unitId) ?? unit);
+    setPending(next);
+    setLevel(null);
   };
   return (
     <main>
@@ -781,7 +921,7 @@ function App() {
           learning={learning}
           onNext={
             nextStoryLevel(level)
-              ? () => pick(nextStoryLevel(level)!)
+              ? () => continueTo(nextStoryLevel(level)!)
               : undefined
           }
         />
@@ -789,11 +929,15 @@ function App() {
         <UnitMap
           unit={unit}
           stars={stars}
+          destination={pending?.unitId === unit.id ? pending : undefined}
           onPick={pick}
-          onBack={() => setUnit(null)}
+          onBack={() => {
+            setPending(undefined);
+            setUnit(null);
+          }}
         />
       ) : (
-        <WorldMap onPickUnit={pickUnit} />
+        <WorldMap stars={stars} onPickUnit={pickUnit} />
       )}
       {!level && !composing && (
         <details className="session-notes">

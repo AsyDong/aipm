@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 test('repeated scene and mechanic switches release all managed asset URLs and canvases', async ({
   page,
@@ -20,6 +21,7 @@ test('repeated scene and mechanic switches release all managed asset URLs and ca
     };
     Object.assign(window, { liveAssetCount: () => live.size });
   });
+  await unlockBefore(page, 'Woodland Walk');
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   for (const name of [

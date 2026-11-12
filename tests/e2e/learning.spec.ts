@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 test('unfinished learning survives reload and retries the identical session after reconnection', async ({
   page,
@@ -13,6 +14,7 @@ test('unfinished learning survives reload and retries the identical session afte
     received.push(data);
     return route.fulfill({ json: { sessionId: data.session.sessionId } });
   });
+  await unlockBefore(page, 'Fruit Market');
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Market' }).click();

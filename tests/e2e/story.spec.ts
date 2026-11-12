@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 async function start(
   page: Page,
@@ -12,6 +13,7 @@ async function start(
   await page.route('**/api/v1/**', (route) =>
     route.fulfill({ json: { progress: [] } }),
   );
+  await unlockBefore(page, name);
   await page.goto('/');
   await page.getByRole('button', { name: `Open ${unit}`, exact: true }).click();
   await page.getByRole('button', { name: `Play ${name}`, exact: true }).click();
@@ -45,6 +47,7 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
   page,
 }) => {
   await page.setViewportSize({ width: 668, height: 375 });
+  await unlockBefore(page, 'Fruit Market');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'World map' })).toBeVisible();
   await expect(page.locator('.world-art')).toHaveAttribute(
@@ -121,6 +124,57 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
   );
   await page.getByRole('button', { name: 'World map', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'World map' })).toBeVisible();
+});
+
+test('completion unlocks the next stop and the monkey walks before READY', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.999999;
+  });
+  await page.route('**/api/v1/**', (route) =>
+    route.fulfill({ json: { progress: [] } }),
+  );
+  await page.goto('/');
+  await expect(
+    page.getByRole('button', { name: 'Market Street locked', exact: true }),
+  ).toBeDisabled();
+  await unlockBefore(page, 'Fruit Market');
+  await page.reload();
+  await page.getByRole('button', { name: 'Open Market Street' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fruit Stall locked', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Grocery Shop locked', exact: true }),
+  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Play Fruit Market' }).click();
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
+  await expect(page.locator('.unit-map')).toHaveClass(/entering-location/);
+  await expect(page.getByTestId('map-monkey')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
+  await page.getByRole('button', { name: 'Let’s play' }).click();
+  await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  for (let i = 0; i < 5; i++) {
+    await chooseFirst(page, 2);
+    await page
+      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
+      .click();
+    if (i < 4)
+      await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  }
+  await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to the map' }).first().click();
+  await expect(
+    page.getByRole('button', { name: 'Play Fruit Stall', exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'Grocery Shop locked', exact: true }),
+  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Play Fruit Stall' }).click();
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
+  await expect(page.locator('.unit-map')).toHaveClass(/entering-location/);
+  await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
 });
 
 test('short story collects solved items, keeps three stars on the map, and continues to the next node', async ({

@@ -1,9 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
+import { unlockBefore } from './unlock';
 
 async function open(page: Page) {
   await page.addInitScript(() => {
     Math.random = () => 0.999999;
   });
+  await unlockBefore(page, 'Fruit Kitchen');
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Kitchen' }).click();

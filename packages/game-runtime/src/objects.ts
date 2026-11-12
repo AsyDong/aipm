@@ -94,25 +94,55 @@ export class PhaserObjects implements ISceneObjects {
     const slot = this.slots.find(({ model }) => model.objectId === objectId);
     if (!slot || slot.collected) return;
     slot.collected = true;
-    const size = to.scale ? (slot.model.width - 20) * to.scale : 80;
+    const sourceSize = slot.model.width - 20;
+    const targetSize = to.scale ? sourceSize * to.scale : 80;
     const mini = this.scene.add
-      .image(slot.model.x, slot.model.y, slot.image)
-      .setDisplaySize(size, size)
-      .setDepth(4);
+      .image(slot.container.x, slot.container.y, slot.image)
+      .setDisplaySize(sourceSize, sourceSize)
+      .setDepth(6);
     this.collected.push(mini);
-    this.scene.tweens.add({
-      targets: mini,
-      x: to.x,
-      y: to.y,
-      duration: 520,
-      ease: 'Cubic.easeInOut',
-    });
-    // The original leaves the counter: it now lives in the collection place.
+    // The same-sized copy replaces the original exactly; shrinking happens in flight.
     this.scene.tweens.killTweensOf(slot.container);
-    this.scene.tweens.add({
-      targets: slot.container,
-      alpha: 0,
-      duration: 300,
+    slot.container.setAlpha(0);
+    const startScale = mini.scaleX;
+    const endScale = startScale * (targetSize / sourceSize);
+    const middleScale = startScale + (endScale - startScale) * 0.65;
+    this.scene.tweens.chain({
+      targets: mini,
+      tweens: [
+        {
+          x: to.x,
+          y: Math.min(slot.container.y, to.y) - 110,
+          scaleX: middleScale,
+          scaleY: middleScale,
+          angle: to.x >= slot.container.x ? 8 : -8,
+          duration: 340,
+          ease: 'Sine.easeOut',
+        },
+        {
+          y: to.y,
+          scaleX: endScale,
+          scaleY: endScale,
+          angle: 0,
+          duration: 280,
+          ease: 'Quad.easeIn',
+          // The basket's cropped front is at depth 5; flight is above it at 6.
+          onComplete: () => mini.setDepth(3),
+        },
+        {
+          scaleX: endScale * 1.12,
+          scaleY: endScale * 0.88,
+          duration: 70,
+          yoyo: true,
+          ease: 'Sine.easeOut',
+        },
+        {
+          y: to.y - 12,
+          duration: 100,
+          yoyo: true,
+          ease: 'Sine.easeOut',
+        },
+      ],
     });
   }
   /** Empties every collected mini (e.g. a wrongly packed box), keeps the shelf. */

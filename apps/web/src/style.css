@@ -415,8 +415,47 @@ canvas {
   object-fit: contain;
   -webkit-user-drag: none;
 }
+.map-person {
+  position: absolute;
+  z-index: 1;
+  object-fit: contain;
+  transform: translate(-50%, -92%);
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 4px 3px #0004);
+  pointer-events: none;
+  animation: map-person-bob 2.8s ease-in-out infinite;
+}
+.map-person:nth-of-type(2n) {
+  animation-delay: -1.4s;
+}
+@keyframes map-person-bob {
+  50% {
+    transform: translate(-50%, -96%);
+  }
+}
+.map-monkey {
+  position: absolute;
+  z-index: 4;
+  width: 7%;
+  transform: translate(-50%, -96%);
+  pointer-events: none;
+  filter: drop-shadow(0 5px 4px #0005);
+}
+.map-monkey img {
+  display: block;
+  width: 100%;
+}
+.map-monkey.walking img {
+  animation: monkey-step 240ms ease-in-out infinite alternate;
+}
+@keyframes monkey-step {
+  to {
+    transform: translateY(-6px) rotate(-4deg);
+  }
+}
 .pin {
   position: absolute;
+  z-index: 2;
   transform: translate(-50%, -22px);
   display: flex;
   flex-direction: column;
@@ -425,6 +464,7 @@ canvas {
   pointer-events: none;
 }
 .pin > button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 44px;
@@ -452,6 +492,32 @@ canvas {
 .pin-bubble .icon {
   width: 55%;
   height: 55%;
+}
+.pin > button:disabled {
+  opacity: 1;
+  filter: none;
+}
+.pin-lock {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #65777e;
+  box-shadow: 0 2px 4px #0004;
+}
+.pin-lock .icon {
+  width: 10px;
+  height: 10px;
+}
+.pin.locked .pin-label {
+  color: #5d696f;
+  background: #ffffffd9;
 }
 .pin.locked .pin-bubble {
   color: #fff;
@@ -832,6 +898,8 @@ canvas {
   }
   .nudge,
   .rotate-phone,
+  .map-person,
+  .map-monkey.walking img,
   .pin-bubble,
   .guide-monkey,
   .spinner,

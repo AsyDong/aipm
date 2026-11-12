@@ -225,6 +225,14 @@ export const guideAudio = (key: GuideKey, level?: WorldLevel) => {
   return key === 'LISTEN' ? undefined : `/audio/guide/${key.toLowerCase()}.mp3`;
 };
 
+export interface MapPoint {
+  x: number;
+  y: number;
+}
+export interface MapPerson extends MapPoint {
+  image: string;
+  size: number;
+}
 export interface WorldLevel {
   id: string;
   title: string;
@@ -249,6 +257,8 @@ export interface WorldLevel {
   outcome?: string;
   marker?: string;
   unitId?: string;
+  /** Road waypoints from the previous stop to the front of this location. */
+  walk?: MapPoint[];
 }
 export interface WorldUnit {
   id: string;
@@ -260,9 +270,12 @@ export interface WorldUnit {
   scene: string;
   /** Unit map art; falls back to the world overview when absent. */
   map?: string;
+  start?: MapPoint;
+  people?: MapPerson[];
 }
 export const world = worldData as {
   title: string;
+  people?: MapPerson[];
   units: WorldUnit[];
   levels: WorldLevel[];
 };
@@ -271,3 +284,57 @@ export const nextStoryLevel = (level: WorldLevel) =>
   level.chapter
     ? storyLevels[storyLevels.findIndex((item) => item.id === level.id) + 1]
     : undefined;
+
+/** A finished stop (at least one raw star) opens the next playable stop. */
+export const levelUnlocked = (
+  level: WorldLevel,
+  stars: Record<string, number>,
+) => {
+  const levels = world.levels.filter((item) => item.unitId === level.unitId);
+  const index = levels.findIndex((item) => item.id === level.id);
+  const previous = levels
+    .slice(0, Math.max(0, index))
+    .reverse()
+    .find((item) => item.game && !item.locked);
+  return (
+    !!level.game &&
+    !level.locked &&
+    (!previous || (stars[previous.id] ?? 0) > 0)
+  );
+};
+
+/** Skip empty future units so the playable U0 → U3 journey never dead-ends. */
+export const unitUnlocked = (
+  unit: WorldUnit,
+  stars: Record<string, number>,
+) => {
+  const playable = world.units.filter((item) =>
+    world.levels.some((level) => level.unitId === item.id && level.chapter),
+  );
+  const previous =
+    playable[playable.findIndex((item) => item.id === unit.id) - 1];
+  return (
+    playable.some((item) => item.id === unit.id) &&
+    (!previous ||
+      world.levels
+        .filter((level) => level.unitId === previous.id && level.chapter)
+        .every((level) => (stars[level.id] ?? 0) > 0))
+  );
+};
+
+/** Follow each stop's road waypoints forwards, or retrace them for a replay. */
+export const routeTo = (
+  levels: WorldLevel[],
+  currentIndex: number,
+  targetIndex: number,
+): MapPoint[] => {
+  const path = (level: WorldLevel) => level.walk ?? [level];
+  if (targetIndex > currentIndex)
+    return levels
+      .slice(currentIndex + 1, targetIndex + 1)
+      .flatMap((level) => path(level));
+  return levels
+    .slice(targetIndex + 1, currentIndex + 1)
+    .reverse()
+    .flatMap((level) => [...path(level)].reverse());
+};

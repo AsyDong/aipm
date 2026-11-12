@@ -35,12 +35,26 @@ export class FruitWorldScene implements IScenePlugin {
     const place = this.place;
     if (place?.prop) {
       const prop = place.prop;
-      this.track(
-        this.scene.add
+      const image = this.scene.add
+        .image(prop.x, prop.y, prop.image)
+        .setDisplaySize(prop.width, prop.height)
+        .setDepth(-4);
+      this.track(image);
+      if (place.kind === 'BASKET') {
+        const source = image.texture.getSourceImage();
+        const front = this.scene.add
           .image(prop.x, prop.y, prop.image)
           .setDisplaySize(prop.width, prop.height)
-          .setDepth(-4),
-      );
+          .setDepth(5);
+        // Same texture and geometry: the rim and front wall occlude landed fruit.
+        front.setCrop(
+          0,
+          source.height * 0.2,
+          source.width,
+          source.height * 0.8,
+        );
+        this.track(front);
+      }
     }
     if (place?.kind === 'BOX' && config.box) {
       const rect = config.box as {

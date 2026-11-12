@@ -82,11 +82,11 @@ export const PLACE_LAYOUTS: Record<PlaceKind, PlaceLayout> = {
       height: 240,
     },
     slots: [
-      { x: 185, y: 522, scale: 0.45 },
-      { x: 250, y: 512, scale: 0.45 },
-      { x: 315, y: 522, scale: 0.45 },
-      { x: 215, y: 582, scale: 0.45 },
-      { x: 285, y: 582, scale: 0.45 },
+      { x: 215, y: 480, scale: 0.4 },
+      { x: 285, y: 480, scale: 0.4 },
+      { x: 185, y: 505, scale: 0.4 },
+      { x: 250, y: 492, scale: 0.4 },
+      { x: 315, y: 505, scale: 0.4 },
     ],
   },
   SHELF: {
