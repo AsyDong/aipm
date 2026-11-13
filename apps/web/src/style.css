@@ -269,8 +269,10 @@ canvas {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  justify-content: safe center;
   gap: 14px;
   padding: 24px;
+  overflow-y: auto;
   text-align: center;
   color: #fff;
   background: #1b6e9bcc;
@@ -388,7 +390,8 @@ canvas {
 }
 .world-map {
   position: relative;
-  width: 100%;
+  width: min(100%, calc((100dvh - 260px) * 16 / 9));
+  align-self: center;
   aspect-ratio: 16 / 9;
   border-radius: 24px;
   overflow: hidden;
@@ -415,24 +418,6 @@ canvas {
   object-fit: contain;
   -webkit-user-drag: none;
 }
-.map-person {
-  position: absolute;
-  z-index: 1;
-  object-fit: contain;
-  transform: translate(-50%, -92%);
-  transform-origin: 50% 100%;
-  filter: drop-shadow(0 4px 3px #0004);
-  pointer-events: none;
-  animation: map-person-bob 2.8s ease-in-out infinite;
-}
-.map-person:nth-of-type(2n) {
-  animation-delay: -1.4s;
-}
-@keyframes map-person-bob {
-  50% {
-    transform: translate(-50%, -96%);
-  }
-}
 .map-monkey {
   position: absolute;
   z-index: 4;
@@ -445,12 +430,67 @@ canvas {
   display: block;
   width: 100%;
 }
-.map-monkey.walking img {
-  animation: monkey-step 240ms ease-in-out infinite alternate;
+.monkey-walker {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
 }
-@keyframes monkey-step {
+.monkey-walker::before {
+  content: '';
+  position: absolute;
+  left: 32%;
+  right: 25%;
+  bottom: 1%;
+  height: 4%;
+  border-radius: 50%;
+  background: #40352b40;
+  filter: blur(2px);
+}
+.monkey-walker img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.monkey-leg-left,
+.monkey-leg-right {
+  z-index: 1;
+  animation: 480ms ease-in-out infinite;
+}
+.monkey-leg-left {
+  transform-origin: 45.4% 85.5%;
+  animation-name: monkey-leg-a;
+}
+.monkey-leg-right {
+  transform-origin: 61.5% 85.5%;
+  animation-name: monkey-leg-b;
+}
+.monkey-body {
+  z-index: 2;
+  animation: monkey-body-step 240ms ease-in-out infinite alternate;
+}
+@keyframes monkey-leg-a {
+  0%,
+  100% {
+    transform: rotate(-23deg) translateY(0);
+  }
+  50% {
+    transform: rotate(23deg) translateY(-5px);
+  }
+}
+@keyframes monkey-leg-b {
+  0%,
+  100% {
+    transform: rotate(23deg) translateY(-5px);
+  }
+  50% {
+    transform: rotate(-23deg) translateY(0);
+  }
+}
+@keyframes monkey-body-step {
   to {
-    transform: translateY(-6px) rotate(-4deg);
+    transform: translateY(-2px);
   }
 }
 .pin {
@@ -602,6 +642,7 @@ canvas {
 }
 /* Meet-the-fruit strip on the intro overlay: tap a picture, hear its word. */
 .meet-strip {
+  max-width: 100%;
   background: #fff6dc;
   border-radius: 16px;
   padding: 8px 14px;
@@ -612,6 +653,7 @@ canvas {
 }
 .meet-strip > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
 }
@@ -765,7 +807,7 @@ canvas {
     border-radius: 16px;
   }
   .world-map {
-    width: min(100%, calc((100dvh - 96px) * 16 / 9));
+    width: min(100%, calc((100dvh - 140px) * 16 / 9));
     align-self: center;
   }
   .world {
@@ -898,8 +940,7 @@ canvas {
   }
   .nudge,
   .rotate-phone,
-  .map-person,
-  .map-monkey.walking img,
+  .map-monkey.walking .monkey-walker img,
   .pin-bubble,
   .guide-monkey,
   .spinner,

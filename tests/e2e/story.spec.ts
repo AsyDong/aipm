@@ -50,11 +50,22 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
   await unlockBefore(page, 'Fruit Market');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'World map' })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollHeight - innerHeight),
+    )
+    .toBeLessThanOrEqual(1);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   await expect(page.locator('.world-art')).toHaveAttribute(
     'src',
     '/images/maps/world.webp',
   );
   await expect(page.locator('.chapter-nav')).toHaveCount(0);
+  await expect(page.locator('.map-person')).toHaveCount(0);
   await expect(page.locator('.unit-pin')).toHaveCount(10);
   await expect(page.locator('.unit-pin .pin-bubble')).toHaveText([
     'U0',
@@ -113,6 +124,7 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
     'src',
     '/images/maps/unit-3.webp',
   );
+  await expect(page.locator('.map-person')).toHaveCount(0);
   await page.getByRole('button', { name: 'World map', exact: true }).click();
   await page.getByRole('button', { name: 'Open Welcome Harbour' }).click();
   await expect(
@@ -124,6 +136,12 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
   );
   await page.getByRole('button', { name: 'World map', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'World map' })).toBeVisible();
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollHeight - innerHeight),
+    )
+    .toBeLessThanOrEqual(1);
 });
 
 test('completion unlocks the next stop and the monkey walks before READY', async ({
@@ -152,6 +170,12 @@ test('completion unlocks the next stop and the monkey walks before READY', async
   await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
   await expect(page.locator('.unit-map')).toHaveClass(/entering-location/);
   await expect(page.getByTestId('map-monkey')).toBeVisible();
+  const leftLeg = page.locator('.map-monkey.walking .monkey-leg-left');
+  const rightLeg = page.locator('.map-monkey.walking .monkey-leg-right');
+  await expect(leftLeg).toBeVisible();
+  await expect(rightLeg).toBeVisible();
+  await expect(leftLeg).toHaveCSS('animation-name', 'monkey-leg-a');
+  await expect(rightLeg).toHaveCSS('animation-name', 'monkey-leg-b');
   await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
   await page.getByRole('button', { name: 'Let’s play' }).click();
   await expect(page.getByRole('status')).toHaveText('Which one is it?');
@@ -175,6 +199,87 @@ test('completion unlocks the next stop and the monkey walks before READY', async
   await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
   await expect(page.locator('.unit-map')).toHaveClass(/entering-location/);
   await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
+});
+
+test('small landscape READY panels scroll instead of clipping their actions', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await unlockBefore(page, 'Fruit Stall');
+  await page.goto('/');
+  await page
+    .getByRole('button', { name: 'Open Market Street', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Play Fruit Stall', exact: true })
+    .click();
+  const overlay = page.locator('.overlay');
+  const play = page.getByRole('button', { name: 'Let’s play', exact: true });
+  await expect(overlay).toBeVisible();
+  await expect(play).toBeVisible();
+  await expect(overlay).toHaveCSS('overflow-y', 'auto');
+  expect(
+    await overlay.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  expect(
+    await page
+      .locator('.meet-strip')
+      .evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+  ).toBe(true);
+  await play.scrollIntoViewIfNeeded();
+  expect(
+    await play.evaluate((button) => {
+      const action = button.getBoundingClientRect();
+      const panel = button.closest('.overlay')!.getBoundingClientRect();
+      return action.top >= panel.top && action.bottom <= panel.bottom;
+    }),
+  ).toBe(true);
+  await play.click();
+  await expect(page.getByRole('status')).toHaveText('Which one is it?', {
+    timeout: 20000,
+  });
+});
+
+test('All Aboard hides its answer hint and gives vehicles opaque white cards', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.999999;
+  });
+  await unlockBefore(page, 'All Aboard');
+  await page.goto('/');
+  await page
+    .getByRole('button', { name: 'Open Welcome Harbour', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Play All Aboard', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Let’s play', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Which one is it?', {
+    timeout: 20000,
+  });
+  await expect(page.locator('.task-collection')).toHaveCount(0);
+  // The fourth sequential round is the red bus, kept first by the fixed shuffle.
+  for (let i = 0; i < 3; i++) {
+    await chooseFirst(page, 3, 640, 645);
+    await page.getByRole('button', { name: 'Next', exact: false }).click();
+    await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  }
+  // Above the bus itself, the transparent source reveals the new white backing.
+  const pixel = await page.locator('canvas').evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const scale = canvas.width / 1280;
+    return Array.from(
+      canvas
+        .getContext('2d')!
+        .getImageData(Math.round(400 * scale), Math.round(460 * scale), 1, 1)
+        .data,
+    );
+  });
+  expect(pixel).toEqual([255, 255, 255, 255]);
+  await chooseFirst(page, 3, 640, 645);
 });
 
 test('short story collects solved items, keeps three stars on the map, and continues to the next node', async ({

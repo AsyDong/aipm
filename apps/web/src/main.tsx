@@ -36,7 +36,6 @@ import {
   unitUnlocked,
   routeTo,
   type GuideKey,
-  type MapPerson,
   type WorldLevel,
   type WorldUnit,
 } from './content';
@@ -552,22 +551,6 @@ function Level({
   );
 }
 
-function MapPeople({ people }: { people: MapPerson[] | undefined }) {
-  return people?.map((person) => (
-    <img
-      key={`${person.image}:${person.x}:${person.y}`}
-      className="map-person"
-      src={person.image}
-      alt=""
-      style={{
-        left: `${person.x}%`,
-        top: `${person.y}%`,
-        width: `${person.size}%`,
-      }}
-    />
-  ));
-}
-
 function WorldMap({
   stars,
   onPickUnit,
@@ -586,7 +569,6 @@ function WorldMap({
       <div className="world-map">
         <div className="map-art">
           <img src={WORLD_MAP_SRC} alt="" className="world-art" />
-          <MapPeople people={world.people} />
           {world.units.map((unit) => {
             const open = unitUnlocked(unit, stars);
             return (
@@ -711,7 +693,6 @@ function UnitMap({
       >
         <div className="map-art">
           <img src={unit.map ?? WORLD_MAP_SRC} alt="" className="world-art" />
-          <MapPeople people={unit.people ?? world.people} />
           <div
             ref={monkey}
             className={`map-monkey ${walking ? 'walking' : ''}`}
@@ -719,7 +700,27 @@ function UnitMap({
             aria-hidden
             data-testid="map-monkey"
           >
-            <img src="/images/mascot.webp" alt="" />
+            {walking ? (
+              <span className="monkey-walker">
+                <img
+                  className="monkey-leg-right"
+                  src="/images/monkey/leg-right.webp"
+                  alt=""
+                />
+                <img
+                  className="monkey-leg-left"
+                  src="/images/monkey/leg-left.webp"
+                  alt=""
+                />
+                <img
+                  className="monkey-body"
+                  src="/images/monkey/body.webp"
+                  alt=""
+                />
+              </span>
+            ) : (
+              <img src="/images/mascot.webp" alt="" />
+            )}
           </div>
           {levels.map((level) => {
             const got = level.game

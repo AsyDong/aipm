@@ -50,8 +50,15 @@ export class PhaserObjects implements ISceneObjects {
     const fruit = this.scene.add
       .image(0, 0, item.image)
       .setDisplaySize(size, size);
+    // Vehicle art lives in the canvas, so CSS cannot back it like a DOM image.
+    const backing = item.image.startsWith('/images/vehicles/')
+      ? this.scene.add
+          .graphics()
+          .fillStyle(0xffffff)
+          .fillRoundedRect(-size / 2, -size / 2, size, size, size * 0.08)
+      : undefined;
     const container = this.scene.add
-      .container(x, y - 280, [fruit])
+      .container(x, y - 280, backing ? [backing, fruit] : [fruit])
       .setDepth(2)
       .setAlpha(0);
     const model: SceneObject = {

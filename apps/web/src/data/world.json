@@ -1,10 +1,5 @@
 {
   "title": "Friendly World Adventure",
-  "people": [
-    { "image": "/images/characters/jim.webp", "x": 35, "y": 54, "size": 5 },
-    { "image": "/images/characters/jenny.webp", "x": 64, "y": 61, "size": 5 },
-    { "image": "/images/characters/cameron.webp", "x": 76, "y": 82, "size": 5 }
-  ],
   "units": [
     {
       "id": "hello",
@@ -15,22 +10,7 @@
       "marker": "U0",
       "scene": "harbour",
       "map": "/images/maps/hello.webp",
-      "start": { "x": 72, "y": 82 },
-      "people": [
-        { "image": "/images/characters/jim.webp", "x": 70, "y": 60, "size": 7 },
-        {
-          "image": "/images/characters/jenny.webp",
-          "x": 57,
-          "y": 33,
-          "size": 6
-        },
-        {
-          "image": "/images/characters/cameron.webp",
-          "x": 37,
-          "y": 49,
-          "size": 7
-        }
-      ]
+      "start": { "x": 72, "y": 82 }
     },
     {
       "id": "unit-1",
@@ -59,22 +39,7 @@
       "marker": "U3",
       "scene": "market",
       "map": "/images/maps/unit-3.webp",
-      "start": { "x": 22, "y": 96 },
-      "people": [
-        { "image": "/images/characters/jim.webp", "x": 37, "y": 59, "size": 6 },
-        {
-          "image": "/images/characters/jenny.webp",
-          "x": 77,
-          "y": 80,
-          "size": 6
-        },
-        {
-          "image": "/images/characters/cameron.webp",
-          "x": 24,
-          "y": 32,
-          "size": 6
-        }
-      ]
+      "start": { "x": 22, "y": 96 }
     },
     {
       "id": "unit-4",
@@ -187,7 +152,6 @@
       "hello": "Well done! Now find what I say, and then we sail!",
       "chapter": "hello",
       "order": 3,
-      "collection": "All aboard",
       "outcome": "Everyone is aboard. Set sail for Market Street!",
       "marker": "A3",
       "unitId": "hello",

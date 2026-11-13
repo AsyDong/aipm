@@ -229,10 +229,6 @@ export interface MapPoint {
   x: number;
   y: number;
 }
-export interface MapPerson extends MapPoint {
-  image: string;
-  size: number;
-}
 export interface WorldLevel {
   id: string;
   title: string;
@@ -271,11 +267,9 @@ export interface WorldUnit {
   /** Unit map art; falls back to the world overview when absent. */
   map?: string;
   start?: MapPoint;
-  people?: MapPerson[];
 }
 export const world = worldData as {
   title: string;
-  people?: MapPerson[];
   units: WorldUnit[];
   levels: WorldLevel[];
 };

@@ -1,10 +1,13 @@
-"""Turn raw Seedream output into white-backed game assets: key out the flat
-background colour, crop, and save small webp files.
+"""Turn raw Seedream output into transparent game assets: key out the flat
+background colour, crop, and save small webp files. The three courseware
+portraits are maintained separately and keep their approved white backing.
 Usage: python scripts/process-art.py <raw-dir>"""
 import sys
 from pathlib import Path
 from PIL import Image
 import numpy as np
+
+from art_quality import save_word_webp
 
 RAW = Path(sys.argv[1])
 OUT = Path(__file__).resolve().parents[1] / 'apps/web/public/images'
@@ -23,8 +26,8 @@ def key_out(path: Path, box: int) -> Image.Image:
     img = img.crop(img.getchannel('A').point(lambda v: 255 if v > 10 else 0).getbbox())
     scale = box / max(img.size)
     img = img.resize((max(1, round(img.width * scale)), max(1, round(img.height * scale))), Image.LANCZOS)
-    # White eyes, clothes, food and windows must not reveal the scene behind them.
-    square = Image.new('RGBA', (box + 16, box + 16), (255, 255, 255, 255))
+    # Keep the scene hidden outside the sprite; pale details remain opaque.
+    square = Image.new('RGBA', (box + 16, box + 16), (0, 0, 0, 0))
     square.alpha_composite(img, ((square.width - img.width) // 2, (square.height - img.height) // 2))
     return square
 
@@ -42,7 +45,7 @@ def process(src: str, run) -> None:
     run()
 
 for name in ['apple', 'banana', 'grapes', 'orange', 'watermelon', 'pear']:
-    process(f'fruit_{name}', lambda n=name: key_out(RAW / f'fruit_{n}.png', 380).save(OUT / 'fruit' / f'{n}.webp', quality=88, method=6))
+    process(f'fruit_{name}', lambda n=name: save_word_webp(key_out(RAW / f'fruit_{n}.png', 380), OUT / 'fruit' / f'{n}.webp'))
 process('mascot', lambda: key_out(RAW / 'mascot.png', 480).save(OUT / 'mascot.webp', quality=88, method=6))
 for src, dst in [('market', 'scenes/market'), ('forest', 'scenes/forest'), ('scene_harbour', 'scenes/harbour'), ('map', 'map')]:
     process(src, lambda s=src, d=dst: Image.open(RAW / f'{s}.png').convert('RGB').save(OUT / f'{d}.webp', quality=80, method=6))
@@ -59,6 +62,6 @@ for src, dst in [
     ('food_burger', 'food/burger'),
     ('food_carrot', 'food/carrot'),
 ]:
-    process(src, lambda s=src, d=dst: key_out(RAW / f'{s}.png', 380).save(OUT / f'{d}.webp', quality=88, method=6))
+    process(src, lambda s=src, d=dst: save_word_webp(key_out(RAW / f'{s}.png', 380), OUT / f'{d}.webp'))
 for f in sorted(OUT.rglob('*.webp')):
     print(f.relative_to(OUT), f.stat().st_size // 1024, 'KB')

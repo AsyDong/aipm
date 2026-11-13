@@ -8,6 +8,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from art_quality import save_word_webp
+
 OUT = Path(__file__).resolve().parents[1] / 'apps/web/public/images/count'
 IMAGES = Path(__file__).resolve().parents[1] / 'apps/web/public/images'
 CARD = 560
@@ -46,10 +48,10 @@ def main() -> None:
     assert all(len(LAYOUTS[count]) == count for count in range(2, 7))
     OUT.mkdir(parents=True, exist_ok=True)
     for name, (source, count) in CARDS.items():
-        card(IMAGES / source, count).save(OUT / f'{name}.webp', quality=88, method=6)
+        save_word_webp(card(IMAGES / source, count), OUT / f'{name}.webp', max_side=420)
         print(f'count/{name}.webp', (OUT / f'{name}.webp').stat().st_size // 1024, 'KB')
     for count in range(2, 7):
-        numeral(count).save(OUT / f'numeral-{count}.webp', quality=88, method=6)
+        save_word_webp(numeral(count), OUT / f'numeral-{count}.webp', max_side=420)
         print(f'count/numeral-{count}.webp written')
 
 
