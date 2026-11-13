@@ -47,7 +47,7 @@ The guide moved from the lower-left play area to the upper-left backdrop after s
 
 ## Follow-up — sequential maps and collection motion (2026-11-12)
 
-- Existing Jim, Jenny, Cameron and mascot artwork now populate the world and unit maps.
+- Original courseware portraits of Jim, Jenny and Cameron (Hello Lesson 1, mirror-character slides) now appear consistently on maps, in activities and in results. The mascot and all generated fruit, food and vehicle cards have opaque white backing so pale details cannot reveal the scene behind them; structural basket/shelf/plate/box overlays intentionally retain transparency. Count-card interiors are opaque, with transparency limited to their rounded outer corners; regeneration removes only the connected exterior white from the new source cards. Only the three selected portraits were derived from the external courseware, not the textbook collection.
 - Playable stops unlock in order after the previous stop earns at least one raw star. Completing Welcome Harbour opens Market Street; empty future units do not break that sequence. Existing stars are preserved.
 - Selecting a stop hides the pins and walks the monkey along configured road waypoints before showing READY. Continue Adventure uses the same transition, replay can retrace a route, and reduced-motion users enter immediately.
 - Collected food now starts at its displayed size, shrinks along a lift/drop arc, rotates, squashes and bounces. A cropped copy of the existing basket texture occludes settled food behind its rim and front wall; no new asset or dependency was added.
@@ -57,6 +57,7 @@ The guide moved from the lower-left play area to the upper-left backdrop after s
 - The independent real-Chrome walkthrough completed the U0 unlock chain and all six Market Street stops with real input and no seeded progress. It reported no console errors or failed network requests; its reduced-motion and visibility overrides were test-environment adaptations, not product changes.
 - Focused Playwright regression for sequential unlocking/walking, Counting Boxes completion followed by Play again, and dynamic portrait/landscape changes passed **6/6** across desktop Chromium and automated iPad WebKit. A separate settled five-item packing frame was inspected and showed distinct box slots.
 - Full regression after the follow-up: `pnpm typecheck`, `pnpm lint`, `pnpm test` (**29 files, 89 tests**), `pnpm build`, `pnpm format:check`, `git diff --check` and `pnpm test:e2e` (**44/44**) passed.
+- Artwork follow-up: Market Street map, Fruit Market and Picnic desktop Chromium screenshots were visually inspected. All **56 WebP assets** were audited; the 20 replacement cards are opaque, only structural overlays and rounded count-card exteriors retain transparency, and all **25 count-card interiors** are opaque. Regeneration checks passed for apple, orange, burger and egg count cards. The full validation above was repeated successfully, including **29 files/89 unit tests** and **44/44 browser tests**.
 - Physical iPad Safari, real touch/audio and hands-on pacing remain unverified. The temporary browser reports, PNG evidence and old `dist` backup were removed after their conclusions were incorporated here.
 
 ## Limits and compatibility notes

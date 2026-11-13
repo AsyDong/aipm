@@ -1,5 +1,6 @@
-"""Turn raw Seedream output into game assets: key out the flat background colour,
-crop, and save small webp files. Usage: python scripts/process-art.py <raw-dir>"""
+"""Turn raw Seedream output into white-backed game assets: key out the flat
+background colour, crop, and save small webp files.
+Usage: python scripts/process-art.py <raw-dir>"""
 import sys
 from pathlib import Path
 from PIL import Image
@@ -22,8 +23,9 @@ def key_out(path: Path, box: int) -> Image.Image:
     img = img.crop(img.getchannel('A').point(lambda v: 255 if v > 10 else 0).getbbox())
     scale = box / max(img.size)
     img = img.resize((max(1, round(img.width * scale)), max(1, round(img.height * scale))), Image.LANCZOS)
-    square = Image.new('RGBA', (box + 16, box + 16), (0, 0, 0, 0))
-    square.paste(img, ((square.width - img.width) // 2, (square.height - img.height) // 2))
+    # White eyes, clothes, food and windows must not reveal the scene behind them.
+    square = Image.new('RGBA', (box + 16, box + 16), (255, 255, 255, 255))
+    square.alpha_composite(img, ((square.width - img.width) // 2, (square.height - img.height) // 2))
     return square
 
 (OUT / 'fruit').mkdir(parents=True, exist_ok=True)
@@ -44,11 +46,8 @@ for name in ['apple', 'banana', 'grapes', 'orange', 'watermelon', 'pear']:
 process('mascot', lambda: key_out(RAW / 'mascot.png', 480).save(OUT / 'mascot.webp', quality=88, method=6))
 for src, dst in [('market', 'scenes/market'), ('forest', 'scenes/forest'), ('scene_harbour', 'scenes/harbour'), ('map', 'map')]:
     process(src, lambda s=src, d=dst: Image.open(RAW / f'{s}.png').convert('RGB').save(OUT / f'{d}.webp', quality=80, method=6))
-# Friendly World sample: Hello characters and vehicles, Unit 3 extra food.
+# Original courseware portraits are maintained separately; generated vehicles and food.
 for src, dst in [
-    ('char_cameron', 'characters/cameron'),
-    ('char_jim', 'characters/jim'),
-    ('char_jenny', 'characters/jenny'),
     ('bus_red', 'vehicles/bus-red'),
     ('bus_blue', 'vehicles/bus-blue'),
     ('bus_green', 'vehicles/bus-green'),

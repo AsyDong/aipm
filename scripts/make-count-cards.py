@@ -32,6 +32,8 @@ def card(source: Path, count: int) -> Image.Image:
     drawn = ImageDraw.Draw(base)
     drawn.rounded_rectangle((10, 10, CARD - 10, CARD - 10), 48, fill=(255, 249, 231, 255), outline=(232, 196, 106, 255), width=8)
     item = Image.open(source).convert('RGBA')
+    # Remove only the connected exterior of white-backed item cards; keep pale details.
+    ImageDraw.floodfill(item, (0, 0), (255, 255, 255, 0), thresh=24)
     size = 160 if count >= 5 else 210  # keep neighbouring items separate for counting
     item.thumbnail((size, size), Image.LANCZOS)
     for fx, fy in LAYOUTS[count]:
