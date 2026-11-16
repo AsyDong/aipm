@@ -13,9 +13,15 @@ export function validateAdventure(definition: GameDefinition) {
   if (definition.reward.type !== 'STAR')
     throw new Error('This adventure supports star rewards only');
   const voice = definition.mechanic.id === 'voice-match';
+  const catching = definition.mechanic.id === 'fruit-catch';
+  const arcade = definition.mechanic.id === 'arcade';
   if (
     definition.input.allowed.some((source) =>
-      voice ? source !== 'VOICE' : source !== 'TOUCH' && source !== 'MOUSE',
+      voice
+        ? source !== 'VOICE'
+        : source !== 'TOUCH' &&
+          source !== 'MOUSE' &&
+          !((catching || arcade) && source === 'KEYBOARD'),
     ) ||
     (voice && !definition.input.allowed.includes('VOICE')) ||
     definition.input.settings

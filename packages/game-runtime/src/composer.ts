@@ -12,11 +12,21 @@ import {
   sliceMetadata,
   sliceAssets,
   countPackMetadata,
+  fruitCatchMetadata,
+  arcadeMetadata,
 } from '@english/game-mechanics';
 import {
   fruitWorldMetadata,
   fruitWorldAssets,
 } from '../../game-scenes/src/metadata';
+import {
+  fruitCatchMetadata as catchWorldMetadata,
+  fruitCatchAssets,
+} from '../../game-scenes/src/catch-metadata';
+import {
+  arcadeWorldMetadata,
+  arcadeWorldAssets,
+} from '../../game-scenes/src/arcade-metadata';
 import { validateAdventure } from './validate-adventure';
 import { AssetManager, loadBrowserAsset } from './assets';
 
@@ -26,10 +36,14 @@ export const composerPlugins: {
   assets?: (config: Record<string, unknown>) => AssetReference[];
 }[] = [
   { metadata: fruitWorldMetadata, assets: fruitWorldAssets },
+  { metadata: catchWorldMetadata, assets: fruitCatchAssets },
   { metadata: tapMetadata },
   { metadata: voiceMatchMetadata },
   { metadata: sliceMetadata, assets: sliceAssets },
   { metadata: countPackMetadata },
+  { metadata: fruitCatchMetadata },
+  { metadata: arcadeWorldMetadata, assets: arcadeWorldAssets },
+  { metadata: arcadeMetadata },
 ];
 
 export async function validateComposition(

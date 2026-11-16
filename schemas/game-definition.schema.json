@@ -58,7 +58,7 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "enum": ["TOUCH", "MOUSE", "VOICE", "CAMERA"] }
+          "items": { "enum": ["TOUCH", "MOUSE", "KEYBOARD", "VOICE", "CAMERA"] }
         },
         "settings": {
           "type": "object",

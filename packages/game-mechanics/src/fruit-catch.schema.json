@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FruitCatchConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "baseSpeed": { "type": "number", "minimum": 80, "maximum": 240 },
+    "speedStep": { "type": "number", "minimum": 0, "maximum": 40 }
+  }
+}

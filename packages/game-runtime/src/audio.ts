@@ -107,7 +107,13 @@ export class AudioManager implements IAudioManager {
       return;
     }
     const context = this.context;
-    await this.unlocking;
+    // A suspended/interrupted context can leave resume() pending indefinitely;
+    // fail so the Listen retry path stays available instead of wedging "busy".
+    await this.bounded(
+      this.unlocking ?? Promise.resolve(),
+      4000,
+      'Tap Listen to enable audio',
+    );
     if (!context || context.state !== 'running')
       throw new Error('Tap Listen to enable audio');
     let buffer = this.buffers.get(key);
@@ -121,7 +127,7 @@ export class AudioManager implements IAudioManager {
     }
     let decoded: AudioBuffer;
     try {
-      decoded = await buffer;
+      decoded = await this.bounded(buffer, 10000, 'Audio timed out');
     } catch (error) {
       this.buffers.delete(key);
       throw error;
@@ -169,6 +175,22 @@ export class AudioManager implements IAudioManager {
     this.cancel?.();
     this.fallback?.pause();
     this.fallbackCancel?.();
+  }
+  /** Rejects when the underlying promise stays pending too long. */
+  private bounded<T>(promise: Promise<T>, ms: number, message: string) {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(message)), ms);
+      promise.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
   }
   setVolume(value: number) {
     if (this.fallback) this.fallback.volume = Math.max(0, Math.min(1, value));

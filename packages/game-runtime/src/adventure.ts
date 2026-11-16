@@ -27,7 +27,11 @@ import {
 import { pluginCatalog } from './plugin-catalog';
 import { createViewport } from './viewport';
 import { InputManager } from './input';
-import { createMouseAdapter, createTouchAdapter } from './pointer-adapters';
+import {
+  createKeyboardAdapter,
+  createMouseAdapter,
+  createTouchAdapter,
+} from './pointer-adapters';
 import { AudioManager } from './audio';
 import { validateAdventure } from './validate-adventure';
 import {
@@ -59,7 +63,7 @@ export function createAdventure(
   learning?: LearningOptions,
 ): IGameBridge {
   const subscribers = new Set<(message: GameMessage) => void>();
-  const viewport = createViewport(parent);
+  const viewport = createViewport(parent, definition.scene.id);
   const input = new InputManager();
   const audio = new AudioManager(viewport.assets);
   const rules = new RuleEngine();
@@ -79,6 +83,8 @@ export function createAdventure(
   let epoch = 0;
   let startedAt = 0;
   let revision = 0;
+  let sayChain = 0;
+  let autoAdvance: ReturnType<typeof setTimeout> | undefined;
   let serial = Promise.resolve();
   const state: GameViewState = {
     lifecycle: 'INITIALIZING',
@@ -184,7 +190,27 @@ export function createAdventure(
   }
   let pendingTasks: LearningTask[] = [];
   /** Bumped whenever something else takes the speaker, cancelling a pending "Yes! It is ..." chain. */
-  let sayChain = 0;
+  function scheduleAutoAdvance() {
+    if (autoAdvance !== undefined) clearTimeout(autoAdvance);
+    const token = sayChain;
+    const generation = epoch;
+    autoAdvance = setTimeout(() => {
+      autoAdvance = undefined;
+      if (
+        token !== sayChain ||
+        generation !== epoch ||
+        disposed ||
+        engine?.getState() !== 'RUNNING' ||
+        state.feedback !== 'CORRECT'
+      )
+        return;
+      serial = serial.then(() => execute({ type: 'NEXT' })).catch(error);
+    }, 450);
+  }
+  function cancelAutoAdvance() {
+    if (autoAdvance !== undefined) clearTimeout(autoAdvance);
+    autoAdvance = undefined;
+  }
   function showRound() {
     if (!runner) return;
     state.round = runner.round;
@@ -253,9 +279,8 @@ export function createAdventure(
           },
         ];
       if (word) state.word = word;
-      // "Yes! It is" ... then the word itself, so the child hears the whole sentence.
-      // The chain belongs to this answer only: Next, pause, restart or leaving drop it,
-      // otherwise the word would cut off the next prompt on a single-player device.
+      // Hear the praise and word, then keep the game moving without a Next button.
+      // Pause, restart, leaving or another answer invalidates this answer's chain.
       const mine = ++sayChain;
       const cue =
         definition.mechanic.id === 'slice'
@@ -264,14 +289,20 @@ export function createAdventure(
       void cue.then(async () => {
         if (mine !== sayChain || disposed) return;
         await audio.say(GUIDE_AUDIO.right);
-        // Count & Pack prompts are questions, not words: repeating the target
-        // audio here would read "How many?" back as if it were the answer.
-        if (definition.mechanic.id === 'count-pack') return;
-        const target = runner?.current()?.target.assets.audio;
-        if (mine === sayChain && target && !disposed) void audio.say(target);
+        // Count & Pack prompts are questions, not answer words to repeat.
+        if (definition.mechanic.id !== 'count-pack') {
+          const target = runner?.current()?.target.assets.audio;
+          if (mine === sayChain && target && !disposed) await audio.say(target);
+        }
+        if (
+          mine === sayChain &&
+          !disposed &&
+          engine?.getState() === 'RUNNING' &&
+          state.feedback === 'CORRECT'
+        )
+          scheduleAutoAdvance();
       });
       publish();
-      // Next is deliberate: children control the listening pace and feedback cannot race pauses.
     },
     /** "Not heard" is never a wrong answer: nothing is counted and nothing is lost. */
     unrecognized(reason: UnrecognizedReason) {
@@ -415,9 +446,20 @@ export function createAdventure(
           },
         };
       });
-      const gesture = definition.mechanic.id === 'slice' ? 'SWIPE' : 'TAP';
+      const gesture =
+        definition.mechanic.id === 'slice'
+          ? ('SWIPE' as const)
+          : definition.mechanic.id === 'fruit-catch' ||
+              definition.mechanic.id === 'arcade'
+            ? ('DRAG' as const)
+            : ('TAP' as const);
       input.registerAdapter(createTouchAdapter(scene, gesture));
       input.registerAdapter(createMouseAdapter(scene, gesture));
+      if (
+        definition.mechanic.id === 'fruit-catch' ||
+        definition.mechanic.id === 'arcade'
+      )
+        input.registerAdapter(createKeyboardAdapter());
       await engine.initialize(definition);
       if (disposed) {
         await engine.destroy();
@@ -440,6 +482,7 @@ export function createAdventure(
         break;
       case 'PAUSE':
         if (engine.getState() !== 'RUNNING') return;
+        cancelAutoAdvance();
         revision++;
         sayChain++;
         voice?.cancel();
@@ -453,7 +496,8 @@ export function createAdventure(
         if (engine.getState() !== 'PAUSED') return;
         engine.resume();
         publish();
-        if (state.feedback !== 'CORRECT') void playPrompt(true);
+        if (state.feedback === 'CORRECT') scheduleAutoAdvance();
+        else void playPrompt(true);
         break;
       case 'REPLAY':
         if (state.feedback !== 'CORRECT') void playPrompt(true);
@@ -461,6 +505,7 @@ export function createAdventure(
       case 'NEXT':
         if (engine.getState() !== 'RUNNING' || state.feedback !== 'CORRECT')
           return;
+        cancelAutoAdvance();
         sayChain++;
         if (runner?.next()) showRound();
         else finish();
@@ -478,6 +523,7 @@ export function createAdventure(
         break;
       }
       case 'RESTART':
+        cancelAutoAdvance();
         epoch++;
         revision++;
         sayChain++;
@@ -490,6 +536,10 @@ export function createAdventure(
         break;
       case 'SET_VOLUME':
         audio.setVolume(command.value);
+        break;
+      case 'STEER':
+        if (engine.getState() === 'RUNNING' && !locked)
+          context?.objects.steerCatcher?.(command.direction);
         break;
       case 'VOICE_START': {
         const task = runner?.current();
@@ -531,6 +581,7 @@ export function createAdventure(
   function destroy() {
     if (disposed) return;
     disposed = true;
+    cancelAutoAdvance();
     voice?.cancel();
     epoch++;
     revision++;

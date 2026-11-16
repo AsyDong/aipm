@@ -1,3 +1,5 @@
+import type { ArcadeAction, ArcadeMode } from './arcade';
+
 /** Logical size of the game canvas; every scene and mechanic works in these units. */
 export const WORLD_WIDTH = 1280;
 export const WORLD_HEIGHT = 720;
@@ -10,7 +12,7 @@ export type GameLifecycleState =
   | 'COMPLETED'
   | 'ERROR'
   | 'DESTROYED';
-export type InputSource = 'TOUCH' | 'MOUSE' | 'VOICE' | 'CAMERA';
+export type InputSource = 'TOUCH' | 'MOUSE' | 'KEYBOARD' | 'VOICE' | 'CAMERA';
 export interface PluginDefinition {
   id: string;
   version: string;
@@ -115,6 +117,19 @@ export interface TapInputEvent {
   y: number;
   timestamp: number;
 }
+export interface MoveInputEvent {
+  type: 'MOVE';
+  source: 'TOUCH' | 'MOUSE';
+  x: number;
+  y: number;
+  timestamp: number;
+}
+export interface SteerInputEvent {
+  type: 'STEER';
+  source: 'KEYBOARD';
+  direction: -1 | 0 | 1;
+  timestamp: number;
+}
 export interface SliceConfig {
   minDistance?: number;
 }
@@ -135,7 +150,12 @@ export interface VoiceInputEvent {
   failure?: UnrecognizedReason;
   timestamp: number;
 }
-export type InputEvent = TapInputEvent | SwipeInputEvent | VoiceInputEvent;
+export type InputEvent =
+  | TapInputEvent
+  | MoveInputEvent
+  | SteerInputEvent
+  | SwipeInputEvent
+  | VoiceInputEvent;
 /** Turns one raw device API into standard InputEvents; owned by InputManager. */
 export interface IInputAdapter {
   readonly sources: InputSource[];
@@ -272,6 +292,12 @@ export interface SceneItem {
   /** LARGE: featured question picture beside the shelf. SMALL: small packable items. */
   size?: 'LARGE' | 'SMALL';
 }
+export interface CatchTheme {
+  body: string;
+  legLeft: string;
+  legRight: string;
+  basket: string;
+}
 export interface ISceneObjects {
   /** The scene says where its counter is: horizontal centre and the surface fruit stands on. */
   setShelf(centerX: number, baseY: number): void;
@@ -279,6 +305,25 @@ export interface ISceneObjects {
   hitTest(x: number, y: number): SceneObject | undefined;
   findByContent(contentId: string): SceneObject | undefined;
   feedback(objectId: string, kind: 'CORRECT' | 'RETRY' | 'HINT'): void;
+  /** Optional action-game capability; collision reporting never judges the answer. */
+  configureCatch?(theme: CatchTheme): void;
+  startCatch?(
+    items: SceneItem[],
+    onCatch: (object: SceneObject) => boolean,
+    speed: number,
+  ): void;
+  setCatchActive?(active: boolean): void;
+  moveCatcher?(x: number): void;
+  steerCatcher?(direction: -1 | 0 | 1): void;
+  /** Optional arcade capability. Input is already normalized by InputManager. */
+  startArcade?(
+    mode: ArcadeMode,
+    items: SceneItem[],
+    onAction: ArcadeAction,
+    round: number,
+  ): void;
+  setArcadeActive?(active: boolean): void;
+  arcadeInput?(event: InputEvent): void;
   /** Optional capability: visually split an object without evaluating its content. */
   slice?(objectId: string): void;
   /**
@@ -402,6 +447,7 @@ export type GameCommand =
         | 'VOICE_STOP';
     }
   | { type: 'SET_VOLUME'; value: number }
+  | { type: 'STEER'; direction: -1 | 0 | 1 }
   /** Speak a short guide line (an audio url the host owns). With wait, later commands queue until it ends. */
   | { type: 'SAY'; url: string; wait?: boolean };
 export interface GameViewState {

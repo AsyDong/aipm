@@ -19,9 +19,13 @@ test('unfinished learning survives reload and retries the identical session afte
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Market' }).click();
   await page.getByRole('button', { name: 'Let’s play' }).click();
-  await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  await expect(page.getByRole('status')).toHaveText(
+    'Catch the fruit you hear!',
+  );
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  await expect(page.getByRole('status')).toHaveText(
+    'Catch the fruit you hear!',
+  );
   await page.getByRole('button', { name: 'Back to the map' }).click();
   const pending = () =>
     page.evaluate(() =>

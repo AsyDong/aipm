@@ -2,9 +2,11 @@ import Phaser from 'phaser';
 import { AssetManager, loadBrowserAsset } from './assets';
 import { PhaserObjects } from './objects';
 import { WORLD_HEIGHT, WORLD_WIDTH } from '@english/contracts';
-import type { AssetManifest } from '@english/contracts';
+import type { AssetManifest, ISceneObjects } from '@english/contracts';
+import { PhaserCatchObjects } from './catch-objects';
+import { PhaserArcadeObjects } from './arcade-objects';
 
-export function createViewport(parent: HTMLElement) {
+export function createViewport(parent: HTMLElement, sceneId?: string) {
   let disposed = false;
   let resolveScene: (scene: Phaser.Scene) => void;
   const ready = new Promise<Phaser.Scene>((resolve) => {
@@ -44,11 +46,16 @@ export function createViewport(parent: HTMLElement) {
   addEventListener('orientationchange', refit);
   addEventListener('resize', refit);
   const assets = new AssetManager(loadBrowserAsset);
-  let objects: PhaserObjects | undefined;
+  let objects: ISceneObjects | undefined;
   return {
     ready: ready.then((scene) => {
       if (disposed) throw new Error('Viewport disposed');
-      objects = new PhaserObjects(scene);
+      objects =
+        sceneId === 'catch-world'
+          ? new PhaserCatchObjects(scene)
+          : sceneId === 'arcade-world'
+            ? new PhaserArcadeObjects(scene)
+            : new PhaserObjects(scene);
       return { scene, objects };
     }),
     assets,

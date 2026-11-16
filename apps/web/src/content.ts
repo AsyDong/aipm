@@ -130,13 +130,21 @@ const games: Record<string, GameDefinition> = {
     },
   ),
   // Market Street (Unit 3): each stop now works differently, not just new words.
-  // 1 Entrance: a friend hands over a basket that visibly fills.
-  'u3-basket': listenFind('u3-basket', FRUITS, {
-    rounds: 5,
-    optionCount: 2,
-    unit: U3_UNIT,
-    place: 'BASKET',
-  }),
+  // 1 Entrance: steer the monkey and catch the spoken fruit as it falls.
+  'u3-basket': {
+    ...listenFind('u3-basket', FRUITS, {
+      rounds: 5,
+      optionCount: 2,
+      unit: U3_UNIT,
+    }),
+    scene: { id: 'catch-world', version: '1.0.0', config: {} },
+    mechanic: {
+      id: 'fruit-catch',
+      version: '1.0.0',
+      config: { baseSpeed: 140, speedStep: 16 },
+    },
+    input: { allowed: ['TOUCH', 'MOUSE', 'KEYBOARD'] },
+  },
   // 2 Stall: meet the five fruits first (level.meet), then stock the shelf
   // in a fixed order so the empty stall becomes a full one.
   'u3-stall': listenFind('u3-stall', FRUITS, {
@@ -146,7 +154,7 @@ const games: Record<string, GameDefinition> = {
     place: 'SHELF',
     progression: 'SEQUENTIAL',
   }),
-  // 3 Grocery: a picture shopping list (level.checklist), food into the basket.
+  // 3 Grocery: find the spoken food and put it into the basket.
   'u3-grocery': listenFind('u3-grocery', FOODS, {
     rounds: 5,
     optionCount: 3,
@@ -245,8 +253,6 @@ export interface WorldLevel {
   ask?: string;
   /** Meet-the-words strip on the intro overlay: tap a picture, hear its word. */
   meet?: string[];
-  /** The grocery stop shows its whole shopping list, ticking off what is found. */
-  checklist?: boolean;
   chapter?: string;
   order?: number;
   collection?: string;

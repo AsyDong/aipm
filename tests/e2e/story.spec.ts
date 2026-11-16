@@ -1,11 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { unlockBefore } from './unlock';
 
+const catchPrompt = 'Catch the fruit you hear!';
+
 async function start(
   page: Page,
   name: string,
   unit: string,
-  ask = 'Which one is it?',
+  ask = name === 'Fruit Market' ? catchPrompt : 'Which one is it?',
 ) {
   await page.addInitScript(() => {
     Math.random = () => 0.999999;
@@ -19,6 +21,10 @@ async function start(
   await page.getByRole('button', { name: `Play ${name}`, exact: true }).click();
   await page.getByRole('button', { name: /^Let/ }).click();
   await expect(page.getByRole('status')).toHaveText(ask, { timeout: 20000 });
+  await expect(page.locator('.task-collection')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: /^(Next|Finish)/ }),
+  ).toHaveCount(0);
 }
 
 async function tapWorld(page: Page, x: number, y: number) {
@@ -41,6 +47,15 @@ async function chooseFirst(
   const y = baseY - size / 2;
   await tapWorld(page, x, y);
   await expect(page.getByRole('status')).toContainText('Yes! It is');
+}
+
+// Fixed shuffle puts the target in the first falling lane. Moving there is the
+// answer: the test never bypasses collision detection or submits through internals.
+async function catchFirst(page: Page, x = 267) {
+  await tapWorld(page, x, 600);
+  await expect(page.getByRole('status')).toContainText('Yes! It is', {
+    timeout: 20000,
+  });
 }
 
 test('the world map shows U0-U9 and a unit opens its own numbered locations', async ({
@@ -147,6 +162,7 @@ test('the world map shows U0-U9 and a unit opens its own numbered locations', as
 test('completion unlocks the next stop and the monkey walks before READY', async ({
   page,
 }) => {
+  test.setTimeout(90000);
   await page.addInitScript(() => {
     Math.random = () => 0.999999;
   });
@@ -178,16 +194,14 @@ test('completion unlocks the next stop and the monkey walks before READY', async
   await expect(rightLeg).toHaveCSS('animation-name', 'monkey-leg-b');
   await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
   await page.getByRole('button', { name: 'Let’s play' }).click();
-  await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
   for (let i = 0; i < 5; i++) {
-    await chooseFirst(page, 2);
-    await page
-      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
-      .click();
-    if (i < 4)
-      await expect(page.getByRole('status')).toHaveText('Which one is it?');
+    await catchFirst(page);
+    if (i < 4) await expect(page.getByRole('status')).toHaveText(catchPrompt);
   }
   await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
+  await page.getByRole('button', { name: 'Play again', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
   await page.getByRole('button', { name: 'Back to the map' }).first().click();
   await expect(
     page.getByRole('button', { name: 'Play Fruit Stall', exact: true }),
@@ -199,6 +213,97 @@ test('completion unlocks the next stop and the monkey walks before READY', async
   await expect(page.getByRole('button', { name: 'Let’s play' })).toHaveCount(0);
   await expect(page.locator('.unit-map')).toHaveClass(/entering-location/);
   await expect(page.getByRole('button', { name: 'Let’s play' })).toBeVisible();
+});
+
+test('fruit catch moves continuously, accepts keyboard and touch, and retries a wrong catch', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(90000);
+  await page.setViewportSize({ width: 668, height: 375 });
+  await start(page, 'Fruit Market', 'Market Street');
+  const canvas = page.locator('canvas');
+  const frame = () =>
+    canvas.evaluate((element) => (element as HTMLCanvasElement).toDataURL());
+  const before = await frame();
+  await page.waitForTimeout(400);
+  expect(before === (await frame())).toBe(false);
+  await page.screenshot({
+    path: testInfo.outputPath('fruit-catch-moving.png'),
+    fullPage: true,
+  });
+
+  // The second lane contains the distractor. It must bounce out, not end the round.
+  await tapWorld(page, 478, 600);
+  await expect(page.getByRole('status')).toHaveText(
+    'It bounced out. Try again!',
+    { timeout: 20000 },
+  );
+  const hint = page.getByRole('button', { name: 'Hint', exact: false });
+  await expect(hint).toBeEnabled();
+  await hint.click();
+  await page.screenshot({
+    path: testInfo.outputPath('fruit-catch-hint.png'),
+    fullPage: true,
+  });
+  await catchFirst(page, 360);
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
+
+  // Hold a real key to steer into another target lane in the faster round.
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(800);
+  await page.keyboard.up('ArrowRight');
+  await expect(page.getByRole('status')).toContainText('Yes! It is', {
+    timeout: 20000,
+  });
+
+  // The on-screen controls use the same hold-to-steer path on touch and mouse.
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
+  const left = page.getByRole('button', { name: 'Move left', exact: true });
+  const box = (await left.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(800);
+  await page.mouse.up();
+  await expect(page.getByRole('status')).toContainText('Yes! It is', {
+    timeout: 20000,
+  });
+});
+
+test('fruit catch replays, freezes on pause and resumes falling', async ({
+  page,
+}) => {
+  await start(page, 'Fruit Market', 'Market Street');
+  const canvas = page.locator('canvas');
+  const frame = () =>
+    canvas.evaluate((element) => (element as HTMLCanvasElement).toDataURL());
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Break time' })).toBeVisible();
+  const frozen = await frame();
+  await page.waitForTimeout(350);
+  expect(frozen === (await frame())).toBe(true);
+  await page.getByRole('button', { name: 'Keep playing', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText(catchPrompt);
+  const resumed = await frame();
+  await page.waitForTimeout(350);
+  expect(resumed === (await frame())).toBe(false);
+});
+
+test('a correct catch advances automatically and pause postpones the transition', async ({
+  page,
+}) => {
+  await start(page, 'Fruit Market', 'Market Street');
+  await catchFirst(page);
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Break time' })).toBeVisible();
+  await page.waitForTimeout(700);
+  await expect(page.getByLabel('Round 1 of 5')).toBeVisible();
+  await page.getByRole('button', { name: 'Keep playing', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText(catchPrompt, {
+    timeout: 20000,
+  });
+  await expect(page.getByLabel('Round 2 of 5')).toBeVisible();
 });
 
 test('small landscape READY panels scroll instead of clipping their actions', async ({
@@ -264,7 +369,6 @@ test('All Aboard hides its answer hint and gives vehicles opaque white cards', a
   // The fourth sequential round is the red bus, kept first by the fixed shuffle.
   for (let i = 0; i < 3; i++) {
     await chooseFirst(page, 3, 640, 645);
-    await page.getByRole('button', { name: 'Next', exact: false }).click();
     await expect(page.getByRole('status')).toHaveText('Which one is it?');
   }
   // Above the bus itself, the transparent source reveals the new white backing.
@@ -282,18 +386,50 @@ test('All Aboard hides its answer hint and gives vehicles opaque white cards', a
   await chooseFirst(page, 3, 640, 645);
 });
 
+test('Grocery Shop has opaque food art and no active shopping record', async ({
+  page,
+}, testInfo) => {
+  await start(page, 'Grocery Shop', 'Market Street');
+  await expect(page.locator('.task-collection')).toHaveCount(0);
+  const opaque = await page.evaluate(async () => {
+    const results: boolean[] = [];
+    for (const name of ['rice', 'egg']) {
+      const image = new Image();
+      image.src = `/images/food/${name}.webp`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      results.push(
+        context
+          .getImageData(0, 0, canvas.width, canvas.height)
+          .data.every((value, index) => index % 4 !== 3 || value === 255),
+      );
+    }
+    return results;
+  });
+  expect(opaque).toEqual([true, true]);
+  await page.screenshot({
+    path: testInfo.outputPath('grocery-opaque-food.png'),
+    fullPage: true,
+  });
+  for (let i = 0; i < 5; i++) {
+    await chooseFirst(page, 3);
+    if (i < 4)
+      await expect(page.getByRole('status')).toHaveText('Which one is it?');
+  }
+  await expect(page.getByLabel('Shopping basket complete')).toBeVisible();
+  await expect(page.locator('.collected-items img')).toHaveCount(5);
+});
+
 test('short story collects solved items, keeps three stars on the map, and continues to the next node', async ({
   page,
 }) => {
   await start(page, 'Harbour Friends', 'Welcome Harbour');
-  const collected = page.getByLabel('Friends together', { exact: true });
-  await expect(collected.locator('img')).toHaveCount(0);
   for (let i = 0; i < 3; i++) {
     await chooseFirst(page, 3, 640, 645);
-    await expect(collected.locator('img')).toHaveCount(i + 1);
-    await page
-      .getByRole('button', { name: i === 2 ? 'Finish' : 'Next', exact: false })
-      .click();
     if (i < 2)
       await expect(page.getByRole('status')).toHaveText('Which one is it?');
   }
@@ -321,7 +457,7 @@ test('short story collects solved items, keeps three stars on the map, and conti
   ).toBeVisible();
 });
 
-test('counting and packing complete six rounds; restart clears the collected boxes', async ({
+test('counting and packing complete six rounds and can restart', async ({
   page,
 }) => {
   const images: string[] = [];
@@ -342,14 +478,9 @@ test('counting and packing complete six rounds; restart clears the collected box
     'eggs-5',
   ])
     expect(images.some((url) => url.endsWith(`/${file}.webp`))).toBe(true);
-  const collected = page
-    .getByLabel('Boxes checked', { exact: true })
-    .locator('img');
   // Count the picture and tap a numeral in the first two rounds.
   for (let i = 0; i < 2; i++) {
     await chooseFirst(page, 4);
-    await expect(collected).toHaveCount(i + 1);
-    await page.getByRole('button', { name: 'Next', exact: false }).click();
     await expect(page.getByRole('status')).toHaveText(ask);
   }
   // Pack 3, 2, 4 and 5 single foods, then tap the box to answer.
@@ -358,17 +489,14 @@ test('counting and packing complete six rounds; restart clears the collected box
       await tapWorld(page, 70 + item * 140, 545);
     await tapWorld(page, 1000, 540);
     await expect(page.getByRole('status')).toContainText('Yes! It is');
-    await expect(collected).toHaveCount(index + 3);
-    await page
-      .getByRole('button', {
-        name: index === 3 ? 'Finish' : 'Next',
-        exact: false,
-      })
-      .click();
     if (index < 3) await expect(page.getByRole('status')).toHaveText(ask);
   }
+  await expect(
+    page.getByLabel('Boxes checked complete').locator('img'),
+  ).toHaveCount(6);
   await page.getByRole('button', { name: 'Play again' }).click();
-  await expect(collected).toHaveCount(0);
+  await expect(page.getByRole('status')).toHaveText(ask);
+  await expect(page.locator('.task-collection')).toHaveCount(0);
 });
 
 test('the last mission ends with friends around the collected picnic food', async ({
@@ -377,9 +505,6 @@ test('the last mission ends with friends around the collected picnic food', asyn
   await start(page, 'Picnic Time', 'Market Street');
   for (let i = 0; i < 6; i++) {
     await chooseFirst(page, 4);
-    await page
-      .getByRole('button', { name: i === 5 ? 'Finish' : 'Next', exact: false })
-      .click();
     if (i < 5)
       await expect(page.getByRole('status')).toHaveText('Which one is it?');
   }

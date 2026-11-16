@@ -4,8 +4,14 @@ import {
   VoiceMatchMechanic,
   SliceMechanic,
   CountPackMechanic,
+  FruitCatchMechanic,
+  ArcadeMechanic,
 } from '@english/game-mechanics';
-import { FruitWorldScene } from '@english/game-scenes';
+import {
+  ArcadeWorldScene,
+  FruitCatchScene,
+  FruitWorldScene,
+} from '@english/game-scenes';
 import type Phaser from 'phaser';
 import { composerPlugins } from './composer';
 
@@ -16,10 +22,14 @@ import { composerPlugins } from './composer';
 export function pluginCatalog(scene: Phaser.Scene): PluginRegistration[] {
   const factories: Record<string, PluginRegistration['create']> = {
     'fruit-world': () => new FruitWorldScene(scene),
+    'catch-world': () => new FruitCatchScene(scene),
+    'arcade-world': () => new ArcadeWorldScene(scene),
     tap: () => new TapMechanic(),
     'voice-match': () => new VoiceMatchMechanic(),
     slice: () => new SliceMechanic(),
     'count-pack': () => new CountPackMechanic(),
+    'fruit-catch': () => new FruitCatchMechanic(),
+    arcade: () => new ArcadeMechanic(),
   };
   return composerPlugins.map((plugin) => {
     const create = factories[plugin.metadata.id];

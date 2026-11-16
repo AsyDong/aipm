@@ -75,6 +75,46 @@ The guide moved from the lower-left play area to the upper-left backdrop after s
 - Desktop Chromium walkthroughs inspected the populated world map, a paused walking frame, All Aboard, Fruit Market and Woodland Walk. The transparent choices and new scene crops rendered correctly; All Aboard had no collection element. The browser reported no console errors or failed relevant image requests. Focused e2e assertions now cover the absence of map-person overlays, independent leg animations, the removed All Aboard hint, responsive map fitting and scrollable small-screen READY actions.
 - Vehicle-card follow-up: an actual All Aboard walkthrough showed the red bus on its white card, with successful vehicle image responses and no console errors. The focused All Aboard browser test now reaches the sequential bus round, reads the transparent area above the bus as opaque white, and taps the choice successfully; it passed **2/2** across desktop Chromium and automated iPad WebKit. `pnpm typecheck`, `pnpm lint`, `pnpm test` (**29 files, 89 tests**) and `pnpm build` also passed after the renderer change.
 
+## Follow-up — Monkey's Fruit Catch playable vertical slice (2026-11-16)
+
+- Fruit Market is no longer a stationary Listen & Find board. The locally registered `catch-world` scene and `fruit-catch` mechanic move the monkey with drag/touch positioning, Arrow/A/D keys and on-screen hold buttons. Fruit falls and rotates continuously, landing in the basket submits the answer, a wrong fruit bounces out for a retry, correct catches build a streak, and each of the five rounds falls faster.
+- Fruit starts visible at the beginning of a round, different candidates are interleaved, and no opening target lane aligns with the stationary basket. Screenshot review moved the basket beside the monkey's face and shortened the active guidance so the 668×375 layout does not clip it. Hints circle and slow a target; replay, pause/resume, restart, learning collection, rewards and sequential map unlocks continue through the existing runtime.
+- Public contracts add `KEYBOARD`, world-coordinate `MOVE`/`STEER` events and optional catch rendering capabilities. Collision callbacks return whether the answer boundary accepted the drop, preventing replay or locked input from consuming fruit. The scene does not import the mechanic, the mechanic contains no vocabulary, and Core/learning-core remain independent of Phaser and React. The scene and mechanic IDs are deliberately different so local plugin registration cannot collide.
+
+### Fruit Catch verification
+
+- Real browser input completed correct and wrong catches with touch/pointer positioning, keyboard steering and held on-screen controls. Five-round completion, increasing speed, replay, hint, pause with unchanged Canvas pixels, resumed motion, Play again and the next-stop unlock were exercised in desktop Chromium and automated iPad WebKit. Desktop and small-landscape screenshots were inspected; the visible monkey/basket alignment, falling fruit, hint ring and complete compact guidance were checked.
+- `pnpm typecheck`, `pnpm lint`, `pnpm test` (**30 files, 91 tests**), `pnpm build` and `git diff --check` passed.
+- The full Playwright run passed **48/52**; the four failures were stale assertions waiting for the former “Which one is it?” text. After changing only those assertions to the actual Fruit Catch guidance, all four passed on both browser projects. Thus all **52 browser tests pass against the final product code** (48 in the full run plus the 4/4 focused rerun). Generic stationary-card adventure tests now explicitly open Fruit Stall rather than implicitly depending on Fruit Market's old mechanic.
+- This validates one vertical slice, not every proposed game type. Physical iPad Safari, real-device audio/touch latency and hands-on child pacing remain unverified; no driving, delivery or platformer expansion is claimed.
+
+## Follow-up — opaque food art and no active-play records (2026-11-16)
+
+- Rice and egg are rebuilt as fully opaque RGB vocabulary cards with contrasting blue interiors and warm borders. `rice.webp` is **288×288, 7,458 bytes** and `egg.webp` is **320×320, 8,324 bytes**; both retain the 10,000-byte ceiling. Browser screenshot review confirmed that both remain recognizable on the market canvas.
+- `scripts/process-art.py` now bakes newly generated fruit, food and vehicle vocabulary onto opaque cards through `scripts/art_quality.py`; future vocabulary generation no longer emits transparent WebP files. Animated mascot layers and transparent scene props are not vocabulary cards and are unchanged.
+- The upper-right collection/checklist overlay is removed from **every activity during play**, not just All Aboard or Grocery Shop. In-world baskets, shelves, plates and packing boxes still show progress as game objects, and completion results still show the collected items. The obsolete Grocery `checklist` metadata, React branch and CSS were removed.
+
+### Opaque art and record-removal verification
+
+- Pillow assertions confirmed that both final food files are RGB and below 10,000 bytes. The new browser test decodes both assets and verifies that every pixel has alpha 255, completes all five Grocery Shop rounds, checks that no active shopping record exists, and verifies the five-item completion result. Shared story test setup also checks for the absence of the active record on every story activity it enters.
+- Desktop Chromium and automated iPad WebKit Grocery Shop screenshots were inspected: rice and egg are clearly visible, and the upper-right checklist is absent. The broader removal keeps the same completion results for Harbour Friends, Grocery Shop, Counting Boxes and Picnic Time.
+- `pnpm typecheck`, `pnpm lint`, `pnpm test` (**30 files, 91 tests**), `pnpm build`, `pnpm format:check` and `git diff --check` passed after the broader removal.
+- The final full `pnpm test:e2e` run passed **54/54** in 6.2 minutes: 27 desktop Chromium tests and 27 automated iPad WebKit tests, including Fruit Catch, all affected story flows, completion results, counting/packing, slicing and voice. Physical iPad Safari remains unverified.
+
+## Follow-up — Game arcade, auto-advance and audio-hang fix (2026-11-16)
+
+- The world map now has a **Game arcade**: the child picks only how to play, and the next unlocked story stop's words, audio, distractors, rules and rewards load automatically (`arcadeDefinition()` swaps scene, mechanic and input only; Count & Pack stays on its own mechanic). See [GAMEPLAY_CATALOG.md](GAMEPLAY_CATALOG.md) for the referenced open-source-games survey and the ten playable modes.
+- Ten locally registered modes share one `arcade` mechanic and one `arcade-world` scene: Picture Pairs, Little Chef, Word Racers, Maze Explorer, Sky Jumper, Bubble Pop, Word Golf, Little Builders, Garden Guardians and Power Quest. Each mode's motion reports through `IAnswerPort.submit()`; RuleEngine/TaskRunner still judge correctness, and no mode embeds curriculum words. Modes cap on-screen candidates and reuse the pause/restart/hint/reward flows.
+- Every activity now **auto-advances after a correct answer**: praise and the target word play, then the next round starts without a Next button; the final round settles into the summary automatically. Pause, restart, leaving or a new answer cancels the pending advance. E2e assertions that clicked the removed Next button were updated.
+- Audio-hang fix found by the WebKit voice test: `AudioManager.playLoaded` awaited `AudioContext.resume()` and `decodeAudioData` with no timeout, so a suspended/interrupted context could wedge the round on "Listen…". Both waits are now bounded (4 s unlock, 10 s fetch+decode); timeouts fail into the existing AUDIO_ERROR state where tapping Listen retries, and a failed decode reloads the asset. Desktop Chromium and WebKit voice suites pass after the fix. The Playwright per-test budget moved from 60 s to 90 s because praise plus the repeated target word now precede every auto-advanced round.
+
+### Arcade verification
+
+- `pnpm typecheck`, `pnpm lint`, `pnpm test` (**32 files, 96 tests**), `pnpm build`, `pnpm format:check` and `git diff --check` passed.
+- Focused arcade suite passed **22/22** (ten games plus picker navigation, desktop Chromium and automated iPad WebKit): each test opens the arcade, plays the mode with real pointer/touch/keyboard input, hears the praise line and earns a star; page errors and console errors are asserted empty.
+- Full `pnpm test:e2e` result: **78/78 passed in 10.7 minutes** — 39 desktop Chromium tests and 39 automated iPad WebKit tests, covering all ten arcade modes with real input, the picker navigation, every auto-advanced story flow and the audio-retry path.
+- Physical iPad Safari, real-device audio latency and child pacing remain unverified.
+
 ## Limits and compatibility notes
 
 - Automated WebKit is not physical iPad Safari acceptance. Real-device touch latency, audio volume and child pacing still need hands-on review.

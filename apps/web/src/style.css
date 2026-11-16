@@ -206,6 +206,30 @@ canvas {
   display: block;
   touch-action: none;
 }
+.catch-steering {
+  position: absolute;
+  z-index: 1;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.catch-move {
+  width: 64px;
+  height: 64px;
+  color: #4a2c00;
+  background: linear-gradient(#ffe889, var(--sun));
+  box-shadow:
+    0 5px 0 var(--sun-deep),
+    0 8px 14px #0004;
+  font-size: 36px;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+  pointer-events: auto;
+}
 .controls {
   padding-bottom: 4px;
   display: flex;
@@ -606,40 +630,6 @@ canvas {
 .pin:hover {
   z-index: 3;
 }
-.task-collection {
-  position: absolute;
-  z-index: 1;
-  right: 10px;
-  top: 10px;
-  max-width: 52%;
-  border-radius: 12px;
-  padding: 6px 10px;
-  background: #fff6dcf2;
-  color: #3a2a1a;
-  pointer-events: none;
-  font-size: clamp(11px, 1.5vw, 17px);
-}
-.task-collection > div {
-  display: flex;
-}
-/* The grocery stop's picture shopping list: dim until found, then a tick. */
-.shopping-list .list-item {
-  position: relative;
-  display: inline-block;
-}
-.shopping-list .list-item:not(.bought) img {
-  opacity: 0.35;
-  filter: grayscale(0.6);
-}
-.shopping-list .tick {
-  position: absolute;
-  right: -2px;
-  bottom: -4px;
-  color: #2e9e44;
-  font-weight: 700;
-  font-size: clamp(16px, 2.4vw, 26px);
-  text-shadow: 0 1px 0 #fff;
-}
 /* Meet-the-fruit strip on the intro overlay: tap a picture, hear its word. */
 .meet-strip {
   max-width: 100%;
@@ -679,11 +669,6 @@ canvas {
 .meet-item img {
   width: clamp(40px, 6vw, 72px);
   height: clamp(40px, 6vw, 72px);
-  object-fit: contain;
-}
-.task-collection img {
-  width: clamp(22px, 3vw, 42px);
-  height: clamp(22px, 3vw, 42px);
   object-fit: contain;
 }
 .story-result {
@@ -925,6 +910,150 @@ canvas {
 .composer textarea {
   width: 100%;
   min-height: 140px;
+}
+
+/* ---------- child-facing arcade picker ---------- */
+.arcade-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.arcade-lesson {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  border: 3px solid #fff9;
+  border-radius: 20px;
+  background: #fff5;
+  color: #234b50;
+}
+.arcade-lesson > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+.arcade-lesson strong {
+  font-size: 23px;
+}
+.arcade-words {
+  display: flex;
+  gap: 8px;
+}
+.arcade-words img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  background: #fff8e7;
+}
+.arcade-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.arcade-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 250px;
+  padding: 16px 14px 46px;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 22px;
+  color: #3a2a1a;
+  text-align: left;
+  background: linear-gradient(155deg, #fff9e8, #ffe5a4);
+  box-shadow:
+    0 6px 0 #d18b35,
+    0 10px 18px #18556b44;
+  transition: transform 0.12s;
+}
+.arcade-card:nth-child(3n + 2) {
+  background: linear-gradient(155deg, #f3ffe6, #bfeaa5);
+  box-shadow:
+    0 6px 0 #62a34c,
+    0 10px 18px #18556b44;
+}
+.arcade-card:nth-child(3n) {
+  background: linear-gradient(155deg, #effaff, #b9e4f3);
+  box-shadow:
+    0 6px 0 #4d9db8,
+    0 10px 18px #18556b44;
+}
+.arcade-card:hover,
+.arcade-card:focus-visible {
+  transform: translateY(-4px);
+}
+.arcade-card:active {
+  transform: translateY(3px);
+}
+.arcade-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 19px;
+  font-size: 45px;
+  background: #fff9;
+}
+.arcade-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.arcade-copy strong {
+  font-size: 22px;
+  line-height: 1.05;
+}
+.arcade-copy small {
+  color: #22748e;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.arcade-copy > span {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 14px;
+  line-height: 1.25;
+}
+.arcade-go {
+  position: absolute;
+  right: 13px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  background: #278eb8;
+}
+.arcade-go .icon {
+  width: 21px;
+  height: 21px;
+}
+@media (max-width: 899px) {
+  .arcade-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .arcade-card {
+    min-height: 190px;
+  }
+}
+@media (max-width: 560px) {
+  .arcade-grid {
+    grid-template-columns: 1fr;
+  }
+  .arcade-lesson {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 720px) and (orientation: portrait) {

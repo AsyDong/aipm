@@ -3,7 +3,7 @@ import { unlockBefore } from './unlock';
 
 const WORLD = { width: 1280, height: 720 };
 // The hint turns the plate under the right fruit gold (#ffd21f).
-async function openLevel(page: Page, name = 'Fruit Market') {
+async function openLevel(page: Page, name = 'Fruit Stall') {
   await unlockBefore(page, name);
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Market Street' }).click();
@@ -87,9 +87,6 @@ test('five real audio rounds, hints, rewards, completion and restart', async ({
   await start(page);
   for (let i = 0; i < 5; i++) {
     await hintedChoice(page);
-    await page
-      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
-      .click();
     if (i < 4)
       await expect(page.getByRole('status')).toHaveText('Which one is it?');
   }
@@ -125,7 +122,7 @@ test('the map remembers stars; pause, replay, leave and re-enter, and a second l
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Back to the map' }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Play Fruit Market' }).click();
+    await page.getByRole('button', { name: 'Play Fruit Stall' }).click();
     await expect(
       page.getByRole('button', { name: 'Let’s play' }),
     ).toBeVisible();
@@ -143,16 +140,15 @@ test('finished levels keep their stars on the map after a reload', async ({
   await start(page);
   for (let i = 0; i < 5; i++) {
     await hintedChoice(page);
-    await page
-      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
-      .click();
+    if (i < 4)
+      await expect(page.getByRole('status')).toHaveText('Which one is it?');
   }
   await expect(page.getByRole('heading', { name: 'Great job!' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to the map' }).first().click();
   await page.reload();
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   const market = page.locator('.pin', {
-    has: page.getByRole('button', { name: 'Play Fruit Market' }),
+    has: page.getByRole('button', { name: 'Play Fruit Stall' }),
   });
   await expect(market.getByLabel('3 of 3 stars')).toBeVisible();
 });
@@ -195,10 +191,10 @@ test('a wrong choice can retry without losing stars and the layout fits', async 
 }, testInfo) => {
   await start(page);
   const right = await hintPlate(page);
-  // Fruit are spaced 240 apart; tap the neighbour that is not gold.
+  // Five fruit are spaced 180 apart; tap the neighbour that is not gold.
   await tapWorld(
     page,
-    right.x > 770 ? right.x - 240 : right.x + 240,
+    right.x > 770 ? right.x - 180 : right.x + 180,
     right.y - 100,
   );
   await expect(page.getByRole('status')).toHaveText(
@@ -252,9 +248,12 @@ test('an upright phone gets a "turn sideways" notice and the game pauses', async
   await page.getByRole('button', { name: 'Open Market Street' }).click();
   await page.getByRole('button', { name: 'Play Fruit Market' }).click();
   await page.getByRole('button', { name: 'Let’s play' }).click();
-  await expect(page.getByRole('status')).toHaveText('Which one is it?', {
-    timeout: 15000,
-  });
+  await expect(page.getByRole('status')).toHaveText(
+    'Catch the fruit you hear!',
+    {
+      timeout: 15000,
+    },
+  );
   await page.setViewportSize({ width: 390, height: 780 }); // turned upright mid-game
   // Wait for the portrait event to be delivered before rotating back (WebKit coalesces resizes).
   await expect(

@@ -4,8 +4,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
   workers: 3,
-  // Real prompts and guide lines play at their natural speed; five rounds take ~20 s.
-  timeout: 60000,
+  // Real prompts, praise and repeated target words play at their natural speed;
+  // five auto-advanced rounds with voice capture take ~60 s on WebKit.
+  timeout: 90000,
   expect: { timeout: 15000 },
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },
   projects: [

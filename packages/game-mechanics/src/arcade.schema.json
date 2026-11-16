@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ArcadeConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode"],
+  "properties": {
+    "mode": {
+      "enum": [
+        "picture-pairs",
+        "little-chef",
+        "word-racers",
+        "maze-explorer",
+        "sky-jumper",
+        "bubble-pop",
+        "word-golf",
+        "little-builders",
+        "garden-guardians",
+        "power-quest"
+      ]
+    }
+  }
+}

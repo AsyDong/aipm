@@ -106,9 +106,6 @@ test('voice retry, wrong word, five matches and restart use the shared rewards',
         path: info.outputPath('voice-match.png'),
         fullPage: true,
       });
-    await page
-      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
-      .click();
     if (i < 4)
       await expect(page.getByRole('status')).toHaveText(
         'Tap Record and say the word!',

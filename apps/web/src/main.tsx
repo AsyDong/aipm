@@ -19,6 +19,7 @@ import type {
   LearningOptions,
   LearningProgress,
   GameDefinition,
+  ArcadeMode,
 } from '@english/contracts';
 import { learnerId, LearningOutbox } from './learning';
 const Composer = lazy(() =>
@@ -40,6 +41,8 @@ import {
   type WorldUnit,
 } from './content';
 import { gameStars, loadStars, saveStars } from './progress';
+import { arcadeDefinition, arcadeGame, nextArcadeLevel } from './arcade';
+import { ArcadePicker } from './ArcadePicker';
 import {
   BackIcon,
   BulbIcon,
@@ -117,6 +120,8 @@ function Level({
   learning,
   definition,
   onNext,
+  onChooseGame,
+  exitLabel = 'Back to the map',
 }: {
   level: WorldLevel;
   onExit: () => void;
@@ -124,6 +129,8 @@ function Level({
   learning?: LearningOptions | undefined;
   definition?: GameDefinition;
   onNext?: (() => void) | undefined;
+  onChooseGame?: (() => void) | undefined;
+  exitLabel?: string;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const bridge = useRef<IGameBridge | null>(null);
@@ -168,6 +175,9 @@ function Level({
   const counting =
     (definition ?? (level.game ? definitionFor(level.game) : undefined))
       ?.mechanic.id === 'count-pack';
+  const catching =
+    (definition ?? (level.game ? definitionFor(level.game) : undefined))
+      ?.mechanic.id === 'fruit-catch';
   const voiceBusy = !!state.voice && state.voice.status !== 'IDLE';
   const voiceMessages = {
     NO_SPEECH: 'I did not hear a word. Tap Record to try again.',
@@ -202,12 +212,28 @@ function Level({
           ? 'Swipe across the fruit you heard!'
           : undefined
       : undefined;
+  const catchLine =
+    catching && !state.busy && !correct
+      ? state.feedback === 'RETRY'
+        ? 'It bounced out. Try again!'
+        : 'Catch the fruit you hear!'
+      : undefined;
   const portrait = usePortraitPhone();
   // Turning the phone upright pauses the game instead of hiding it behind a notice.
   useEffect(() => {
     if (portrait && active) bridge.current?.send({ type: 'PAUSE' });
   }, [portrait, active]);
   const gameDefinition = definition ?? definitionFor(level.game!);
+  const arcadeInfo =
+    gameDefinition.mechanic.id === 'arcade'
+      ? arcadeGame(gameDefinition.mechanic.config.mode as ArcadeMode)
+      : undefined;
+  const arcadeLine =
+    arcadeInfo && active && !state.busy && !correct
+      ? state.feedback === 'RETRY'
+        ? `Try again! ${arcadeInfo.instruction}`
+        : arcadeInfo.instruction
+      : undefined;
   const earned = gameStars(state.stars, gameDefinition);
   const spoken = useRef('');
   useEffect(() => {
@@ -232,11 +258,7 @@ function Level({
   return (
     <section className="level" aria-label={`${level.title} level`}>
       <div className="hud">
-        <button
-          className="round-btn"
-          aria-label="Back to the map"
-          onClick={onExit}
-        >
+        <button className="round-btn" aria-label={exitLabel} onClick={onExit}>
           <BackIcon />
         </button>
         <div
@@ -261,72 +283,52 @@ function Level({
         </span>
       </div>
       <div className="stage">
-        {level.collection && active && level.checklist ? (
-          <div
-            className="task-collection shopping-list"
-            aria-label={level.collection}
-          >
-            <span>
-              {level.collection} · {state.collected?.length ?? 0}/{state.total}
-            </span>
-            <div>
-              {gameDefinition.content.items.map((reference) => {
-                const item = allContent.find(
-                  (content) => content.id === reference.contentId,
-                );
-                if (!item) return null;
-                const bought = state.collected?.some(
-                  (collected) => collected.contentId === item.id,
-                );
-                return (
-                  <span
-                    key={item.id}
-                    className={`list-item ${bought ? 'bought' : ''}`}
-                  >
-                    <img src={item.assets.image} alt={item.text} />
-                    <span className="tick" aria-hidden>
-                      {bought ? '✓' : ''}
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          level.collection &&
-          active && (
-            <div className="task-collection" aria-label={level.collection}>
-              <span>
-                {level.collection} · {state.collected?.length ?? 0}/
-                {state.total}
-              </span>
-              <div>
-                {state.collected?.map((item) => (
-                  <img key={item.taskId} src={item.image} alt={item.text} />
-                ))}
-              </div>
-            </div>
-          )
-        )}
         <div
           className="canvas-host"
           ref={host}
           data-testid="game-host"
           aria-label={
-            state.voice
-              ? 'Fruit on the counter. Listen, then record your voice.'
-              : slicing
-                ? 'Fruit on the counter. Listen, then swipe across one.'
-                : counting
-                  ? 'Food to count and a box to pack. Tap a number, or tap food into the box and tap the box.'
-                  : 'Fruit on the counter. Listen, then tap one.'
+            arcadeInfo
+              ? arcadeInfo.instruction
+              : state.voice
+                ? 'Fruit on the counter. Listen, then record your voice.'
+                : slicing
+                  ? 'Fruit on the counter. Listen, then swipe across one.'
+                  : counting
+                    ? 'Food to count and a box to pack. Tap a number, or tap food into the box and tap the box.'
+                    : catching
+                      ? 'Fruit is falling. Drag the monkey or use the left and right controls to catch the fruit you hear.'
+                      : 'Fruit on the counter. Listen, then tap one.'
           }
         />
         <Guide>
-          {active && (voiceLine || sliceLine)
-            ? voiceLine || sliceLine
+          {active && (voiceLine || sliceLine || catchLine || arcadeLine)
+            ? voiceLine || sliceLine || catchLine || arcadeLine
             : guideText(guideKey(state, !!error), state.word, level)}
         </Guide>
+        {catching && active && !correct && (
+          <div className="catch-steering" aria-label="Move the monkey">
+            {([-1, 1] as const).map((direction) => (
+              <button
+                key={direction}
+                className="round-btn catch-move"
+                aria-label={direction < 0 ? 'Move left' : 'Move right'}
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  send({ type: 'STEER', direction });
+                }}
+                onPointerUp={() => send({ type: 'STEER', direction: 0 })}
+                onPointerCancel={() => send({ type: 'STEER', direction: 0 })}
+                onLostPointerCapture={() =>
+                  send({ type: 'STEER', direction: 0 })
+                }
+                onContextMenu={(event) => event.preventDefault()}
+              >
+                {direction < 0 ? '←' : '→'}
+              </button>
+            ))}
+          </div>
+        )}
         {(ready ||
           paused ||
           completed ||
@@ -338,7 +340,7 @@ function Level({
                 <h2>Let’s try that again.</h2>
                 <p className="error-detail">{error}</p>
                 <button className="big-btn" onClick={onExit}>
-                  <BackIcon /> Back to the map
+                  <BackIcon /> {exitLabel}
                 </button>
               </>
             ) : completed ? (
@@ -393,7 +395,7 @@ function Level({
                     <PlayIcon /> Play again
                   </button>
                   <button className="big-btn alt" onClick={onExit}>
-                    Back to the map
+                    {exitLabel}
                   </button>
                 </div>
                 {state.summary && (
@@ -423,7 +425,7 @@ function Level({
               </>
             ) : ready ? (
               <>
-                <h2>{level.title}</h2>
+                <h2>{arcadeInfo?.title ?? level.title}</h2>
                 {level.story && <p className="story">{level.story}</p>}
                 {level.meet && (
                   <div className="meet-strip" aria-label="Meet the fruit">
@@ -453,13 +455,17 @@ function Level({
                   </div>
                 )}
                 <p>
-                  {state.voice
-                    ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
-                    : counting
-                      ? 'Count the food and tap the number. Then pack the food and tap the box!'
-                      : slicing
-                        ? 'Listen to the word. Swipe across the fruit.'
-                        : 'Listen to the word. Tap the right one.'}
+                  {arcadeInfo
+                    ? arcadeInfo.instruction
+                    : state.voice
+                      ? 'Listen to the word. Tap Record and say it. Your voice is sent for recognition and is not saved on this device.'
+                      : counting
+                        ? 'Count the food and tap the number. Then pack the food and tap the box!'
+                        : catching
+                          ? 'Drag the monkey, hold the arrow buttons, or use ← →. Catch the fruit you hear!'
+                          : slicing
+                            ? 'Listen to the word. Swipe across the fruit.'
+                            : 'Listen to the word. Tap the right one.'}
                 </p>
                 <button
                   className="big-btn"
@@ -471,6 +477,11 @@ function Level({
                 >
                   <PlayIcon /> Let’s play
                 </button>
+                {onChooseGame && (
+                  <button className="big-btn alt" onClick={onChooseGame}>
+                    Choose a game
+                  </button>
+                )}
               </>
             ) : (
               <>
@@ -521,22 +532,13 @@ function Level({
                 {state.voice.status === 'RECORDING' ? 'Done' : 'Record'}
               </button>
             )}
-            {correct ? (
-              <button
-                className="big-btn nudge"
-                onClick={() => send({ type: 'NEXT' })}
-              >
-                {state.round === state.total ? 'Finish' : 'Next'} <NextIcon />
-              </button>
-            ) : (
-              <button
-                className="big-btn"
-                disabled={state.busy || voiceBusy}
-                onClick={() => send({ type: 'REPLAY' })}
-              >
-                <SpeakerIcon /> Listen
-              </button>
-            )}
+            <button
+              className="big-btn"
+              disabled={state.busy || correct || voiceBusy}
+              onClick={() => send({ type: 'REPLAY' })}
+            >
+              <SpeakerIcon /> Listen
+            </button>
             <button
               className="round-btn"
               aria-label="Pause"
@@ -554,9 +556,11 @@ function Level({
 function WorldMap({
   stars,
   onPickUnit,
+  onArcade,
 }: {
   stars: Record<string, number>;
   onPickUnit: (unit: WorldUnit) => void;
+  onArcade: () => void;
 }) {
   return (
     <section className="world" aria-label={world.title}>
@@ -565,6 +569,9 @@ function WorldMap({
           <h1>World map</h1>
           <p>U0–U9 · Follow the friends from the harbour to the farm</p>
         </div>
+        <button className="big-btn" onClick={onArcade}>
+          Game arcade <NextIcon />
+        </button>
       </div>
       <div className="world-map">
         <div className="map-art">
@@ -779,6 +786,10 @@ function App() {
   const [composing, setComposing] = useState(false);
   const [preview, setPreview] = useState<GameDefinition>();
   const [level, setLevel] = useState<WorldLevel | null>(null);
+  const [arcade, setArcade] = useState<{
+    base: WorldLevel;
+    mode?: ArcadeMode;
+  } | null>(null);
   const [unit, setUnit] = useState<WorldUnit | null>(null);
   const [pending, setPending] = useState<WorldLevel>();
   const [stars, setStars] = useState(loadStars);
@@ -886,6 +897,19 @@ function App() {
     setPending(next);
     setLevel(null);
   };
+  const openArcade = (preferred?: WorldLevel) => {
+    const base = nextArcadeLevel(stars, preferred);
+    if (!base) return;
+    void tryLockLandscape();
+    setPending(undefined);
+    setLevel(null);
+    setArcade({ base });
+  };
+  const selectedArcadeDefinition = useMemo(
+    () =>
+      arcade?.mode ? arcadeDefinition(arcade.base, arcade.mode) : undefined,
+    [arcade],
+  );
   return (
     <main>
       {portrait && <RotateNotice />}
@@ -894,7 +918,9 @@ function App() {
           <img src="/images/mascot.webp" alt="" />
           English Adventure
         </span>
-        <span className="subtitle">{level ? level.subtitle : world.title}</span>
+        <span className="subtitle">
+          {arcade ? arcade.base.title : level ? level.subtitle : world.title}
+        </span>
       </header>
       {composing ? (
         preview ? (
@@ -913,6 +939,22 @@ function App() {
             />
           </Suspense>
         )
+      ) : arcade?.mode && selectedArcadeDefinition ? (
+        <Level
+          key={selectedArcadeDefinition.id}
+          level={arcade.base}
+          definition={selectedArcadeDefinition}
+          exitLabel="Back to games"
+          onExit={() => setArcade({ base: arcade.base })}
+          onDone={(earned) => setStars(saveStars(arcade.base.id, earned))}
+          learning={learning}
+        />
+      ) : arcade ? (
+        <ArcadePicker
+          level={arcade.base}
+          onBack={() => setArcade(null)}
+          onPick={(mode) => setArcade({ base: arcade.base, mode })}
+        />
       ) : level ? (
         <Level
           key={level.id}
@@ -920,6 +962,7 @@ function App() {
           onExit={() => setLevel(null)}
           onDone={(earned) => setStars(saveStars(level.id, earned))}
           learning={learning}
+          onChooseGame={() => openArcade(level)}
           onNext={
             nextStoryLevel(level)
               ? () => continueTo(nextStoryLevel(level)!)
@@ -938,9 +981,13 @@ function App() {
           }}
         />
       ) : (
-        <WorldMap stars={stars} onPickUnit={pickUnit} />
+        <WorldMap
+          stars={stars}
+          onPickUnit={pickUnit}
+          onArcade={() => openArcade()}
+        />
       )}
-      {!level && !composing && (
+      {!level && !arcade && !composing && (
         <details className="session-notes">
           <summary>Learning notes for grown-ups</summary>
           <p>{syncNote}</p>
@@ -964,7 +1011,7 @@ function App() {
           ))}
         </details>
       )}
-      {!level && !composing && (
+      {!level && !arcade && !composing && (
         <button onClick={() => setComposing(true)}>
           Game Composer for grown-ups
         </button>

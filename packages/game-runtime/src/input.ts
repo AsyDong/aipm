@@ -19,7 +19,10 @@ function valid(event: InputEvent) {
           event.confidence >= 0 &&
           event.confidence <= 1))
     );
-  if (event.type === 'TAP') return finite(event.x) && finite(event.y);
+  if (event.type === 'TAP' || event.type === 'MOVE')
+    return finite(event.x) && finite(event.y);
+  if (event.type === 'STEER')
+    return [-1, 0, 1].includes(event.direction) && finite(event.timestamp);
   return (
     event.points.length >= 2 &&
     event.points.length <= 128 &&

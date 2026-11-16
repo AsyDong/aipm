@@ -86,9 +86,6 @@ test('five swiped rounds, sound, completion and restart reuse Fruit World', asyn
     await expect(
       page.getByLabel(`${i + 1} stars`, { exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole('button', { name: i === 4 ? 'Finish' : 'Next', exact: false })
-      .click();
     if (i < 4)
       await expect(page.getByRole('status')).toHaveText(
         'Swipe across the fruit you heard!',
